@@ -1,0 +1,9 @@
+{
+  "name": "gulp-zurb-inky",
+  "version": "0.0.1",
+  "main": "./index.js",
+  "dependencies": {
+    "cheerio": "*"
+  },
+  "description": "Take initial HTML syntax and turn them into tables that use Foundation for Email styles."
+}
