@@ -422,7 +422,7 @@ Inky.prototype = {
       colSize += 'small' + '-' + $(col).attr('small') + ' ';
     }
     else {
-      colSize += 'small-12 ';
+      colSize += 'small-' + self.grid + ' ';
     }
 
     if ($(col).attr('large')) {

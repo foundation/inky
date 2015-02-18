@@ -1,6 +1,7 @@
 "use strict";
 
-var inky = require('../node_modules/gulp-zurb-foundation-email/node_modules/gulp-zurb-inky');
+var inky = require('../index.js');
+var cheerio = require('../node_modules/cheerio');
 
 describe("inky", function () {
   it("should be setting custom tags from object correctly", function () {
