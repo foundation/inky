@@ -60,7 +60,6 @@ Repo Contents
 
 * Spec Folder
 * index.js
-* gulp file
 
 
 Installation Instructions
