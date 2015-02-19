@@ -16,92 +16,6 @@ var Inky = function Inky () {
 
 Inky.prototype = {
   // Description:
-  //    Returns the object zfTags
-  // Arguments:
-  //    null
-  // Returns:
-  //    null
-  getTags: function() {
-    return this.zfTags;
-  },
-
-  // Description:
-  //    Sets the object property zfArray to an array containing the markup for our ZF custom elements
-  // Arguments:
-  //    null
-  // Returns:
-  //    null
-  setTagArray: function() {
-    var arr = [];
-    var self = this;
-    
-    for (val in self.zfTags) {
-      arr.push(self.zfTags[val]);
-    }
-    self.zfArray = arr;
-  },
-
-  // Description:
-  //   Checks if an element is a custom ZF element.
-  //
-  // Arguments:
-  //    elType (string): the tag name of an element
-  // Returns:
-  //    boolean: true/false
-  isZfElement: function(elType) {
-    var self = this;
-    // create an array of our custom tags, if we haven't done so already
-    if(!self.zfArray) {
-      self.setTagArray();
-    }
-
-    // if the element is a custom element
-    if (self.zfArray.indexOf(elType) !== -1) {
-      // return true
-      return true;
-    }
-    else {
-      return false;
-    }
-  },
-
-  // Description:
-  //   Puts in mark up for microsoft buttons
-  //   TODO
-  // Arguments:
-  //    $: Cheerio
-  // Returns:
-  //    null: new buttons
-  msButton: function($) {
-    var buttons = $('table.button');
-    $(buttons).each(function() {
-      // put microsoft markup
-    })
-
-  },
-
-  // Description:
-  //   Checks if an element is an element with a td included. Currently it's a manual check. 
-  //   Array was populated from the markup from the component factory.
-  //
-  // Arguments:
-  //    elType (string): the tag name of an element
-  // Returns:
-  //    boolean: true/false
-  isTdElement: function(elType) {
-    var tdEls = [this.zfTags.subcolumns, this.zfTags.callout, 'td'];
-
-    // if the element is an element that comes with td
-    if (tdEls.indexOf(elType) > -1) {
-      // return true
-      return true;
-    }
-    else {
-      return false;
-    }
-  },
-
-  // Description:
   //   Sets custom config for Inky
   //
   // Arguments:
@@ -158,6 +72,97 @@ Inky.prototype = {
   },
 
   // Description:
+  //    Returns the object zfTags
+  // Arguments:
+  //    null
+  // Returns:
+  //    null
+  getTags: function() {
+    return this.zfTags;
+  },
+
+  // Description:
+  //    Sets the object property zfArray to an array containing the markup for our ZF custom elements
+  // Arguments:
+  //    null
+  // Returns:
+  //    null
+  setTagArray: function() {
+    var arr = [];
+    var self = this;
+    
+    for (val in self.zfTags) {
+      arr.push(self.zfTags[val]);
+    }
+    self.zfArray = arr;
+  },
+
+  // Description:
+  //   Checks if an element is a custom ZF element.
+  //
+  // Arguments:
+  //    elType (string): the tag name of an element
+  // Returns:
+  //    boolean: true/false
+  isZfElement: function(elType) {
+    var self = this;
+    // create an array of our custom tags, if we haven't done so already
+    if(!self.zfArray) {
+      self.setTagArray();
+    }
+
+    // if the element is a custom element
+    if (self.zfArray.indexOf(elType) !== -1) {
+      // return true
+      return true;
+    }
+    else {
+      return false;
+    }
+  },
+
+  // Description:
+  //   Checks if an element is an element with a td included. Currently it's a manual check. 
+  //   Array was populated from the markup from the component factory.
+  //
+  // Arguments:
+  //    elType (string): the tag name of an element
+  // Returns:
+  //    boolean: true/false
+  isTdElement: function(elType) {
+    var tdEls = [this.zfTags.subcolumns, this.zfTags.callout, 'td'];
+
+    // if the element is an element that comes with td
+    if (tdEls.indexOf(elType) > -1) {
+      // return true
+      return true;
+    }
+    else {
+      return false;
+    }
+  },
+
+  // Description:
+  //   Checks if an element is an element that is usually included with table markup.
+  //
+  // Arguments:
+  //    elType (string): the tag name of an element
+  // Returns:
+  //    boolean: true/false
+  isTableElement: function(elType) {
+    var tableEls = ['td', 'tr', 'table', 'center', 'tbody', 'img'];
+
+    // if the element is an element that comes with td
+    if (tableEls.indexOf(elType) > -1) {
+      // return true
+      return true;
+    }
+    else {
+      return false;
+    }
+  },
+
+  // Description:
   //   Executes a function place the correct mark up for custom components in the correct place in the DOM
   //   It is a recursive function that drills down the DOM to find all custom nested elements within an element
   //   and replaces the custom tags with the correct table email markup. I got a blank space, baby.
@@ -168,9 +173,107 @@ Inky.prototype = {
   //    null: his function replaces the syntax directly in the cheerio object
   removeBlankSpaces: function(str) {
     // remove any blank spaces between classes we may have put in
-    str = str.replace( / "+/g, '"' )
-
+    str = str.replace( / "+/g, '"' );
+    // str = str.replace( /" /+/g, '' );
     return str;
+  },
+
+  // Description:
+  //   Goes through array of custom nested components to determine whether or not there are any on the DOM
+  //
+  // Arguments:
+  //    $ : Cheerio
+  // Returns:
+  //    boolean: True if there are nested components on the DOM, false otherwise.
+  checkZfComponents: function($) {
+    var self = this;
+
+    // if array hasn't been set yet, set it with properties of object
+    if (!self.zfArray) {
+      self.setTagArray();
+    }
+
+    $(self.zfArray).each(function(idx, zfElement) {
+      // check if custom elements still exist
+      if ($('center').find(zfElement).length > 0) {
+        return true;
+      }
+    });
+  },
+
+  // Description:
+  //   Executes a function to find and return nested custom elements within another element
+  //
+  // Arguments:
+  //    $, str (String): Cheerio, and a string containing the markup of an element to be checked for nested components
+  // Returns:
+  //    nestedComponents (Array): An array containing the names (i.e. tags) of the nested components
+  findNestedComponents: function($, str) {
+    var nestedComponents = [],
+        self             = this,
+        children;
+
+    // if array hasn't been set yet, set it with properties of object
+    if (!self.zfArray) {
+      self.setTagArray();
+    }
+    // if the nested component is an element, find the children
+    // NOTE: this is to avoid a cheerio quirk where it will still pass
+    // special alphanumeric characters as a selector
+    if (str.indexOf('<') !== -1) {
+      children = $(str);
+    };
+
+    $(children).each(function(i, el) {
+
+      // if the element's name matches an element in the array
+      if (self.zfArray.indexOf(el.name) !== -1) {
+        // push them to array of nested component names
+        nestedComponents.push(el.name);
+      }
+
+      // // if the element's name matches an element in the array
+      // var basics = ['p', 'h1'];
+      // if (el.name !== undefined && basics.indexOf(el.name) > -1) {
+      // //   // push them to array of nested component names
+      //   nestedComponents.push(el.name);
+      // }
+    });
+    // return array containing all nested components
+    return nestedComponents;
+  },
+
+  // Description:
+  //   Executes a function to find and return deeply nested custom elements within another element
+  //   Uses the find selector rather than going through children.
+  //
+  // Arguments:
+  //    $, el (String): Cheerio, and a string containing the markup of an element to be checked for nested components
+  // Returns:
+  //    nestedComponents (Array): An array containing the names (i.e. tags) of the nested components
+  findDeeplyNested: function($, el) {
+    var nestedComponents = [],
+        self             = this;
+
+    // if array hasn't been set yet, set it with properties of object
+    if (!self.zfArray) {
+      self.setTagArray();
+    }
+
+    // if the nested component is an element, find the children
+    // NOTE: this is to avoid a cheerio quirk where it will still pass
+    // special alphanumeric characters as a selector
+    if (el.indexOf('<') !== -1) {
+      $(self.zfArray).each(function(idx, zfElement) {
+        // find any nearby elements that are contained within el
+        if ($(el).find(zfElement).length > 0) {
+          nestedComponents.push(zfElement);
+        }
+      });
+    };
+
+    // return array containing all nested components
+    return nestedComponents;
   },
 
   // Description:
@@ -213,96 +316,28 @@ Inky.prototype = {
   },
 
   // Description:
-  //   Executes a function to find and return nested custom elements within another element
+  //   Transcludes the attributes from our custom markup into the table markup
   //
   // Arguments:
-  //    $, str (String): Cheerio, and a string containing the markup of an element to be checked for nested components
+  //    component (obj): Cheerio object of a target element
   // Returns:
-  //    nestedComponents (Array): An array containing the names (i.e. tags) of the nested components
-  findNestedComponents: function($, str) {
-    var nestedComponents = [],
-        self             = this,
-        children;
+  //    compAttrs (str): A string starting with the first class and other attributes following.
+  addComponentAttrs: function(component) {
+    var attributes = component.attr(),
+        compAttrs  = '';
 
-    // if array hasn't been set yet, set it with properties of object
-    if (!self.zfArray) {
-      self.setTagArray();
-    }
-    // if the nested component is an element, find the children
-    // NOTE: this is to avoid a cheerio quirk where it will still pass
-    // special alphanumeric characters as a selector
-    if (str.indexOf('<') !== -1) {
-      children = $(str);
-    };
+    for (var attr in attributes) {
 
-    $(children).each(function(i, el) {
-      // if the element's name matches an element in the array
-      if (self.zfArray.indexOf(el.name) !== -1) {
-        // push them to array of nested component names
-        nestedComponents.push(el.name);
+      if (attr === 'class') {
+        compAttrs += attributes[attr] + '" ';
       }
-    });
-    // return array containing all nested components
-    return nestedComponents;
-  },
-
-  // Description:
-  //   Executes a function to find and return deeply nested custom elements within another element
-  //   Uses the find selector rather than going through children.
-  //
-  // Arguments:
-  //    $, el (String): Cheerio, and a string containing the markup of an element to be checked for nested components
-  // Returns:
-  //    nestedComponents (Array): An array containing the names (i.e. tags) of the nested components
-  findDeeplyNested: function($, el) {
-    var nestedComponents = [],
-        self             = this;
-
-    // if array hasn't been set yet, set it with properties of object
-    if (!self.zfArray) {
-      self.setTagArray();
-    }
-
-    // if the nested component is an element, find the children
-    // NOTE: this is to avoid a cheerio quirk where it will still pass
-    // special alphanumeric characters as a selector
-    if (el.indexOf('<') !== -1) {
-      $(self.zfArray).each(function(idx, zfElement) {
-        // find any nearby elements that are contained within el
-        if ($(el).find(zfElement).length > 0) {
-          nestedComponents.push(zfElement);
-        }
-      });
-    };
-
-    // return array containing all nested components
-    return nestedComponents;
-  },
-
-  // Description:
-  //   Goes through array of custom nested components to determine whether or not there are any on the DOM
-  //
-  // Arguments:
-  //    $ : Cheerio
-  // Returns:
-  //    boolean: True if there are nested components on the DOM, false otherwise.
-  checkZfComponents: function($) {
-    var self = this;
-
-    // if array hasn't been set yet, set it with properties of object
-    if (!self.zfArray) {
-      self.setTagArray();
-    }
-
-    $(self.zfArray).each(function(idx, zfElement) {
-      // check if custom elements still exist
-      if ($('center').find(zfElement).length > 0) {
-        return true;
+      else {
+        compAttrs += '"' + attr + '="' + attributes[attr] + '" ';
       }
-    });
+    }
 
+    return compAttrs;
   },
-
   // Description:
   //    Returns output for desired custom element
   //
@@ -317,13 +352,21 @@ Inky.prototype = {
         compClass = '',
         self      = this;
 
-    if ($(component).attr('class')) {
-      compClass = $(component).attr('class');
-    };
+    // if ($(component).attr('class')) {
+    //   compClass = $(component).attr('class');
+    // };
+    if (component.attr() !== {}) {
+     compClass = self.addComponentAttrs(component);
+    }
 
     switch (type) {
       case self.zfTags.callout:
-        output = '<td class="callout ' + compClass +'">' + inner + '</td>';
+        if (component.parent() && self.isTdElement(component.parent()[0].name)) {
+          output = '<table><tbody><tr><td class="callout ' + compClass +'">' + inner + '</td></tr></tbody></table>'; 
+        }
+        else {
+          output = '<td class="callout ' + compClass +'">' + inner + '</td>';
+        }
         break;
 
       case self.zfTags.button:
@@ -366,7 +409,8 @@ Inky.prototype = {
         // unless it's a special element, just grab the inside
         // another cheerio quirk
         inner = $.html(element);
-        output = '<td>' + inner + '</td>';
+
+        output = '<tr><td>' + inner + '</td></tr>';
     };
 
     return output;
@@ -391,7 +435,6 @@ Inky.prototype = {
       }
       else if (orientation === 'vertical') {
           output += '<tr><td class="vertical">' + innerChild + '</td></tr>';
-
       }
       else {
         return;
@@ -448,12 +491,22 @@ Inky.prototype = {
     } else {
       output = '<td class="wrapper ' + colClass + '">';
     }        
+    output += '<table class="' + colSize + 'columns"><tr>';
 
+    // put each child in its own tr
+    // unless it's a table element or a zfElement
+    var children = $(inner).nextUntil('columns');
+    $(children).each(function(idx, el) {
 
+      if (el.name !== undefined && !self.isTableElement(el.name) && !self.isZfElement(el.name)) {
+        output += '<tr><td>' + $.html(el) + '</td></tr>';
+      }
+      else {
+        output += $.html(el);
+      }
+    });
 
-      output += '<table class="' + colSize + 'columns"><tr>';
-      output += inner;
-      output += '<td class="expander"></td></tr></table></td>';
+    output += '<td class="expander"></td></tr></table></td>';
 
     }
     else if (type === 'subcolumns') {
@@ -471,7 +524,22 @@ Inky.prototype = {
     }
 
     return output;
-  }
+  },
+
+  // Description:
+  //   Puts in mark up for microsoft buttons
+  //   TODO
+  // Arguments:
+  //    $: Cheerio
+  // Returns:
+  //    null: new buttons
+  msButton: function($) {
+    var buttons = $('table.button');
+    $(buttons).each(function() {
+      // put microsoft markup
+    })
+
+  },
 };
 
 module.exports = new Inky();
