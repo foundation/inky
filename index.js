@@ -89,7 +89,7 @@ Inky.prototype = {
   // Returns:
   //    boolean: true/false
   isTdElement: function(elType) {
-    var tdEls = ['subcolumns'];
+    var tdEls = [this.zfTags.subcolumns, this.zfTags.callout, 'td'];
 
     // if the element is an element that comes with td
     if (tdEls.indexOf(elType) > -1) {
@@ -327,7 +327,13 @@ Inky.prototype = {
         break;
 
       case self.zfTags.button:
-        output = '<table class="button ' + compClass +'"><tbody><tr><td>' + inner + '</td></tr></tbody></table>';
+        // if parent is a callout, you don't need the tds
+        if (component.parent() && self.isTdElement(component.parent()[0].name)) {
+          output = '<table class="button ' + compClass +'"><tbody><tr><td>' + inner + '</td></tr></tbody></table>'; 
+        }
+        else {
+          output = '<td><table class="button ' + compClass +'"><tbody><tr><td>' + inner + '</td></tr></tbody></table></td>'; 
+        }
         break;
 
       case self.zfTags.subcolumns:
@@ -384,7 +390,8 @@ Inky.prototype = {
         output += '<td>' + innerChild + '</td>';
       }
       else if (orientation === 'vertical') {
-        output += '<tr><td class="vertical">' + innerChild + '</td></tr>';
+          output += '<tr><td class="vertical">' + innerChild + '</td></tr>';
+
       }
       else {
         return;
@@ -434,22 +441,25 @@ Inky.prototype = {
 
     // start making markup
     if (type === 'columns') {
-      // if it is the last column, add the class last
-      if ($(col).next()[0] && $(col).next()[0].name !== 'columns') {
-        output = '<td class="wrapper ' + colClass + 'last">';
+    // if it is the last column, add the class last
+    if (!$(col).next(self.zfTags.columns)[0]) {
+      output = '<td class="wrapper ' + colClass + 'last">';
 
-      } else {
-        output = '<td class="wrapper ' + colClass + '">';
-      }
+    } else {
+      output = '<td class="wrapper ' + colClass + '">';
+    }        
+
+
 
       output += '<table class="' + colSize + 'columns"><tr>';
       output += inner;
-      output += '<td class="expander"></td></tr></table>';
+      output += '<td class="expander"></td></tr></table></td>';
+
     }
     else if (type === 'subcolumns') {
 
       // if it is the last subcolumn, add the last class
-      if ($(col).next()[0] && $(col).next()[0].name !== 'subcolumns') {
+      if (!$(col).next(self.zfTags.subcolumns)[0]) {
         output = '<td class="sub-columns last' + colClass + ' ' + colSize +'">' + inner + '</td>';
       }
       else {
