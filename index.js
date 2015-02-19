@@ -220,6 +220,7 @@ Inky.prototype = {
     // if the nested component is an element, find the children
     // NOTE: this is to avoid a cheerio quirk where it will still pass
     // special alphanumeric characters as a selector
+
     if (str.indexOf('<') !== -1) {
       children = $(str);
     };
@@ -329,10 +330,10 @@ Inky.prototype = {
     for (var attr in attributes) {
 
       if (attr === 'class') {
-        compAttrs += attributes[attr] + '" ';
+        compAttrs += attributes[attr] + ' ';
       }
       else {
-        compAttrs += '"' + attr + '="' + attributes[attr] + '" ';
+        compAttrs += '" ' + attr + '="' + attributes[attr];
       }
     }
 
@@ -349,33 +350,30 @@ Inky.prototype = {
     var output    = '',
         component = $(element),
         inner     = $(element).html(),
-        compClass = '',
+        compAttr = '',
         self      = this;
 
-    // if ($(component).attr('class')) {
-    //   compClass = $(component).attr('class');
-    // };
     if (component.attr() !== {}) {
-     compClass = self.addComponentAttrs(component);
+     compAttr = self.addComponentAttrs(component);
     }
 
     switch (type) {
       case self.zfTags.callout:
         if (component.parent() && self.isTdElement(component.parent()[0].name)) {
-          output = '<table><tbody><tr><td class="callout ' + compClass +'">' + inner + '</td></tr></tbody></table>'; 
+          output = '<table><tbody><tr><td class="callout ' + compAttr +'">' + inner + '</td></tr></tbody></table>'; 
         }
         else {
-          output = '<td class="callout ' + compClass +'">' + inner + '</td>';
+          output = '<td class="callout ' + compAttr +'">' + inner + '</td>';
         }
         break;
 
       case self.zfTags.button:
         // if parent is a callout, you don't need the tds
         if (component.parent() && self.isTdElement(component.parent()[0].name)) {
-          output = '<table class="button ' + compClass +'"><tbody><tr><td>' + inner + '</td></tr></tbody></table>'; 
+          output = '<table class="button ' + compAttr +'"><tbody><tr><td>' + inner + '</td></tr></tbody></table>'; 
         }
         else {
-          output = '<td><table class="button ' + compClass +'"><tbody><tr><td>' + inner + '</td></tr></tbody></table></td>'; 
+          output = '<td><table class="button ' + compAttr +'"><tbody><tr><td>' + inner + '</td></tr></tbody></table></td>'; 
         }
         break;
 
@@ -384,7 +382,7 @@ Inky.prototype = {
         break;
 
       case self.zfTags.container:
-        output = '<table class="container ' + compClass + '"><tbody><tr><td>' + inner + '</td></tr></tbody></table>';
+        output = '<table class="container ' + compAttr + '"><tbody><tr><td>' + inner + '</td></tr></tbody></table>';
         break;
 
       case self.zfTags.columns:
@@ -392,17 +390,17 @@ Inky.prototype = {
         break;
       
       case self.zfTags.row:
-        output = '<table class="row ' + compClass + '"><tbody><tr>'+ inner + '</tr></tbody></table>';
+        output = '<table class="row ' + compAttr + '"><tbody><tr>'+ inner + '</tr></tbody></table>';
         break;
 
       case self.zfTags.inlineListH:
         inner  = self.makeInlineList($, component, 'horizontal');
-        output = '<table class="inline-list ' + compClass + '"><tbody><tr>' + inner + '</tr></tbody></table>';
+        output = '<table class="inline-list ' + compAttr + '"><tbody><tr>' + inner + '</tr></tbody></table>';
         break;
 
       case self.zfTags.inlineListV:
         inner  = self.makeInlineList($, component, 'vertical');
-        output = '<table class="inline-list ' + compClass + '"><tbody>' + inner + '</tbody></table>';
+        output = '<table class="inline-list ' + compAttr + '"><tbody>' + inner + '</tbody></table>';
         break;
 
       default: 
