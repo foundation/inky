@@ -456,7 +456,8 @@ Inky.prototype = {
         colSize     = '',
         colClass    = '',
         inner       = $(col).html(),
-        self        = this;
+        self        = this,
+        children;
 
     // Add 1 to include current column
     var colCount = $(col).siblings().length + 1;
@@ -493,9 +494,15 @@ Inky.prototype = {
     }        
     output += '<table class="' + colSize + 'columns"><tr>';
 
+    // if the nested component is an element, find the children
+    // NOTE: this is to avoid a cheerio quirk where it will still pass
+    // special alphanumeric characters as a selector
+    if (inner.indexOf('<') !== -1) {
+      children = $(inner).nextUntil('columns');
+    };
+
     // put each child in its own tr
     // unless it's a table element or a zfElement
-    var children = $(inner).nextUntil('columns');
     $(children).each(function(idx, el) {
 
       if (el.name !== undefined && !self.isTableElement(el.name) && !self.isZfElement(el.name)) {
