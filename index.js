@@ -9,7 +9,8 @@ var Inky = function Inky () {
     subcolumns: 'subcolumns',
     container: 'container',
     inlineListH: 'inline-list-h',
-    inlineListV: 'inline-list-v'
+    inlineListV: 'inline-list-v',
+    inky: 'inky'
   },
   this.grid = 12
 };
@@ -403,6 +404,10 @@ Inky.prototype = {
         output = '<table class="inline-list ' + compAttr + '"><tbody>' + inner + '</tbody></table>';
         break;
 
+      case self.zfTags.inky:
+
+        output = '<tr><td><img src="https://raw.githubusercontent.com/arvida/emoji-cheat-sheet.com/master/public/graphics/emojis/octopus.png" /></tr></td>';
+        break;
       default: 
         // unless it's a special element, just grab the inside
         // another cheerio quirk
