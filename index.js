@@ -490,7 +490,7 @@ Inky.prototype = {
     } else {
       output = '<td class="wrapper ' + colClass + '">';
     }        
-    output += '<table class="' + colSize + 'columns"><tr>';
+    output += '<table class="' + colSize + 'columns">';
 
     // if the nested component is an element, find the children
     // NOTE: this is to avoid a cheerio quirk where it will still pass
@@ -504,14 +504,14 @@ Inky.prototype = {
     $(children).each(function(idx, el) {
 
       if (el.name !== undefined && !self.isTableElement(el.name) && !self.isZfElement(el.name)) {
-        output += '<tr><td>' + $.html(el) + '</td></tr>';
+        output += '<tr><td>' + $.html(el) + '</td><td class="expander"></td></tr>';
       }
       else {
-        output += $.html(el);
+        output += $.html(el) + '<td class="expander"></td>';
       }
     });
 
-    output += '<td class="expander"></td></tr></table></td>';
+    output += '</table></td>';
 
     }
     else if (type === 'subcolumns') {
