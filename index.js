@@ -495,7 +495,7 @@ Inky.prototype = {
     } else {
       output = '<td class="wrapper ' + colClass + '">';
     }
-    output += '<table class="' + colSize + 'columns"><td>';
+    output += '<table class="' + colSize + 'columns">';
 
     // if the nested component is an element, find the children
     // NOTE: this is to avoid a cheerio quirk where it will still pass
@@ -516,7 +516,7 @@ Inky.prototype = {
       }
     });
 
-    output += '</td></table></td>';
+    output += '</table></td>';
 
     }
     else if (type === 'subcolumns') {
