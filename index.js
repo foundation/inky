@@ -30,8 +30,8 @@ Inky.prototype = {
   },
 
   // Description:
-  //   Awww yiss. Kickstarts the whole parser. Takes in HTML loaded via Cheerio as an argument, 
-  //   checks if there are any custom components. If there are, it replaces the nested components, 
+  //   Awww yiss. Kickstarts the whole parser. Takes in HTML loaded via Cheerio as an argument,
+  //   checks if there are any custom components. If there are, it replaces the nested components,
   //   traverses the DOM and replaces them with email markup.
   //
   // Arguments:
@@ -91,7 +91,7 @@ Inky.prototype = {
   setTagArray: function() {
     var arr = [];
     var self = this;
-    
+
     for (val in self.zfTags) {
       arr.push(self.zfTags[val]);
     }
@@ -123,7 +123,7 @@ Inky.prototype = {
   },
 
   // Description:
-  //   Checks if an element is an element with a td included. Currently it's a manual check. 
+  //   Checks if an element is an element with a td included. Currently it's a manual check.
   //   Array was populated from the markup from the component factory.
   //
   // Arguments:
@@ -313,7 +313,7 @@ Inky.prototype = {
     $(moreNested).each(function(idx, el) {
       // call a recursion to replace all nested elements
       self.scaffoldElements($, $(el));
-    }); 
+    });
 
   },
 
@@ -361,7 +361,7 @@ Inky.prototype = {
     switch (type) {
       case self.zfTags.callout:
         if (component.parent() && self.isTdElement(component.parent()[0].name)) {
-          output = '<table><tbody><tr><td class="callout ' + compAttr +'">' + inner + '</td></tr></tbody></table>'; 
+          output = '<table><tbody><tr><td class="callout ' + compAttr +'">' + inner + '</td></tr></tbody></table>';
         }
         else {
           output = '<td class="callout ' + compAttr +'">' + inner + '</td>';
@@ -371,10 +371,10 @@ Inky.prototype = {
       case self.zfTags.button:
         // if parent is a callout, you don't need the tds
         if (component.parent() && self.isTdElement(component.parent()[0].name)) {
-          output = '<table class="button ' + compAttr +'"><tbody><tr><td>' + inner + '</td></tr></tbody></table>'; 
+          output = '<table class="button ' + compAttr +'"><tbody><tr><td>' + inner + '</td></tr></tbody></table>';
         }
         else {
-          output = '<td><table class="button ' + compAttr +'"><tbody><tr><td>' + inner + '</td></tr></tbody></table></td>'; 
+          output = '<td><table class="button ' + compAttr +'"><tbody><tr><td>' + inner + '</td></tr></tbody></table></td>';
         }
         break;
 
@@ -389,7 +389,7 @@ Inky.prototype = {
       case self.zfTags.columns:
         output = self.makeCols($, component, 'columns');
         break;
-      
+
       case self.zfTags.row:
         output = '<table class="row ' + compAttr + '"><tbody><tr>'+ inner + '</tr></tbody></table>';
         break;
@@ -408,7 +408,7 @@ Inky.prototype = {
 
         output = '<tr><td><img src="https://raw.githubusercontent.com/arvida/emoji-cheat-sheet.com/master/public/graphics/emojis/octopus.png" /></tr></td>';
         break;
-      default: 
+      default:
         // unless it's a special element, just grab the inside
         // another cheerio quirk
         inner = $.html(element);
@@ -420,7 +420,7 @@ Inky.prototype = {
   },
 
   // Description:
-  //    Returns output for inline list elements. 
+  //    Returns output for inline list elements.
   //
   // Arguments:
   //    $ (obj), col (obj), orientation (str): cheerio, the list, whether vertical/horizontal list
@@ -494,8 +494,8 @@ Inky.prototype = {
 
     } else {
       output = '<td class="wrapper ' + colClass + '">';
-    }        
-    output += '<table class="' + colSize + 'columns">';
+    }
+    output += '<table class="' + colSize + 'columns"><td>';
 
     // if the nested component is an element, find the children
     // NOTE: this is to avoid a cheerio quirk where it will still pass
@@ -516,7 +516,7 @@ Inky.prototype = {
       }
     });
 
-    output += '</table></td>';
+    output += '</td></table></td>';
 
     }
     else if (type === 'subcolumns') {
@@ -527,7 +527,7 @@ Inky.prototype = {
       }
       else {
         output = '<td class="sub-columns' + colClass + ' ' + colSize +'">' + inner + '</td>';
-      }      
+      }
     }
     else {
       return;
