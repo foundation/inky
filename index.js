@@ -458,6 +458,7 @@ Inky.prototype = {
         wrapperHTML = '',
         colSize     = '',
         colClass    = '',
+        colEl       = 'td',
         inner       = $(col).html(),
         self        = this,
         children;
@@ -467,6 +468,10 @@ Inky.prototype = {
 
     if ($(col).attr('class')) {
       colClass = $(col).attr('class');
+    }
+
+    if ($(col).attr('el')) {
+      colEl = $(col).attr('el');
     }
 
     // check for sizes
@@ -488,36 +493,34 @@ Inky.prototype = {
 
     // start making markup
     if (type === 'columns') {
-    // if it is the last column, add the class last
-    if (!$(col).next(self.zfTags.columns)[0]) {
-      output = '<td class="wrapper ' + colClass + 'last">';
-
-    } else {
-      output = '<td class="wrapper ' + colClass + '">';
-    }
-    output += '<table class="' + colSize + 'columns">';
-
-    // if the nested component is an element, find the children
-    // NOTE: this is to avoid a cheerio quirk where it will still pass
-    // special alphanumeric characters as a selector
-    if (inner.indexOf('<') !== -1) {
-      children = $(inner).nextUntil('columns');
-    };
-
-    // put each child in its own tr
-    // unless it's a table element or a zfElement
-    $(children).each(function(idx, el) {
-
-      if (el.name !== undefined && !self.isTableElement(el.name) && !self.isZfElement(el.name)) {
-        output += '<tr><td>' + $.html(el) + '</td><td class="expander"></td></tr>';
+      // if it is the last column, add the class last
+      if (!$(col).next(self.zfTags.columns)[0]) {
+          output = '<'+colEl+' class="wrapper ' + colClass + 'last">';
+      } else {
+        output = '<'+colEl+' class="wrapper ' + colClass + '">';
       }
-      else {
-        output += $.html(el) + '<td class="expander"></td>';
-      }
-    });
+      output += '<table class="' + colSize + 'columns">';
 
-    output += '</table></td>';
+      // if the nested component is an element, find the children
+      // NOTE: this is to avoid a cheerio quirk where it will still pass
+      // special alphanumeric characters as a selector
+      if (inner.indexOf('<') !== -1) {
+        children = $(inner).nextUntil('columns');
+      };
 
+      // put each child in its own tr
+      // unless it's a table element or a zfElement
+      $(children).each(function(idx, el) {
+
+        if (el.name !== undefined && !self.isTableElement(el.name) && !self.isZfElement(el.name)) {
+          output += '<tr><td>' + $.html(el) + '</td><td class="expander"></td></tr>';
+        }
+        else {
+          output += $.html(el) + '<td class="expander"></td>';
+        }
+      });
+
+      output += '</table></'+colEl+'>';
     }
     else if (type === 'subcolumns') {
 
