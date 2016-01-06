@@ -151,7 +151,7 @@ Inky.prototype = {
   // Returns:
   //    boolean: true/false
   isTableElement: function(elType) {
-    var tableEls = ['td', 'tr', 'table', 'center', 'tbody', 'img'];
+    var tableEls = ['td', 'tr', 'th', 'table', 'center', 'tbody'];
 
     // if the element is an element that comes with td
     if (tableEls.indexOf(elType) > -1) {
