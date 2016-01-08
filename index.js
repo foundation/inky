@@ -12,6 +12,10 @@ var Inky = function Inky () {
     inlineListV: 'inline-list-v',
     inky: 'inky'
   },
+  // List of attributes we will not store as a class
+  this.attributes = [
+    'href'
+  ],
   this.grid = 12
 };
 
@@ -326,20 +330,24 @@ Inky.prototype = {
   //    compAttrs (str): A string starting with the first class and other attributes following.
   addComponentAttrs: function(component) {
     var attributes = component.attr(),
-        compAttrs  = '';
+        compAttrs  = {
+          'class': ' ',
+          'attributes': {}
+        };
 
     for (var attr in attributes) {
-
       if (attr === 'class') {
-        compAttrs += attributes[attr] + ' ';
-      }
-      else {
-        compAttrs += '" ' + attr + '="' + attributes[attr];
+        compAttrs.class += attributes[attr] + ' ';
+      } else if (this.attributes.indexOf(attr) !== -1) {
+        compAttrs.attributes[attr] = attributes[attr];
+      } else {
+        compAttrs.class += attr + '-' + attributes[attr] + ' ';
       }
     }
 
     return compAttrs;
   },
+
   // Description:
   //    Returns output for desired custom element
   //
@@ -361,20 +369,24 @@ Inky.prototype = {
     switch (type) {
       case self.zfTags.callout:
         if (component.parent() && self.isTdElement(component.parent()[0].name)) {
-          output = '<table><tbody><tr><td class="callout ' + compAttr +'">' + inner + '</td></tr></tbody></table>';
+          output = '<table><tbody><tr><td class="callout' + compAttr.class +'">' + inner + '</td></tr></tbody></table>';
         }
         else {
-          output = '<td class="callout ' + compAttr +'">' + inner + '</td>';
+          output = '<td class="callout ' + compAttr.class +'">' + inner + '</td>';
         }
         break;
 
       case self.zfTags.button:
+        // If we have the href attribute we can create an anchor for the inner of the button;
+        if ('href' in compAttr.attributes) {
+          inner = '<a href="' + compAttr.attributes.href + '">' + inner + '</a>';
+        }
         // if parent is a callout, you don't need the tds
         if (component.parent() && self.isTdElement(component.parent()[0].name)) {
-          output = '<table class="button ' + compAttr +'"><tbody><tr><td>' + inner + '</td></tr></tbody></table>';
+          output = '<table class="button' + compAttr.class +'"><tbody><tr><td>' + inner + '</td></tr></tbody></table>';
         }
         else {
-          output = '<td><table class="button ' + compAttr +'"><tbody><tr><td>' + inner + '</td></tr></tbody></table></td>';
+          output = '<td><table class="button' + compAttr.class +'"><tbody><tr><td>' + inner + '</td></tr></tbody></table></td>';
         }
         break;
 
@@ -383,7 +395,7 @@ Inky.prototype = {
         break;
 
       case self.zfTags.container:
-        output = '<table class="container ' + compAttr + '"><tbody><tr><td>' + inner + '</td></tr></tbody></table>';
+        output = '<table class="container' + compAttr.class + '"><tbody><tr><td>' + inner + '</td></tr></tbody></table>';
         break;
 
       case self.zfTags.columns:
@@ -391,17 +403,17 @@ Inky.prototype = {
         break;
 
       case self.zfTags.row:
-        output = '<table class="row ' + compAttr + '"><tbody><tr>'+ inner + '</tr></tbody></table>';
+        output = '<table class="row' + compAttr.class + '"><tbody><tr>'+ inner + '</tr></tbody></table>';
         break;
 
       case self.zfTags.inlineListH:
         inner  = self.makeInlineList($, component, 'horizontal');
-        output = '<table class="inline-list ' + compAttr + '"><tbody><tr>' + inner + '</tr></tbody></table>';
+        output = '<table class="inline-list' + compAttr.class + '"><tbody><tr>' + inner + '</tr></tbody></table>';
         break;
 
       case self.zfTags.inlineListV:
         inner  = self.makeInlineList($, component, 'vertical');
-        output = '<table class="inline-list ' + compAttr + '"><tbody>' + inner + '</tbody></table>';
+        output = '<table class="inline-list' + compAttr.class + '"><tbody>' + inner + '</tbody></table>';
         break;
 
       case self.zfTags.inky:
