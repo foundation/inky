@@ -56,7 +56,6 @@ Inky.prototype = {
     //find nested components
     if (self.checkZfComponents($) !== false) {
       var nestedComponents = self.findNestedComponents($, center);
-
       // process each element to get the table markup
       $(nestedComponents).each(function(idx, el) {
         var containerScaffold = self.scaffoldElements($, $(el));
@@ -469,72 +468,61 @@ Inky.prototype = {
     var output      = '',
         wrapperHTML = '',
         colSize     = '',
-        colClass    = '',
         inner       = $(col).html(),
+        colAttrs    = $(col).attr(),
+        colClass    = colAttrs.class || '',
         self        = this,
         children;
 
     // Add 1 to include current column
     var colCount = $(col).siblings().length + 1;
 
-    if ($(col).attr('class')) {
-      colClass = $(col).attr('class');
-    }
+    // if ($(col).attr('class')) {
+    //   colClass = colAttrs.class;
+    // }
 
     // check for sizes
     // if no attribute is provided, default to small-12
     // divide evenly for large columns
-    if ($(col).attr('small')) {
-      colSize += 'small' + '-' + $(col).attr('small') + ' ';
-    }
-    else {
-      colSize += 'small-' + self.grid + ' ';
-    }
-
-    if ($(col).attr('large')) {
-      colSize += 'large' + '-' + $(col).attr('large') + ' ';
-    }
-    else {
-      colSize += 'large-' + Math.floor(self.grid/colCount) + ' ';
-    }
+    colSize += 'small' + '-' + (colAttrs.small || self.grid) + ' ';
+    colSize += 'large' + '-' + (colAttrs.large || Math.floor(self.grid/colCount)) + ' ';
 
     // start making markup
     if (type === 'columns') {
-    // if it is the last column, add the class last
-    if (!$(col).next(self.zfTags.columns)[0]) {
-      output = '<td class="wrapper ' + colClass + 'last">';
+      // if it is the last column, add the class last
+      if (!$(col).next(self.zfTags.columns)[0]) {
+        output = '<td class="wrapper ' + colClass + 'last">';
 
-    } else {
-      output = '<td class="wrapper ' + colClass + '">';
-    }
-    output += '<table class="' + colSize + 'columns">';
-
-    // if the nested component is an element, find the children
-    // NOTE: this is to avoid a cheerio quirk where it will still pass
-    // special alphanumeric characters as a selector
-    if (inner.indexOf('<') !== -1) {
-      children = $(inner).nextUntil('columns');
-    };
-
-    // put each child in its own tr
-    // unless it's a table element or a zfElement
-    $(children).each(function(idx, el) {
-
-      if (el.name !== undefined && !self.isTableElement(el.name) && !self.isZfElement(el.name)) {
-        output += '<tr><td>' + $.html(el) + '</td><td class="expander"></td></tr>';
+      } else {
+        output = '<td class="wrapper ' + colClass + '">';
       }
-      else {
-        output += $.html(el) + '<td class="expander"></td>';
-      }
-    });
+      output += '<table class="' + colSize + 'columns">';
 
-    output += '</table></td>';
+      // if the nested component is an element, find the children
+      // NOTE: this is to avoid a cheerio quirk where it will still pass
+      // special alphanumeric characters as a selector
+      if (inner.indexOf('<') !== -1) {
+        // children = $(inner).nextUntil('columns');
+        children = $(col).children();
+      };
 
-    }
-    else if (type === 'subcolumns') {
+      // put each child in its own tr
+      // unless it's a table element or a zfElement
+      $(children).each(function(idx, el) {
+        if (el.name !== undefined && !self.isTableElement(el.name) && !self.isZfElement(el.name)) {
+          output += '<tr><td>' + $.html(el) + '</td><td class="expander"></td></tr>';
+        }
+        else {
+          output += $.html(el) + '<td class="expander"></td>';
+        }
+      });
 
+      output += '</table></td>';
+
+    } else if (type === 'subcolumns') {
+      console.log($(col).parent().html());
       // if it is the last subcolumn, add the last class
-      if (!$(col).next(self.zfTags.subcolumns)[0]) {
+      if (!$(col).nextUntil(self.zfTags.subcolumns)[0]) {
         output = '<td class="sub-columns last' + colClass + ' ' + colSize +'">' + inner + '</td>';
       }
       else {
