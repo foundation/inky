@@ -504,9 +504,11 @@ Inky.prototype = {
       if (inner.indexOf('<') !== -1) {
         // children = $(inner).nextUntil('columns');
         children = $(col).children();
-      } else {
+      } else if ($(col).html().trim() !== '') {
         output += '<tr><td>' + $(col).html() + '</td><td class="expander"></td></tr>';
-      };
+      } else {
+        output += '<tr><td class="expander"></td></tr>';
+      }
 
       // put each child in its own tr
       // unless it's a table element or a zfElement

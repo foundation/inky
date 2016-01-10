@@ -57,41 +57,41 @@ describe("the grid", function () {
 
   })
 
-  // it("handles deeply nested components", function() {
-  //   var $ = cheerio.load('<center><row><columns large="12"><p><callout>deep stuff</callout></p></columns></row></center>');
+  it("handles deeply nested components", function() {
+    var $ = cheerio.load('<center><row><columns large="12"><p><callout>deep stuff</callout></p></columns></row></center>');
 
-  //   $ = inky.releaseTheKraken($);
-  //   expect($.html()).toEqual('<center><table class="row"><tbody><tr><td class="wrapper"><table class="small-12 large-12 columns"><tr><p><td class="callout">deep stuff</td></p><td class="expander"></td></tr></table></td></tr></tbody></table></center>');
+    $ = inky.releaseTheKraken($);
+    expect($.html()).toEqual('<center><table class="row"><tbody><tr><td class="wrapper last"><table class="small-12 large-12 columns"><tr><td><p><td class="callout">deep stuff</td></p><td class="expander"></td></tr></table></td></tr></tbody></table></center>');
 
-  // })
+  })
 
-  // it("automatically assigns large columns if no large attribute is assigned", function() {
-  //   var $ = cheerio.load('<center><row><columns small="12"></columns><columns small="12"></columns><columns small="12"></columns></row></center>');
+  it("automatically assigns large columns if no large attribute is assigned", function() {
+    var $ = cheerio.load('<center><row><columns small="12"></columns><columns small="12"></columns><columns small="12"></columns></row></center>');
 
-  //   $ = inky.releaseTheKraken($);
-  //   expect($.html()).toEqual('<center><table class="row"><tbody><tr><td class="wrapper"><table class="small-12 large-4 columns"><tr><td class="expander"></td></tr></table></td><td class="wrapper"><table class="small-12 large-4 columns"><tr><td class="expander"></td></tr></table></td><td class="wrapper"><table class="small-12 large-4 columns"><tr><td class="expander"></td></tr></table></td></tr></tbody></table></center>');
+    $ = inky.releaseTheKraken($);
+    expect($.html()).toEqual('<center><table class="row"><tbody><tr><td class="wrapper"><table class="small-12 large-4 columns"><tr><td class="expander"></td></tr></table></td><td class="wrapper"><table class="small-12 large-4 columns"><tr><td class="expander"></td></tr></table></td><td class="wrapper last"><table class="small-12 large-4 columns"><tr><td class="expander"></td></tr></table></td></tr></tbody></table></center>');
 
-  // })
+  })
 
-  // it("automatically assigns large columns if no large attribute is assigned, with custom grids", function() {
-  //   var $ = cheerio.load('<center><row><columns></columns><columns></columns><columns></columns></row></center>');
+  it("automatically assigns large columns if no large attribute is assigned, with custom grids", function() {
+    var $ = cheerio.load('<center><row><columns></columns><columns></columns><columns></columns></row></center>');
 
-  //   var opts = {
-  //     grid: 15
-  //   }
-  //   $ = inky.releaseTheKraken($, opts);
-  //   expect($.html()).toEqual('<center><table class="row"><tbody><tr><td class="wrapper"><table class="small-15 large-5 columns"><tr><td class="expander"></td></tr></table></td><td class="wrapper"><table class="small-15 large-5 columns"><tr><td class="expander"></td></tr></table></td><td class="wrapper"><table class="small-15 large-5 columns"><tr><td class="expander"></td></tr></table></td></tr></tbody></table></center>');
+    var opts = {
+      grid: 15
+    }
+    $ = inky.releaseTheKraken($, opts);
+    expect($.html()).toEqual('<center><table class="row"><tbody><tr><td class="wrapper"><table class="small-15 large-5 columns"><tr><td class="expander"></td></tr></table></td><td class="wrapper"><table class="small-15 large-5 columns"><tr><td class="expander"></td></tr></table></td><td class="wrapper last"><table class="small-15 large-5 columns"><tr><td class="expander"></td></tr></table></td></tr></tbody></table></center>');
 
-  // })
+  })
 
-  // it("automatically assigns small columns as full width, with custom grids", function() {
-  //   var $ = cheerio.load('<center><row><columns></columns><columns></columns><columns></columns></row></center>');
+  it("automatically assigns small columns as full width, with custom grids", function() {
+    var $ = cheerio.load('<center><row><columns></columns><columns></columns><columns></columns></row></center>');
 
-  //   var opts = {
-  //     grid: 15
-  //   }
-  //   $ = inky.releaseTheKraken($, opts);
-  //   expect($.html()).toEqual('<center><table class="row"><tbody><tr><td class="wrapper"><table class="small-15 large-5 columns"><tr><td class="expander"></td></tr></table></td><td class="wrapper"><table class="small-15 large-5 columns"><tr><td class="expander"></td></tr></table></td><td class="wrapper"><table class="small-15 large-5 columns"><tr><td class="expander"></td></tr></table></td></tr></tbody></table></center>');
+    var opts = {
+      grid: 15
+    }
+    $ = inky.releaseTheKraken($, opts);
+    expect($.html()).toEqual('<center><table class="row"><tbody><tr><td class="wrapper"><table class="small-15 large-5 columns"><tr><td class="expander"></td></tr></table></td><td class="wrapper"><table class="small-15 large-5 columns"><tr><td class="expander"></td></tr></table></td><td class="wrapper last"><table class="small-15 large-5 columns"><tr><td class="expander"></td></tr></table></td></tr></tbody></table></center>');
 
-  // })
+  })
 });
