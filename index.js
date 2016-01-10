@@ -504,6 +504,9 @@ Inky.prototype = {
       if (inner.indexOf('<') !== -1) {
         // children = $(inner).nextUntil('columns');
         children = $(col).children();
+      } else {
+        output += '<tr><td>' + $(col).html() + '</td><td class="expander"></td></tr>';
+        console.log($(col).html());
       };
 
       // put each child in its own tr
@@ -520,9 +523,9 @@ Inky.prototype = {
       output += '</table></td>';
 
     } else if (type === 'subcolumns') {
-      console.log($(col).parent().html());
       // if it is the last subcolumn, add the last class
-      if (!$(col).nextUntil(self.zfTags.subcolumns)[0]) {
+      // With an extra check because the next item can be a td.expander
+      if (!$(col).next(self.zfTags.subcolumns)[0] && !$(col).next().next(self.zfTags.subcolumns)[0]) {
         output = '<td class="sub-columns last' + colClass + ' ' + colSize +'">' + inner + '</td>';
       }
       else {
