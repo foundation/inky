@@ -506,7 +506,6 @@ Inky.prototype = {
         children = $(col).children();
       } else {
         output += '<tr><td>' + $(col).html() + '</td><td class="expander"></td></tr>';
-        console.log($(col).html());
       };
 
       // put each child in its own tr

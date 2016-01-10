@@ -49,13 +49,13 @@ describe("the grid", function () {
 
   })
 
-  // it("will place the 'last' class on a solo column", function() {
-  //   var $ = cheerio.load('<center><row><columns large="12">forever alone</columns></row></center>');
+  it("will place the 'last' class on a solo column", function() {
+    var $ = cheerio.load('<center><row><columns large="12">forever alone</columns></row></center>');
 
-  //   $ = inky.releaseTheKraken($);
-  //   expect($.html()).toEqual('<center><table class="row"><tbody><tr><td class="wrapper"><table class="small-12 large-12 columns"><tr>forever alone<td class="expander"></td></tr></table></td></tr></tbody></table></center>');
+    $ = inky.releaseTheKraken($);
+    expect($.html()).toEqual('<center><table class="row"><tbody><tr><td class="wrapper last"><table class="small-12 large-12 columns"><tr><td>forever alone</td><td class="expander"></td></tr></table></td></tr></tbody></table></center>');
 
-  // })
+  })
 
   // it("handles deeply nested components", function() {
   //   var $ = cheerio.load('<center><row><columns large="12"><p><callout>deep stuff</callout></p></columns></row></center>');
