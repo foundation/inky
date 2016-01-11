@@ -490,12 +490,12 @@ Inky.prototype = {
     if (type === 'columns') {
     // if it is the last column, add the class last
     if (!$(col).next(self.zfTags.columns)[0]) {
-      output = '<td class="wrapper ' + colClass + 'last">';
+      output = '<td class="' + colSize + ' columns ' + colClass + 'last">';
 
     } else {
-      output = '<td class="wrapper ' + colClass + '">';
+      output = '<td class="columns ' + colClass + '">';
     }
-    output += '<table class="' + colSize + 'columns">';
+    output += '<table class="gutter">';
 
     // if the nested component is an element, find the children
     // NOTE: this is to avoid a cheerio quirk where it will still pass
