@@ -493,7 +493,7 @@ Inky.prototype = {
       output = '<td class="' + colSize + ' columns ' + colClass + 'last">';
 
     } else {
-      output = '<td class="columns ' + colClass + '">';
+      output = '<td class="columns ' + colClass + ' ' + colSize + '">';
     }
     output += '<table class="gutter">';
 
