@@ -2,8 +2,8 @@
 
 "use strict";
 
-var inky = require('../index.js');
-var cheerio = require('../node_modules/cheerio');
+var inky = require('../lib/inky');
+var cheerio = require('cheerio');
 
 describe("the components", function () {
 

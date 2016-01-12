@@ -1,12 +1,14 @@
 {
   "name": "inky",
   "version": "0.0.1",
-  "main": "./index.js",
+  "main": "index.js",
   "scripts": {
     "test": "jasmine"
   },
   "dependencies": {
-    "cheerio": "*"
+    "cheerio": "*",
+    "through2": "^2.0.0",
+    "vinyl-fs": "^2.3.0"
   },
   "devDependencies": {
     "jasmine": "2.*"
