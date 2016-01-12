@@ -12,6 +12,10 @@ var Inky = function Inky () {
     inlineListV: 'inline-list-v',
     inky: 'inky'
   },
+  // List of attributes we will not store as a class
+  this.attributes = [
+    'href'
+  ],
   this.grid = 12
 };
 
@@ -52,7 +56,6 @@ Inky.prototype = {
     //find nested components
     if (self.checkZfComponents($) !== false) {
       var nestedComponents = self.findNestedComponents($, center);
-
       // process each element to get the table markup
       $(nestedComponents).each(function(idx, el) {
         var containerScaffold = self.scaffoldElements($, $(el));
@@ -326,20 +329,24 @@ Inky.prototype = {
   //    compAttrs (str): A string starting with the first class and other attributes following.
   addComponentAttrs: function(component) {
     var attributes = component.attr(),
-        compAttrs  = '';
+        compAttrs  = {
+          'class': ' ',
+          'attributes': {}
+        };
 
     for (var attr in attributes) {
-
       if (attr === 'class') {
-        compAttrs += attributes[attr] + ' ';
-      }
-      else {
-        compAttrs += '" ' + attr + '="' + attributes[attr];
+        compAttrs.class += attributes[attr] + ' ';
+      } else if (this.attributes.indexOf(attr) !== -1) {
+        compAttrs.attributes[attr] = attributes[attr];
+      } else {
+        compAttrs.class += attr + '-' + attributes[attr] + ' ';
       }
     }
 
     return compAttrs;
   },
+
   // Description:
   //    Returns output for desired custom element
   //
@@ -361,20 +368,24 @@ Inky.prototype = {
     switch (type) {
       case self.zfTags.callout:
         if (component.parent() && self.isTdElement(component.parent()[0].name)) {
-          output = '<table><tbody><tr><td class="callout ' + compAttr +'">' + inner + '</td></tr></tbody></table>';
+          output = '<table><tbody><tr><td class="callout' + compAttr.class +'">' + inner + '</td></tr></tbody></table>';
         }
         else {
-          output = '<td class="callout ' + compAttr +'">' + inner + '</td>';
+          output = '<td class="callout ' + compAttr.class +'">' + inner + '</td>';
         }
         break;
 
       case self.zfTags.button:
+        // If we have the href attribute we can create an anchor for the inner of the button;
+        if ('href' in compAttr.attributes) {
+          inner = '<a href="' + compAttr.attributes.href + '">' + inner + '</a>';
+        }
         // if parent is a callout, you don't need the tds
         if (component.parent() && self.isTdElement(component.parent()[0].name)) {
-          output = '<table class="button ' + compAttr +'"><tbody><tr><td>' + inner + '</td></tr></tbody></table>';
+          output = '<table class="button' + compAttr.class +'"><tbody><tr><td>' + inner + '</td></tr></tbody></table>';
         }
         else {
-          output = '<td><table class="button ' + compAttr +'"><tbody><tr><td>' + inner + '</td></tr></tbody></table></td>';
+          output = '<td><table class="button' + compAttr.class +'"><tbody><tr><td>' + inner + '</td></tr></tbody></table></td>';
         }
         break;
 
@@ -383,7 +394,7 @@ Inky.prototype = {
         break;
 
       case self.zfTags.container:
-        output = '<table class="container ' + compAttr + '"><tbody><tr><td>' + inner + '</td></tr></tbody></table>';
+        output = '<table class="container' + compAttr.class + '"><tbody><tr><td>' + inner + '</td></tr></tbody></table>';
         break;
 
       case self.zfTags.columns:
@@ -391,17 +402,17 @@ Inky.prototype = {
         break;
 
       case self.zfTags.row:
-        output = '<table class="row ' + compAttr + '"><tbody><tr>'+ inner + '</tr></tbody></table>';
+        output = '<table class="row' + compAttr.class + '"><tbody><tr>'+ inner + '</tr></tbody></table>';
         break;
 
       case self.zfTags.inlineListH:
         inner  = self.makeInlineList($, component, 'horizontal');
-        output = '<table class="inline-list ' + compAttr + '"><tbody><tr>' + inner + '</tr></tbody></table>';
+        output = '<table class="inline-list' + compAttr.class + '"><tbody><tr>' + inner + '</tr></tbody></table>';
         break;
 
       case self.zfTags.inlineListV:
         inner  = self.makeInlineList($, component, 'vertical');
-        output = '<table class="inline-list ' + compAttr + '"><tbody>' + inner + '</tbody></table>';
+        output = '<table class="inline-list' + compAttr.class + '"><tbody>' + inner + '</tbody></table>';
         break;
 
       case self.zfTags.inky:
@@ -460,15 +471,17 @@ Inky.prototype = {
         colClass    = '',
         colEl       = 'td',
         inner       = $(col).html(),
+        colAttrs    = $(col).attr(),
+        colClass    = colAttrs.class || '',
         self        = this,
         children;
 
     // Add 1 to include current column
     var colCount = $(col).siblings().length + 1;
 
-    if ($(col).attr('class')) {
-      colClass = $(col).attr('class');
-    }
+    // if ($(col).attr('class')) {
+    //   colClass = colAttrs.class;
+    // }
 
     if ($(col).attr('el')) {
       colEl = $(col).attr('el');
@@ -477,40 +490,20 @@ Inky.prototype = {
     // check for sizes
     // if no attribute is provided, default to small-12
     // divide evenly for large columns
-    if ($(col).attr('small')) {
-      colSize += 'small' + '-' + $(col).attr('small') + ' ';
-    }
-    else {
-      colSize += 'small-' + self.grid + ' ';
-    }
-
-    if ($(col).attr('large')) {
-      colSize += 'large' + '-' + $(col).attr('large') + ' ';
-    }
-    else {
-      colSize += 'large-' + Math.floor(self.grid/colCount) + ' ';
-    }
+    colSize += 'small' + '-' + (colAttrs.small || self.grid) + ' ';
+    colSize += 'large' + '-' + (colAttrs.large || Math.floor(self.grid/colCount)) + ' ';
 
     // start making markup
     if (type === 'columns') {
-<<<<<<< HEAD
-    // if it is the last column, add the class last
-    if (!$(col).next(self.zfTags.columns)[0]) {
-      output = '<td class="wrapper ' + colClass + ' last">';
 
-    } else {
-      output = '<td class="wrapper ' + colClass + '">';
-    }
-    output += '<table class="' + colSize + 'columns">';
-=======
       // if it is the last column, add the class last
       if (!$(col).next(self.zfTags.columns)[0]) {
-          output = '<'+colEl+' class="wrapper ' + colClass + 'last">';
+          output = '<'+colEl+' class="wrapper ' + colClass + ' last">';
       } else {
         output = '<'+colEl+' class="wrapper ' + colClass + '">';
       }
       output += '<table class="' + colSize + 'columns">';
->>>>>>> CandoImage-custom-column-elements
+
 
       // if the nested component is an element, find the children
       // NOTE: this is to avoid a cheerio quirk where it will still pass
@@ -518,6 +511,27 @@ Inky.prototype = {
       if (inner.indexOf('<') !== -1) {
         children = $(inner).nextUntil('columns');
       };
+
+      // if it is the last column, add the class last
+      if (!$(col).next(self.zfTags.columns)[0]) {
+        output = '<td class="wrapper ' + colClass + 'last">';
+
+      } else {
+        output = '<td class="wrapper ' + colClass + '">';
+      }
+      output += '<table class="' + colSize + 'columns">';
+
+      // if the nested component is an element, find the children
+      // NOTE: this is to avoid a cheerio quirk where it will still pass
+      // special alphanumeric characters as a selector
+      if (inner.indexOf('<') !== -1) {
+        // children = $(inner).nextUntil('columns');
+        children = $(col).children();
+      } else if ($(col).html().trim() !== '') {
+        output += '<tr><td>' + $(col).html() + '</td><td class="expander"></td></tr>';
+      } else {
+        output += '<tr><td class="expander"></td></tr>';
+      }
 
       // put each child in its own tr
       // unless it's a table element or a zfElement
@@ -534,9 +548,9 @@ Inky.prototype = {
       output += '</table></'+colEl+'>';
     }
     else if (type === 'subcolumns') {
-
       // if it is the last subcolumn, add the last class
-      if (!$(col).next(self.zfTags.subcolumns)[0]) {
+      // With an extra check because the next item can be a td.expander
+      if (!$(col).next(self.zfTags.subcolumns)[0] && !$(col).next().next(self.zfTags.subcolumns)[0]) {
         output = '<td class="sub-columns last ' + colClass + ' ' + colSize +'">' + inner + '</td>';
       }
       else {
