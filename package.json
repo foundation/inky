@@ -2,6 +2,9 @@
   "name": "inky",
   "version": "0.0.1",
   "main": "./index.js",
+  "scripts": {
+    "test": "jasmine"
+  },
   "dependencies": {
     "cheerio": "*"
   },
