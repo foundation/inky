@@ -70,6 +70,15 @@ Installation Instructions
 3. Run `npm install`. If you don't have node.js installed, downloaded it at [nodejs.org](http://nodejs.org/download/).
 4. Run tests with  `jasmine`.
 
+Testing
+=============
+
+All the tests need to be started from the root of the project
+
+* Run all tests: `jasmine-node spec`
+* Run one test: `jasmine-node spec/testfile`
+
+
 ZURB
 ====
 
