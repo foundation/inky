@@ -490,7 +490,7 @@ Inky.prototype = {
     if (type === 'columns') {
     // if it is the last column, add the class last
     if (!$(col).next(self.zfTags.columns)[0]) {
-      output = '<td class="wrapper ' + colClass + 'last">';
+      output = '<td class="wrapper ' + colClass + ' last">';
 
     } else {
       output = '<td class="wrapper ' + colClass + '">';
@@ -523,7 +523,7 @@ Inky.prototype = {
 
       // if it is the last subcolumn, add the last class
       if (!$(col).next(self.zfTags.subcolumns)[0]) {
-        output = '<td class="sub-columns last' + colClass + ' ' + colSize +'">' + inner + '</td>';
+        output = '<td class="sub-columns last ' + colClass + ' ' + colSize +'">' + inner + '</td>';
       }
       else {
         output = '<td class="sub-columns' + colClass + ' ' + colSize +'">' + inner + '</td>';
