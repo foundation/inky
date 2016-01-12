@@ -1,7 +1,9 @@
 Inky
 ===
 
-Inky is the parser made by ZURB meant to be used with the Foundation for Emails framework. 
+Inky is the parser made by ZURB meant to be used with the Foundation for Emails framework.
+
+In order to unify Foundation for Emails issues, issue tracking has moved to [https://github.com/zurb/foundation-emails](https://github.com/zurb/foundation-emails). File Inky issues there and tag it with `Inky`.
 
 It has configurable options:
 
