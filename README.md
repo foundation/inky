@@ -70,16 +70,7 @@ Installation Instructions
 1. Clone the repo with `git clone git@github.com:zurb/inky.git`.
 2. Navigate into the directory.
 3. Run `npm install`. If you don't have node.js installed, downloaded it at [nodejs.org](http://nodejs.org/download/).
-4. Run tests with  `jasmine`.
-
-Testing
-=============
-
-All the tests need to be started from the root of the project
-
-* Run all tests: `jasmine-node spec`
-* Run one test: `jasmine-node spec/testfile`
-
+4. Run tests with  `npm test`.
 
 ZURB
 ====
