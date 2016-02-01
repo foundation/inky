@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "main": "index.js",
   "scripts": {
-    "test": "jasmine"
+    "test": "mocha --compilers js:babel-register --reporter nyan"
   },
   "dependencies": {
     "cheerio": "^0.20.0",
@@ -11,7 +11,12 @@
     "vinyl-fs": "^2.3.0"
   },
   "devDependencies": {
-    "jasmine": "^2.4.1"
+    "babel": "^6.3.26",
+    "babel-preset-es2015": "^6.3.13",
+    "babel-register": "^6.4.3",
+    "babel-runtime": "^6.3.19",
+    "jasmine": "^2.4.1",
+    "mocha": "^2.4.5"
   },
   "description": "Take initial HTML syntax and turn them into tables that use Foundation for Email styles."
 }
