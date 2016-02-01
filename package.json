@@ -6,12 +6,12 @@
     "test": "jasmine"
   },
   "dependencies": {
-    "cheerio": "*",
+    "cheerio": "^0.20.0",
     "through2": "^2.0.0",
     "vinyl-fs": "^2.3.0"
   },
   "devDependencies": {
-    "jasmine": "2.*"
+    "jasmine": "^2.4.1"
   },
   "description": "Take initial HTML syntax and turn them into tables that use Foundation for Email styles."
 }
