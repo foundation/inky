@@ -71,7 +71,17 @@ describe("the grid", function () {
       </center>`);
   });
 
-  it("nests subcolumns correctly", function() {
+  xit("returns the correct column syntax if it's one column", function() {
+    var inky = new Inky();
+    var $ = cheerio.load('<input code here>');
+
+    $ = inky.releaseTheKraken($);
+    compare($.html(), `
+      <expected output here>
+    `);
+  });
+
+  xit("nests subcolumns correctly", function() {
     var inky = new Inky();
     var $ = cheerio.load('<center><row><columns large="6" small="12"><subcolumns large="4"><h3>Sub column 1</h3></subcolumns><subcolumns large="8"><h3>Sub column 2</h3></subcolumns></columns><columns large="6" small="12"><subcolumns large="6"><h3>Sub column 1.1</h3></subcolumns><subcolumns large="6"><h3>Sub column 1.2</h3></subcolumns></columns></row></center>');
 
