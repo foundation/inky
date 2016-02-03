@@ -1,142 +1,158 @@
 var Inky = require('../lib/inky');
 var cheerio = require('cheerio');
 var assert = require('assert');
+var htmlEqual = require('assert-html-equal');
 
-describe("the container", function() {
-  it("returns the correct container syntax", function() {
-    var inky = new Inky();
-    var $ = cheerio.load('<container></container>');
+describe('Container', function() {
+  it('creates a container table', function() {
+    var input = '<container></container>';
+    var expected = `
+      <table class="container">
+        <tbody>
+          <tr>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    `;
 
-    $ = inky.releaseTheKraken($);
-    compare($.html(), `
-        <table class="container">
-          <tbody>
-            <tr>
-              <td></td>
-            </tr>
-          </tbody>
-        </table>`);
+    compare(input, expected);
   });
 });
 
-describe("centering", function() {
-  it("returns the correct centering syntax", function() {
-    var inky = new Inky();
-    var $ = cheerio.load('<center><table><tr><th></th></tr></table></center>');
+describe('Centering', function() {
+  it('creates a properly centered table', function() {
+    var input = `
+      <center>
+        <table>
+          <tr>
+            <th></th>
+          </tr>
+        </table>
+      </center>
+    `;
+    var expected = `
+      <center>
+        <table class="center">
+          <tbody>
+            <tr>
+              <th></th>
+            </tr>
+          </tbody>
+        </table>
+      </center>
+    `;
 
-    $ = inky.releaseTheKraken($);
-    compare($.html(), `
-        <center>
-          <table class="center">
-            <tbody>
-              <tr>
-                <th></th>
-              </tr>
-            </tbody>
-          </table>
-        </center>`);
+    compare(input, expected);
   });
 });
 
 
-describe("the grid", function () {
-  it("returns the correct row syntax", function() {
-    var inky = new Inky();
-    var $ = cheerio.load('<row></row>');
+describe('Grid', function() {
+  it('creates a row', function() {
+    var input = '<row></row>';
+    var expected =  `
+      <table class="row">
+        <tbody>
+          <tr></tr>
+        </tbody>
+      </table>
+    `;
 
-    $ = inky.releaseTheKraken($);
-    compare($.html(), `
-        <table class="row">
-          <tbody>
-            <tr></tr>
-          </tbody>
-        </table>`);
+    compare(input, expected);
   });
 
-  it("returns the correct sinlge column syntax", function () {
-    var inky = new Inky();
-    var $ = cheerio.load('<columns large="12" small="12"></columns>');
+  it('creates a single column with first and last classes', function () {
+    var input = '<columns large="12" small="12"></columns>';
+    var expected = `
+      <th class="columns small-12 large-12 first last">
+        <table >
+          <tr>
+            <th class="expander"></th>
+          </tr>
+        </table>
+      </th>
+    `;
 
-    $ = inky.releaseTheKraken($);
-    compare($.html(), `
-        <th class="columns small-12 large-12 first last">
-          <table >
-            <tr>
-              <th class="expander"></th>
-            </tr>
-          </table>
-        </th>`);
+    compare(input, expected);
   });
 
-  it("returns the correct two column syntax", function () {
-    var inky = new Inky();
-    var $ = cheerio.load('<columns large="6" small="12"></columns><columns large="6" small="12"></columns>');
+  it('creates two columns, one first, one last', function () {
+    var input = `
+      <columns large="6" small="12"></columns>
+      <columns large="6" small="12"></columns>
+    `;
+    var expected = `
+      <th class="columns small-12 large-6 first">
+        <table >
+          <tr>
+            <th class="expander"></th>
+          </tr>
+        </table>
+      </th>
+      <th class="columns small-12 large-6 last">
+        <table >
+          <tr>
+            <th class="expander"></th>
+          </tr>
+        </table>
+      </th>
+    `;
 
-    $ = inky.releaseTheKraken($);
-    compare($.html(), `
-        <th class="columns small-12 large-6 first">
-          <table >
-            <tr>
-              <th class="expander"></th>
-            </tr>
-          </table>
-        </th>
-        <th class="columns small-12 large-6 last">
-          <table >
-            <tr>
-              <th class="expander"></th>
-            </tr>
-          </table>
-        </th>`);
-  });
-  
-  it("returns the correct three column syntax", function () {
-    var inky = new Inky();
-    var $ = cheerio.load('<columns large="4" small="12"></columns><columns large="4" small="12"></columns><columns large="4" small="12"></columns>');
-
-    $ = inky.releaseTheKraken($);
-    compare($.html(), `
-        <th class="columns small-12 large-4 first">
-          <table >
-            <tr>
-              <th class="expander"></th>
-            </tr>
-          </table>
-        </th>
-        <th class="columns small-12 large-4">
-          <table >
-            <tr>
-              <th class="expander"></th>
-            </tr>
-          </table>
-        </th>
-        <th class="columns small-12 large-4 last">
-          <table >
-            <tr>
-              <th class="expander"></th>
-            </tr>
-          </table>
-        </th>`);
+    compare(input, expected);
   });
 
-  it("returns the correct offset syntax", function () {
-    var inky = new Inky();
-    var $ = cheerio.load('');
+  it('creates 3+ columns, first is first, last is last', function() {
+    var input = `
+      <columns large="4" small="12"></columns>
+      <columns large="4" small="12"></columns>
+      <columns large="4" small="12"></columns>
+    `;
+    var expected = `
+      <th class="columns small-12 large-4 first">
+        <table >
+          <tr>
+            <th class="expander"></th>
+          </tr>
+        </table>
+      </th>
+      <th class="columns small-12 large-4">
+        <table >
+          <tr>
+            <th class="expander"></th>
+          </tr>
+        </table>
+      </th>
+      <th class="columns small-12 large-4 last">
+        <table >
+          <tr>
+            <th class="expander"></th>
+          </tr>
+        </table>
+      </th>
+    `;
 
-    $ = inky.releaseTheKraken($);
-    compare($.html(), `
-        <th class="columns small-4 small-offset-8 large-4 large-offset-8">
-        </th>`);
+    compare(input, expected);
+  });
+
+  it('offsets a column', function() {
+    var input = '';
+    var expected = `
+      <th class="columns small-4 small-offset-8 large-4 large-offset-8">
+      </th>
+    `;
+
+    compare(input, expected)
   });
 
 
   //if it just has small, borrow from small for large
-  it("automatically assigns large columns if no large attribute is assigned", function() {
-    var inky = new Inky();
-    var $ = cheerio.load('<columns small="4"></columns><columns small="8"></columns>');
-
-    $ = inky.releaseTheKraken($);
-    compare($.html(), `
+  it('automatically assigns large columns if no large attribute is assigned', function() {
+    var input = `
+      <columns small="4"></columns>
+      <columns small="8"></columns>
+    `;
+    var expected = `
       <th class="columns small-4 large-4 first">
         <table >
           <tr>
@@ -150,18 +166,18 @@ describe("the grid", function () {
             <th class="expander"></th>
           </tr>
         </table>
-      </th>`);
+      </th>
+    `;
+
+    compare(input, expected);
   });
 
-  it("automatically assigns small columns as full width if only large defined", function() {
-    var inky = new Inky();
-    var $ = cheerio.load('<columns large="4"></columns><columns large="8"></columns>');
-
-    var opts = {
-      grid: 15
-    }
-    $ = inky.releaseTheKraken($, opts);
-    compare($.html(), `
+  it('automatically assigns small columns as full width if only large defined', function() {
+    var input = `
+      <columns large="4"></columns>
+      <columns large="8"></columns>
+    `;
+    var expected = `
       <th class="columns small-12 large-4 first">
         <table >
           <tr>
@@ -175,17 +191,23 @@ describe("the grid", function () {
             <th class="expander"></th>
           </tr>
         </table>
-      </th>`);
+      </th>
+    `;
+
+    compare(input, expected);
+
+    // ?
+    // var opts = {
+    //   grid: 15
+    // }
+    // $ = inky.releaseTheKraken($, opts);
   });
 });
 
-describe("the block grid", function() {
-  it("returns the correct block grid syntax", function() {
-    var inky = new Inky();
-    var $ = cheerio.load('<block-grid up="4"></block-grid>');
-
-    $ = inky.releaseTheKraken($);
-    compare($.html(), `
+describe('Block Grid', function() {
+  it('returns the correct block grid syntax', function() {
+    var input = '<block-grid up="4"></block-grid>';
+    var expected = `
       <table class="block-grid up-4">
         <tr>
           <td></td>
@@ -193,112 +215,105 @@ describe("the block grid", function() {
           <td></td>
           <td></td>
         </tr>
-      </table>`);
+      </table>
+    `;
+
+    compare(input, expected);
   });
 });
 
-describe("buttons", function() {
-  it("returns the correct generic button syntax", function() {
-    var inky = new Inky();
-    var $ = cheerio.load('<button href="http://zurb.com"></button>');
+describe('Button', function() {
+  it('creates a simple button', function() {
+    var input = '<button href="http://zurb.com"></button>';
+    var expected = `
+      <table class="button">
+        <tr>
+          <td>
+            <table>
+              <tr>
+                <td>
+                  <a href="https://zurb.com">I am a button</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    `;
 
-    $ = inky.releaseTheKraken($);
-    compare($.html(), `
-        <table class="button">
-          <tr>
-            <td>
-              <table>
-                <tr>
-                  <td>
-                    <a href="https://zurb.com">I am a button</a>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>`);
+    compare(input, expected);
   });
 
-  //adds the classes for complex buttons
-  it("returns the correct complex button syntax", function() {
-    var inky = new Inky();
-    var $ = cheerio.load('<button class="small alert expand" href="http://zurb.com"></button>');
+  it('creates a button with classes', function() {
+    var input = '<button class="small alert expand" href="http://zurb.com"></button>';
+    var expected = `
+      <table class="button small alert expand">
+        <tr>
+          <td>
+            <table>
+              <tr>
+                <td>
+                  <a href="https://zurb.com">I am a button</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    `;
 
-    $ = inky.releaseTheKraken($);
-    compare($.html(), `
-        <table class="button small alert expand">
-          <tr>
-            <td>
-              <table>
-                <tr>
-                  <td>
-                    <a href="https://zurb.com">I am a button</a>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>`);
+    compare(input, expected);
   });
 });
 
-describe("menus", function() {
-  it("returns the correct complete menu syntax", function() {
-    var inky = new Inky();
-    var $ = cheerio.load('<menu><item href="http://zurb.com">My Item 1</item><item href="http://zurb.com">My Item 2</item><item href="http://zurb.com">My Item 3</item></menu>');
-
-    $ = inky.releaseTheKraken($);
-    compare($.html(), `
+describe('Menu', function() {
+  it('creates a menu with item tags inside', function() {
+    var input = `
+      <menu>
+        <item href="http://zurb.com">Item</item>
+      </menu>
+    `;
+    var expected = `
       <table class="menu">
         <tr>
           <td>
-            <a href="http://zurb.com">My Item 1</a>
-          </td>
-          <td>
-            <a href="http://zurb.com">My Item 2</a>
-          </td>
-          <td>
-            <a href="http://zurb.com">My Item 3</a>
+            <a href="http://zurb.com">Item</a>
           </td>
         </tr>
-      </table>`);
+      </table>
+    `;
+
+    compare(input, expected);
   });
 
-  it("returns the correct menu wrapper with custom syntax", function() {
-    var inky = new Inky();
-    var $ = cheerio.load('<menu><item href="http://zurb.com">My Item 1</item><td><a href="http://zurb.com">My Item 2</a></td><item href="http://zurb.com">My Item 3</item></menu>');
-
-    $ = inky.releaseTheKraken($);
-    compare($.html(), `
+  it('works without using an item tag', function() {
+    var input = `
+      <menu>
+        <item href="http://zurb.com">Item 1</item>
+        <td><a href="http://zurb.com">Item 2</a></td>
+      </menu>
+    `;
+    var expected = `
       <table class="menu">
         <tr>
           <td>
-            <a href="http://zurb.com">My Item 1</a>
+            <a href="http://zurb.com">Item 1</a>
           </td>
           <td>
-            <a href="http://zurb.com">My Item 2</a>
-          </td>
-          <td>
-            <a href="http://zurb.com">My Item 3</a>
+            <a href="http://zurb.com">Item 2</a>
           </td>
         </tr>
-      </table>`);
+      </table>
+    `;
+
+    compare(input, expected);
   });
 });
 
-function compare(expected, actual) {
-  assert.equal(expected, oneLine(actual));
-}
+function compare(input, expected) {
+  var inky = new Inky();
+  var $ = cheerio.load(input);
+  var output = inky.releaseTheKraken($).html();
 
-// Thank you: https://muffinresearch.co.uk/removing-leading-whitespace-in-es6-template-strings/
-function oneLine(string) {
-  var output = '';
-
-  // Split on newlines.
-  var lines = string.split(/(?:\r\n|\n|\r)/);
-
-  // Rip out the leading whitespace.
-  return lines.map((line) => {
-    return line.replace(/^\s+/gm, '');
-  }).join('').trim();
+  htmlEqual(output, expected);
 }
