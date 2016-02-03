@@ -65,7 +65,7 @@ describe('Grid', function() {
   it('creates a single column with first and last classes', function () {
     var input = '<columns large="12" small="12"></columns>';
     var expected = `
-      <th class="columns small-12 large-12 first last">
+      <th class="small-12 large-12 columns first last">
         <table >
           <tr>
             <th class="expander"></th>
@@ -83,14 +83,14 @@ describe('Grid', function() {
       <columns large="6" small="12"></columns>
     `;
     var expected = `
-      <th class="columns small-12 large-6 first">
+      <th class="small-12 large-6 columns first">
         <table >
           <tr>
             <th class="expander"></th>
           </tr>
         </table>
       </th>
-      <th class="columns small-12 large-6 last">
+      <th class="small-12 large-6 columns last">
         <table >
           <tr>
             <th class="expander"></th>
@@ -109,21 +109,21 @@ describe('Grid', function() {
       <columns large="4" small="12"></columns>
     `;
     var expected = `
-      <th class="columns small-12 large-4 first">
+      <th class="small-12 large-4 columns first">
         <table >
           <tr>
             <th class="expander"></th>
           </tr>
         </table>
       </th>
-      <th class="columns small-12 large-4">
+      <th class="small-12 large-4 columns">
         <table >
           <tr>
             <th class="expander"></th>
           </tr>
         </table>
       </th>
-      <th class="columns small-12 large-4 last">
+      <th class="small-12 large-4 columns last">
         <table >
           <tr>
             <th class="expander"></th>
@@ -138,7 +138,7 @@ describe('Grid', function() {
   it('offsets a column', function() {
     var input = '';
     var expected = `
-      <th class="columns small-4 small-offset-8 large-4 large-offset-8">
+      <th class="small-4 small-offset-8 large-4 large-offset-8 columns">
       </th>
     `;
 
@@ -153,14 +153,14 @@ describe('Grid', function() {
       <columns small="8"></columns>
     `;
     var expected = `
-      <th class="columns small-4 large-4 first">
+      <th class="small-4 large-4 columns first">
         <table >
           <tr>
             <th class="expander"></th>
           </tr>
         </table>
       </th>
-      <th class="columns small-8 large-8 last">
+      <th class="small-8 large-8 columns last">
         <table >
           <tr>
             <th class="expander"></th>
