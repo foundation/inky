@@ -178,14 +178,14 @@ describe('Grid', function() {
       <columns large="8"></columns>
     `;
     var expected = `
-      <th class="columns small-12 large-4 first">
+      <th class="small-12 large-4 columns first">
         <table >
           <tr>
             <th class="expander"></th>
           </tr>
         </table>
       </th>
-      <th class="columns small-12 large-8 last">
+      <th class="small-12 large-8 columns last">
         <table >
           <tr>
             <th class="expander"></th>
