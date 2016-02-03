@@ -204,7 +204,7 @@ describe('Grid', function() {
 });
 
 describe('Block Grid', function() {
-  it.only('returns the correct block grid syntax', function() {
+  it('returns the correct block grid syntax', function() {
     var input = '<block-grid up="4"></block-grid>';
     var expected = `
       <table class="block-grid up-4">
@@ -259,7 +259,7 @@ describe('Button', function() {
 });
 
 describe('Menu', function() {
-  it('creates a menu with item tags inside', function() {
+  it.only('creates a menu with item tags inside', function() {
     var input = `
       <menu>
         <item href="http://zurb.com">Item</item>
@@ -268,9 +268,7 @@ describe('Menu', function() {
     var expected = `
       <table class="menu">
         <tr>
-          <td>
-            <a href="http://zurb.com">Item</a>
-          </td>
+          <td><a href="http://zurb.com">Item</a></td>
         </tr>
       </table>
     `;
@@ -281,19 +279,15 @@ describe('Menu', function() {
   it('works without using an item tag', function() {
     var input = `
       <menu>
-        <item href="http://zurb.com">Item 1</item>
+        <td><a href="http://zurb.com">Item 1</a></td>
         <td><a href="http://zurb.com">Item 2</a></td>
       </menu>
     `;
     var expected = `
       <table class="menu">
         <tr>
-          <td>
-            <a href="http://zurb.com">Item 1</a>
-          </td>
-          <td>
-            <a href="http://zurb.com">Item 2</a>
-          </td>
+          <td><a href="http://zurb.com">Item 1</a></td>
+          <td><a href="http://zurb.com">Item 2</a></td>
         </tr>
       </table>
     `;
