@@ -145,7 +145,6 @@ describe('Grid', function() {
     compare(input, expected)
   });
 
-
   //if it just has small, borrow from small for large
   it('automatically assigns large columns if no large attribute is assigned', function() {
     var input = `
@@ -205,16 +204,11 @@ describe('Grid', function() {
 });
 
 describe('Block Grid', function() {
-  it('returns the correct block grid syntax', function() {
+  it.only('returns the correct block grid syntax', function() {
     var input = '<block-grid up="4"></block-grid>';
     var expected = `
       <table class="block-grid up-4">
-        <tr>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-        </tr>
+        <tr></tr>
       </table>
     `;
 
