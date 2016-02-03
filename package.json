@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "main": "index.js",
   "scripts": {
-    "test": "mocha --compilers js:babel-register --reporter nyan"
+    "test": "mocha --compilers js:babel-register"
   },
   "dependencies": {
     "cheerio": "^0.20.0",
