@@ -259,7 +259,7 @@ describe('Button', function() {
 });
 
 describe('Menu', function() {
-  it.only('creates a menu with item tags inside', function() {
+  it('creates a menu with item tags inside', function() {
     var input = `
       <menu>
         <item href="http://zurb.com">Item</item>
