@@ -44,7 +44,6 @@ describe('Centering', function() {
   });
 });
 
-
 describe('Grid', function() {
   it('creates a row', function() {
     var input = '<row></row>';
