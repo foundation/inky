@@ -224,16 +224,14 @@ describe('Block Grid', function() {
 
 describe('Button', function() {
   it('creates a simple button', function() {
-    var input = '<button href="http://zurb.com"></button>';
+    var input = '<button href="http://zurb.com">Button</button>';
     var expected = `
       <table class="button">
         <tr>
           <td>
             <table>
               <tr>
-                <td>
-                  <a href="https://zurb.com">I am a button</a>
-                </td>
+                <td><a href="http://zurb.com">Button</a></td>
               </tr>
             </table>
           </td>
@@ -245,16 +243,16 @@ describe('Button', function() {
   });
 
   it('creates a button with classes', function() {
-    var input = '<button class="small alert expand" href="http://zurb.com"></button>';
+    var input = `
+      <button class="small alert expand" href="http://zurb.com">Button</button>
+    `;
     var expected = `
       <table class="button small alert expand">
         <tr>
           <td>
             <table>
               <tr>
-                <td>
-                  <a href="https://zurb.com">I am a button</a>
-                </td>
+                <td><a href="http://zurb.com">Button</a></td>
               </tr>
             </table>
           </td>

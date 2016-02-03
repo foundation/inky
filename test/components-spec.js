@@ -5,7 +5,7 @@ var cheerio = require('cheerio');
 var assert = require('assert');
 
 describe("the components", function () {
-  it("returns basic button syntax", function () {
+  xit("returns basic button syntax", function () {
     var inky = new Inky();
     var $ = cheerio.load('<center><button class="inky" href="http://foundation.zurb.com/emails.html">Big button</button></center>');
 
