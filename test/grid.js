@@ -107,7 +107,12 @@ describe('Grid', function() {
   it('offsets a column', function() {
     var input = '<columns class="small-offset-8"></columns>';
     var expected = `
-      <th class="small-4 small-offset-8 large-4 large-offset-8 columns">
+      <th class="small-offset-8 small-12 large-12 columns first last">
+        <table>
+          <tr>
+            <th class="expander"></th>
+          </tr>
+        </table>
       </th>
     `;
 
