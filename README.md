@@ -46,7 +46,7 @@ npm install inky --save-dev
 
 ## Usage
 
-Inky can be used standalone or as a Gulp plugin. You can also access the `Inky` parser class directly.
+Inky can be used standalone, as a Gulp plugin, or with a CLI. You can also access the `Inky` parser class directly.
 
 ### Standalone
 
@@ -72,6 +72,17 @@ function parse() {
     .pipe(gulp.dest('dist'));
 }
 ```
+
+### Command Line
+
+Install Inky globally to get the `inky` command. The first option is a glob of input files, and the second option is a folder to output them to. Add the `--watch` flag to re-compile when files are added or changed.
+
+```bash
+npm install inky --global
+inky src/pages/**/*.html dist --watch
+```
+
+Doesn't support advanced settings at the moment.
 
 ## Plugin Settings
 

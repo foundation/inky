@@ -5,6 +5,7 @@ var assert = require('assert');
 var fs = require('fs');
 var rimraf = require('rimraf');
 var vfs = require('vinyl-fs');
+var exec = require('child_process').exec;
 
 describe('Inky', function() {
   it('can take in settings in the constructor', function() {
@@ -50,5 +51,12 @@ describe('Inky wrappers', function() {
         assert(fs.existsSync('test/fixtures/_build/test.html'), 'Output file exists');
         done();
       });
+  });
+
+  it.only('works as a CLI', function(done) {
+    exec('bin/inky.js test/fixtures/test.html test/fixtures/_build --watch', function(e, o, r) {
+      console.log(o);
+      done();
+    });
   });
 });
