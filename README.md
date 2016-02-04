@@ -7,30 +7,11 @@ Inky is the parser made by ZURB meant to be used with the Foundation for Emails 
 
 In order to unify Foundation for Emails issues, issue tracking has moved to [https://github.com/zurb/foundation-emails](https://github.com/zurb/foundation-emails). File Inky issues there and tag it with `Inky`.
 
-It has configurable options:
+It has configurable options. The `components` object contains what you'd like to specify as the syntax shortcut. For example, if you wanted to use the word "col" instead of "columns" in your mark up, you can pass it through to Inky like so:
 
 ```
-{
-  zfTags = {
-    button: 'button',
-    row: 'row',
-    callout: 'callout',
-    columns: 'columns',
-    subcolumns: 'subcolumns',
-    container: 'container',
-    inlineListH: 'inline-list-h',
-    inlineListV: 'inline-list-v'
-  },
-  grid = 12
-}
-```
-
-The zfTags object contains what you'd like to specify as the syntax shortcut. For example, if you wanted to use the word "col" instead of "columns" in your mark up, you can pass it through to Inky like so:
-
-```
-var inky = new Inky();
-var myConfig = {
-  zfTags = {
+var inky = new Inky({
+  components: {
     button: 'button',
     row: 'row',
     callout: 'callout',
@@ -40,8 +21,7 @@ var myConfig = {
     inlineListH: 'inline-list-h',
     inlineListV: 'inline-list-v'  
   }
-}
-inky.setConfig(myConfig);
+});
 ```
 
 Inky relies on Cheerio to load up an HTML string and manipulate it using a series of methods and replacements. If you want to pass initialize Inky, you can start everything off like so:
