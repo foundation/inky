@@ -1,6 +1,8 @@
 Inky
 ===
 
+[![Build Status](https://travis-ci.org/zurb/inky.svg?branch=master)](https://travis-ci.org/zurb/inky) [![npm version](https://badge.fury.io/js/inky.svg)](https://badge.fury.io/js/inky)
+
 Inky is the parser made by ZURB meant to be used with the Foundation for Emails framework.
 
 In order to unify Foundation for Emails issues, issue tracking has moved to [https://github.com/zurb/foundation-emails](https://github.com/zurb/foundation-emails). File Inky issues there and tag it with `Inky`.
