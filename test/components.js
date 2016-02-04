@@ -1,7 +1,7 @@
 var compare = require('./lib/compare');
 
-describe('Button', function() {
-  it('creates a simple button', function() {
+describe('Button', () => {
+  it('creates a simple button', () => {
     var input = '<button href="http://zurb.com">Button</button>';
     var expected = `
       <table class="button">
@@ -20,7 +20,7 @@ describe('Button', function() {
     compare(input, expected);
   });
 
-  it('creates a button with classes', function() {
+  it('creates a button with classes', () => {
     var input = `
       <button class="small alert expand" href="http://zurb.com">Button</button>
     `;
@@ -42,8 +42,8 @@ describe('Button', function() {
   });
 });
 
-describe('Menu', function() {
-  it('creates a menu with item tags inside', function() {
+describe('Menu', () => {
+  it('creates a menu with item tags inside', () => {
     var input = `
       <menu>
         <item href="http://zurb.com">Item</item>
@@ -60,7 +60,7 @@ describe('Menu', function() {
     compare(input, expected);
   });
 
-  it('works without using an item tag', function() {
+  it('works without using an item tag', () => {
     var input = `
       <menu>
         <td><a href="http://zurb.com">Item 1</a></td>

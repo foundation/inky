@@ -1,7 +1,7 @@
 var compare = require('./lib/compare');
 
-describe('Container', function() {
-  it('creates a container table', function() {
+describe('Container', () => {
+  it('creates a container table', () => {
     var input = '<container></container>';
     var expected = `
       <table class="container">
@@ -17,8 +17,8 @@ describe('Container', function() {
   });
 });
 
-describe('Grid', function() {
-  it('creates a row', function() {
+describe('Grid', () => {
+  it('creates a row', () => {
     var input = '<row></row>';
     var expected =  `
       <table class="row">
@@ -71,7 +71,7 @@ describe('Grid', function() {
     compare(input, expected);
   });
 
-  it('creates 3+ columns, first is first, last is last', function() {
+  it('creates 3+ columns, first is first, last is last', () => {
     var input = `
       <columns large="4" small="12"></columns>
       <columns large="4" small="12"></columns>
@@ -104,7 +104,7 @@ describe('Grid', function() {
     compare(input, expected);
   });
 
-  it('offsets a column', function() {
+  it('offsets a column', () => {
     var input = '<columns class="small-offset-8"></columns>';
     var expected = `
       <th class="small-offset-8 small-12 large-12 columns first last">
@@ -120,7 +120,7 @@ describe('Grid', function() {
   });
 
   //if it just has small, borrow from small for large
-  it('automatically assigns large columns if no large attribute is assigned', function() {
+  it('automatically assigns large columns if no large attribute is assigned', () => {
     var input = `
       <columns small="4"></columns>
       <columns small="8"></columns>
@@ -145,7 +145,7 @@ describe('Grid', function() {
     compare(input, expected);
   });
 
-  it('automatically assigns small columns as full width if only large defined', function() {
+  it('automatically assigns small columns as full width if only large defined', () => {
     var input = `
       <columns large="4"></columns>
       <columns large="8"></columns>
@@ -177,8 +177,8 @@ describe('Grid', function() {
   });
 });
 
-describe('Block Grid', function() {
-  it('returns the correct block grid syntax', function() {
+describe('Block Grid', () => {
+  it('returns the correct block grid syntax', () => {
     var input = '<block-grid up="4"></block-grid>';
     var expected = `
       <table class="block-grid up-4">
