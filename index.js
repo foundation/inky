@@ -3,6 +3,8 @@ var path = require('path');
 var through = require('through2');
 var vfs = require('vinyl-fs');
 var Inky = require('./lib/inky');
+var fs = require('fs');
+var mkdirp = require('mkdirp');
 
 var inky;
 
@@ -18,7 +20,7 @@ module.exports = function(opts, cb) {
   if (opts.src) {
     stream = vfs
       .src(opts.src)
-      .pipe(process());
+      .pipe(transform());
 
     if (opts.dest && typeof cb === 'function') {
       stream.on('finish', cb);
@@ -33,14 +35,16 @@ module.exports = function(opts, cb) {
   function transform() {
     return through.obj(function(file, enc, callback) {
       var html = cheerio.load(file.contents.toString());
-      var convertedHtml = inky.releaseTheKraken(html);
+      var convertedHtml = inky.releaseTheKraken(html).html();
 
-      file.contents = new Buffer(convertedHtml.html());
+      file.contents = new Buffer(convertedHtml);
 
       // Write to disk manually if the user specified it
       if (opts.dest) {
         var outputPath = path.join(opts.dest, path.basename(file.path));
-        fs.writeFile(outPath, convertedHtml, callback);
+        mkdirp(opts.dest, function() {
+          fs.writeFile(outputPath, convertedHtml, callback);
+        });
       }
       else {
         callback(null, file);
