@@ -104,7 +104,7 @@ describe('Grid', function() {
     compare(input, expected);
   });
 
-  it.only('offsets a column', function() {
+  it('offsets a column', function() {
     var input = '<columns class="small-offset-8"></columns>';
     var expected = `
       <th class="small-4 small-offset-8 large-4 large-offset-8 columns">
