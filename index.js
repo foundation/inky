@@ -4,11 +4,15 @@ var through = require('through2');
 var vfs = require('vinyl-fs');
 var Inky = require('./lib/inky');
 
-var inky = new Inky();
+var inky;
 
 module.exports = function(opts, cb) {
   var stream;
   opts = opts || {};
+
+  if (typeof inky === 'undefined') {
+    inky = new Inky(opts);
+  }
 
   // If the user passed in source files, create a stream
   if (opts.src) {
@@ -29,7 +33,7 @@ module.exports = function(opts, cb) {
   function transform() {
     return through.obj(function(file, enc, callback) {
       var html = cheerio.load(file.contents.toString());
-      var convertedHtml = inky.releaseTheKraken(html, opts);
+      var convertedHtml = inky.releaseTheKraken(html);
 
       file.contents = new Buffer(convertedHtml.html());
 
