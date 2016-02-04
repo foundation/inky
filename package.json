@@ -7,7 +7,7 @@
     "ink",
     "foundation",
     "email",
-     "template"
+    "template"
   ],
   "main": "index.js",
   "scripts": {
