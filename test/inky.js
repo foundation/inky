@@ -20,10 +20,9 @@ describe('Inky', () => {
     assert.equal(inky.columnCount, 16, 'Sets a custom column count');
   });
 
-  it('should be setting custom tags from object correctly', () => {
+  it('should have an array of component tags', () => {
     var inky = new Inky();
-    inky.setTagArray();
-    assert.deepEqual(inky.zfArray, ['button', 'row', 'callout', 'columns', 'subcolumns', 'container', 'inky', 'block-grid', 'menu', 'item']);
+    assert(Array.isArray(inky.componentTags), 'Inky.zftags is an array');
   });
 });
 

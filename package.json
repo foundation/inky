@@ -23,6 +23,7 @@
     "meow": "^3.7.0",
     "mkdirp": "^0.5.1",
     "multiline": "^1.0.2",
+    "object-values": "^1.0.0",
     "through2": "^2.0.0",
     "vinyl-fs": "^2.3.0"
   },
