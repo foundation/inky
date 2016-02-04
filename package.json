@@ -1,6 +1,14 @@
 {
   "name": "inky",
   "version": "0.1.0",
+  "description": "Convert a simple HTML syntax into tables compatible with Foundation for Emails.",
+  "author": "ZURB <foundation@zurb.com> (http://foundation.zurb.com)",
+  "keywords": [
+    "ink",
+    "foundation",
+    "email",
+     "template"
+  ],
   "main": "index.js",
   "scripts": {
     "test": "mocha --compilers js:babel-register"
@@ -18,5 +26,7 @@
     "babel-runtime": "^6.3.19",
     "mocha": "^2.4.5"
   },
-  "description": "Take initial HTML syntax and turn them into tables that use Foundation for Email styles."
+  "repository": "https://github.com/zurb/inky.git",
+  "bugs": "https://github.com/zurb/inky/issues",
+  "license": "MIT"
 }
