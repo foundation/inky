@@ -53,9 +53,9 @@ describe('Inky wrappers', function() {
       });
   });
 
-  it.only('works as a CLI', function(done) {
-    exec('bin/inky.js test/fixtures/test.html test/fixtures/_build --watch', function(e, o, r) {
-      console.log(o);
+  it('works as a CLI', function(done) {
+    exec('bin/inky.js test/fixtures/test.html test/fixtures/_build', function(e, o, r) {
+      assert(fs.existsSync('test/fixtures/_build/test.html'), 'Output file exists');
       done();
     });
   });

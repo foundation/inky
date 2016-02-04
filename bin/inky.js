@@ -33,7 +33,7 @@ else {
 
 function parse(files) {
   inky({
-    src: cli.input[0],
+    src: files,
     dest: cli.input[1]
   }, function() {
     console.log(chalk.magenta(files), 'processed.');
