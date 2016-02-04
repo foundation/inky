@@ -1,62 +1,124 @@
-Inky
-===
+# Inky
 
 [![Build Status](https://travis-ci.org/zurb/inky.svg?branch=master)](https://travis-ci.org/zurb/inky) [![npm version](https://badge.fury.io/js/inky.svg)](https://badge.fury.io/js/inky)
 
-Inky is the parser made by ZURB meant to be used with the Foundation for Emails framework.
+Inky is an HTML-based templating language that converts simple HTML into complex, responsive email-ready HTML. Designed for [Foundation for Emails](http://foundation.zurb.com/emails), a responsive email framework from [ZURB](http://zurb.com).
 
-In order to unify Foundation for Emails issues, issue tracking has moved to [https://github.com/zurb/foundation-emails](https://github.com/zurb/foundation-emails). File Inky issues there and tag it with `Inky`.
+Give Inky simple HTML like this:
 
-It has configurable options. The `components` object contains what you'd like to specify as the syntax shortcut. For example, if you wanted to use the word "col" instead of "columns" in your mark up, you can pass it through to Inky like so:
-
+```html
+<row>
+  <columns large="6"></columns>
+  <columns large="6"></columns>
+</row>
 ```
-var inky = new Inky({
-  components: {
-    button: 'button',
-    row: 'row',
-    callout: 'callout',
-    columns: 'col',
-    subcolumns: 'subcolumns',
-    container: 'container',
-    inlineListH: 'inline-list-h',
-    inlineListV: 'inline-list-v'  
-  }
+
+And get complicated, but battle-tested, email-ready HTML like this:
+
+```html
+<table class="row">
+  <tbody>
+    <tr>
+      <th class="small-12 large-6 columns first">
+        <table>
+          <tr>
+            <th class="expander"></th>
+          </tr>
+        </table>
+      </th>
+      <th class="small-12 large-6 columns first">
+        <table>
+          <tr>
+            <th class="expander"></th>
+          </tr>
+        </table>
+      </th>
+    </tr>
+  </tbody>
+</table>
+```
+
+## Installation
+
+```bash
+npm install inky --save-dev
+```
+
+## Usage
+
+Inky can be used standalone or as a Gulp plugin. You can also access the `Inky` parser class directly.
+
+### Standalone
+
+```js
+var inky = require('inky');
+
+inky({
+  src: 'src/pages/**/*.html',
+  dest: 'dist'
+}, function() {
+  console.log('Done parsing.');
 });
 ```
 
-Inky relies on Cheerio to load up an HTML string and manipulate it using a series of methods and replacements. If you want to pass initialize Inky, you can start everything off like so:
+### With Gulp
 
+```js
+var inky = require('inky')
+
+function parse() {
+  gulp.src('src/pages/**/*.html')
+    .pipe(inky())
+    .pipe(gulp.dest('dist'));
+}
 ```
-var inky = new Inky();
-var syntax = '<column>Here is a column</column>';
 
+## Plugin Settings
 
-var $ = Cheerio.load(syntax);
+- `src` (String): Glob of files to process. You don't need to supply this when using Inky with Gulp.
+- `dest` (String): Folder to output processed files to. You don't need to supply this when using Inky with Gulp.
+- `components` (Object): Tag names for custom components. See [custom components](#custom-components) below to learn more.
+- `columnCount` (Number): Column count for the grid. Make sure your Foundation for Emails project has the same column count in the Sass as well.
 
-inky.releaseTheKraken($);
+## Custom Elements
+
+Inky simplifies the process of creating HTML emails by expanding out simple tags like `<row>` and `<column>` into full table syntax. The names of the tags can be changed with the `components` setting.
+
+Here are the names of the defaults:
+
+```js
+{
+  button: 'button',
+  row: 'row',
+  callout: 'callout',
+  columns: 'columns',
+  subcolumns: 'subcolumns',
+  container: 'container',
+  inky: 'inky',
+  blockGrid: 'block-grid',
+  menu: 'menu',
+  menuItem: 'item'
+}
 ```
 
-You can also add your custom config as an additional argument i.e.
-`inky.releaseTheKraken($, myConfig)`.
+## Programmatic Use
 
-Repo Contents
-=============
+The Inky parser can be accessed directly for programmatic use. It takes in a [Cheerio](https://github.com/cheeriojs/cheerio) object of HTML, and gives you back a converted Cheerio object.
 
-* Spec Folder
-* index.js
+```js
+var Inky = require('inky').Inky;
+var cheerio = require('cheerio');
 
+var options = {};
+var input = '<row></row>';
 
-Installation Instructions
-=============
+// The same plugin settings are passed in the constructor
+var i = new Inky(options);
+var html = cheerio.load(input)
 
-1. Clone the repo with `git clone git@github.com:zurb/inky.git`.
-2. Navigate into the directory.
-3. Run `npm install`. If you don't have node.js installed, downloaded it at [nodejs.org](http://nodejs.org/download/).
-4. Run tests with  `npm test`.
+// Now unleash the fury
+var convertedHtml = i.releaseTheKraken(html);
 
-ZURB
-====
-
-Inky was made by [ZURB](http://www.zurb.com), a product design company in Campbell, CA.
-
-If Inky knocks your socks off the way we hope it does and you want more, why not check out [our jobs](http://www.zurb.com/talent)?
+// The return value is a Cheerio object. Get the string value with .html()
+convertedHtml.html();
+```
