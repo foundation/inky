@@ -15,8 +15,6 @@ var cli = multiline(function() {/*
 */});
 
 var aliases = {
-  i: 'input',
-  o: 'output',
   w: 'watch'
 }
 
