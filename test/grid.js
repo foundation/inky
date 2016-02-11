@@ -35,7 +35,7 @@ describe('Grid', () => {
     var input = '<columns large="12" small="12"></columns>';
     var expected = `
       <th class="small-12 large-12 columns first last">
-        <table >
+        <table>
           <tr>
             <th class="expander"></th>
           </tr>
@@ -53,14 +53,14 @@ describe('Grid', () => {
     `;
     var expected = `
       <th class="small-12 large-6 columns first">
-        <table >
+        <table>
           <tr>
             <th class="expander"></th>
           </tr>
         </table>
       </th>
       <th class="small-12 large-6 columns last">
-        <table >
+        <table>
           <tr>
             <th class="expander"></th>
           </tr>
@@ -127,14 +127,14 @@ describe('Grid', () => {
     `;
     var expected = `
       <th class="small-4 large-4 columns first">
-        <table >
+        <table>
           <tr>
             <th class="expander"></th>
           </tr>
         </table>
       </th>
       <th class="small-8 large-8 columns last">
-        <table >
+        <table>
           <tr>
             <th class="expander"></th>
           </tr>
@@ -152,14 +152,14 @@ describe('Grid', () => {
     `;
     var expected = `
       <th class="small-12 large-4 columns first">
-        <table >
+        <table>
           <tr>
             <th class="expander"></th>
           </tr>
         </table>
       </th>
       <th class="small-12 large-8 columns last">
-        <table >
+        <table>
           <tr>
             <th class="expander"></th>
           </tr>
