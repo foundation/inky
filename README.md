@@ -103,7 +103,6 @@ Here are the names of the defaults:
   row: 'row',
   callout: 'callout',
   columns: 'columns',
-  subcolumns: 'subcolumns',
   container: 'container',
   inky: 'inky',
   blockGrid: 'block-grid',
