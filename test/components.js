@@ -22,15 +22,38 @@ describe('Button', () => {
 
   it('creates a button with classes', () => {
     var input = `
-      <button class="small alert expand" href="http://zurb.com">Button</button>
+      <button class="small alert" href="http://zurb.com">Button</button>
     `;
     var expected = `
-      <table class="button small alert expand">
+      <table class="button small alert">
         <tr>
           <td>
             <table>
               <tr>
                 <td><a href="http://zurb.com">Button</a></td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+
+  it('creates a correct expanded button', () => {
+    var input = `
+      <button class="expand" href="http://zurb.com">Button</button>
+    `;
+    var expected = `
+      <table class="button expand">
+        <tr>
+          <td>
+            <table>
+              <tr>
+                <td>
+                  <center><a href="http://zurb.com">Button</a></center>
+                </td>
               </tr>
             </table>
           </td>
