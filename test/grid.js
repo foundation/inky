@@ -168,12 +168,33 @@ describe('Grid', () => {
     `;
 
     compare(input, expected);
+  });
 
-    // ?
-    // var opts = {
-    //   grid: 15
-    // }
-    // $ = inky.releaseTheKraken($, opts);
+  it('supports nested grids', () => {
+    var input = '<row><columns><row></row></columns></row>'
+    var expected = `
+      <table class="row">
+        <tbody>
+          <tr>
+            <th class="small-12 large-12 columns first last">
+              <table>
+                <tr>
+                  <th>
+                    <table class="row">
+                      <tbody>
+                        <tr></tr>
+                      </tbody>
+                    </table>
+                  </th>
+                </tr>
+              </table>
+            </th>
+          </tr>
+        </tbody>
+      </table>
+    `;
+
+    compare(input, expected);
   });
 });
 
