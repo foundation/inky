@@ -101,7 +101,6 @@ Here are the names of the defaults:
 {
   button: 'button',
   row: 'row',
-  callout: 'callout',
   columns: 'columns',
   container: 'container',
   inky: 'inky',
