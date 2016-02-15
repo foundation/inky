@@ -54,11 +54,4 @@ describe('Inky wrappers', () => {
         done();
       });
   });
-
-  it('works as a CLI', done => {
-    exec(`bin/inky.js ${INPUT} ${OUTPUT}`, () => {
-      assert(fs.existsSync(OUTFILE), 'Output file exists');
-      done();
-    });
-  });
 });

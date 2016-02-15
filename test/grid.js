@@ -1,6 +1,35 @@
 var compare = require('./lib/compare');
 
 describe('Container', () => {
+  xit('works when parsing a full HTML document', () => {
+    var input = `
+      <!doctype html>
+      <html>
+        <head></head>
+        <body>
+          <container></container>
+        </body>
+      </html>
+    `;
+    var expected = `
+      <!doctype html>
+      <html>
+        <head></head>
+        <body>
+          <table class="container">
+            <tbody>
+              <tr>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `
+
+    compare(input, expected);
+  });
+
   it('creates a container table', () => {
     var input = '<container></container>';
     var expected = `
