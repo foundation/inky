@@ -10,17 +10,11 @@
     "template"
   ],
   "main": "index.js",
-  "bin": {
-    "inky": "./bin/inky.js"
-  },
   "scripts": {
     "test": "mocha --compilers js:babel-register"
   },
   "dependencies": {
-    "chalk": "^1.1.1",
     "cheerio": "^0.20.0",
-    "chokidar": "^1.4.2",
-    "meow": "^3.7.0",
     "mkdirp": "^0.5.1",
     "multiline": "^1.0.2",
     "object-values": "^1.0.0",

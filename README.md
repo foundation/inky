@@ -75,10 +75,10 @@ function parse() {
 
 ### Command Line
 
-Install Inky globally to get the `inky` command. The first option is a glob of input files, and the second option is a folder to output them to. Add the `--watch` flag to re-compile when files are added or changed.
+Install [inky-cli](https://github.com/zurb/inky-cli) to get the `inky` command. The first option is a glob of input files, and the second option is a folder to output them to. Add the `--watch` flag to re-compile when files are added or changed.
 
 ```bash
-npm install inky --global
+npm install inky-cli --global
 inky src/pages/**/*.html dist --watch
 ```
 
