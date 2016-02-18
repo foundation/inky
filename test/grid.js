@@ -138,10 +138,10 @@ describe('Grid', () => {
     compare(input, expected);
   });
 
-  it('offsets a column', () => {
-    var input = '<columns class="small-offset-8">One</columns>';
+  it('transfers classes to the final HTML', () => {
+    var input = '<columns class="small-offset-8 hide-for-small">One</columns>';
     var expected = `
-      <th class="small-offset-8 small-12 large-12 columns first last">
+      <th class="small-offset-8 hide-for-small small-12 large-12 columns first last">
         <table>
           <tr>
             <th>One</th>
