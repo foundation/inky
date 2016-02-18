@@ -52,7 +52,7 @@ describe('Button', () => {
             <table>
               <tr>
                 <td>
-                  <center><a href="http://zurb.com"><a href="http://zurb.com">Button</a></a></center>
+                  <center><a href="http://zurb.com">Button</a></center>
                 </td>
               </tr>
             </table>
