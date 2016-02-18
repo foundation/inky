@@ -1,7 +1,7 @@
 var compare = require('./lib/compare');
 
 describe('Container', () => {
-  xit('works when parsing a full HTML document', () => {
+  it('works when parsing a full HTML document', () => {
     var input = `
       <!doctype html>
       <html>
@@ -26,7 +26,6 @@ describe('Container', () => {
         </body>
       </html>
     `
-
     compare(input, expected);
   });
 
@@ -226,7 +225,7 @@ describe('Grid', () => {
                       </tbody>
                     </table>
                   </th>
-                  
+
                 </tr>
               </table>
             </th>
