@@ -83,6 +83,21 @@ describe('Menu', () => {
     compare(input, expected);
   });
 
+  it('creates a menu with classes', () => {
+    var input = `
+      <menu class="vertical">
+      </menu>
+    `;
+    var expected = `
+      <table class="menu vertical">
+        <tr>
+        </tr>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+
   it('works without using an item tag', () => {
     var input = `
       <menu>
