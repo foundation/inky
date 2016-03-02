@@ -6,6 +6,7 @@ var fs = require('fs');
 var rimraf = require('rimraf');
 var vfs = require('vinyl-fs');
 var exec = require('child_process').exec;
+var compare = require('./lib/compare');
 
 describe('Inky', () => {
   it('can take in settings in the constructor', () => {
@@ -23,6 +24,36 @@ describe('Inky', () => {
   it('should have an array of component tags', () => {
     var inky = new Inky();
     assert(Array.isArray(inky.componentTags), 'Inky.zftags is an array');
+  });
+
+  it(`doesn't choke on inline elements`, () => {
+    var input = '<container>This is a link to <a href="#">ZURB.com</a>.</container>';
+    var expected = `
+      <table class="container">
+        <tbody>
+          <tr>
+            <td>This is a link to <a href="#">ZURB.com</a>.</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+
+  it(`doesn't choke on special characters`, () => {
+    var input = '<container>This is a link tö <a href="#">ZURB.com</a>.</container>';
+    var expected = `
+      <table class="container">
+        <tbody>
+          <tr>
+            <td>This is a link t&#xF6; <a href="#">ZURB.com</a>.</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+
+    compare(input, expected);
   });
 });
 
