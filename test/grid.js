@@ -249,4 +249,15 @@ describe('Block Grid', () => {
 
     compare(input, expected);
   });
+
+  it('copies classes to the final HTML output', () => {
+    var input = '<block-grid up="4" class="show-for-large"></block-grid>';
+    var expected = `
+      <table class="block-grid up-4 show-for-large">
+        <tr></tr>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
 });
