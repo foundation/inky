@@ -1,6 +1,6 @@
 var compare = require('./lib/compare');
 
-describe('center', () => {
+describe('Center', () => {
   it('applies a center class and center alignment attribute to the first child', () => {
     var input = `
       <center>
@@ -127,6 +127,34 @@ describe('Menu', () => {
         <tr>
           <td><a href="http://zurb.com">Item 1</a></td>
           <td><a href="http://zurb.com">Item 2</a></td>
+        </tr>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+});
+
+describe('Callout', () => {
+  it('creates a callout with correct syntax', () => {
+    var input = '<callout></callout>';
+    var expected = `
+      <table>
+        <tr>
+          <th class="callout"></th>
+        </tr>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+
+  it('copies classes to the final HTML', () => {
+    var input = '<callout class="primary"></callout>';
+    var expected = `
+      <table>
+        <tr>
+          <th class="callout primary"></th>
         </tr>
       </table>
     `;
