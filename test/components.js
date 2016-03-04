@@ -1,5 +1,22 @@
 var compare = require('./lib/compare');
 
+describe('center', () => {
+  it('applies a center class and center alignment attribute to the first child', () => {
+    var input = `
+      <center>
+        <div></div>
+      </center>
+    `;
+    var expected = `
+      <center>
+        <div align="center" class="center"></div>
+      </center>
+    `;
+
+    compare(input, expected);
+  });
+});
+
 describe('Button', () => {
   it('creates a simple button', () => {
     var input = '<button href="http://zurb.com">Button</button>';
