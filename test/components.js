@@ -8,8 +8,26 @@ describe('Center', () => {
       </center>
     `;
     var expected = `
-      <center>
+      <center data-parsed="">
         <div align="center" class="center"></div>
+      </center>
+    `;
+
+    compare(input, expected);
+  });
+
+  it(`doesn't choke if center tags are nested`, () => {
+    var input = `
+      <center>
+        <center>
+        </center>
+      </center>
+    `;
+
+    var expected = `
+      <center data-parsed="">
+        <center align="center" class="center" data-parsed="">
+        </center>
       </center>
     `;
 
@@ -69,7 +87,7 @@ describe('Button', () => {
             <table>
               <tr>
                 <td>
-                  <center><a href="http://zurb.com">Button</a></center>
+                  <center data-parsed=""><a href="http://zurb.com" align="center" class="center">Button</a></center>
                 </td>
               </tr>
             </table>
