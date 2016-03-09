@@ -1,7 +1,7 @@
 var compare = require('./lib/compare');
 
 describe('Center', () => {
-  it('applies a center class and center alignment attribute to the first child', () => {
+  it('applies a text-center class and center alignment attribute to the first child', () => {
     var input = `
       <center>
         <div></div>
@@ -9,7 +9,7 @@ describe('Center', () => {
     `;
     var expected = `
       <center data-parsed="">
-        <div align="center" class="center"></div>
+        <div align="center" class="text-center"></div>
       </center>
     `;
 
@@ -26,7 +26,7 @@ describe('Center', () => {
 
     var expected = `
       <center data-parsed="">
-        <center align="center" class="center" data-parsed="">
+        <center align="center" class="text-center" data-parsed="">
         </center>
       </center>
     `;
@@ -87,7 +87,7 @@ describe('Button', () => {
             <table>
               <tr>
                 <td>
-                  <center data-parsed=""><a href="http://zurb.com" align="center" class="center">Button</a></center>
+                  <center data-parsed=""><a href="http://zurb.com" align="center" class="text-center">Button</a></center>
                 </td>
               </tr>
             </table>
