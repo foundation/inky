@@ -182,7 +182,7 @@ describe('Callout', () => {
     var expected = `
       <table>
         <tr>
-          <td class="callout"></td>
+          <th class="callout"></th>
         </tr>
       </table>
     `;
@@ -195,7 +195,7 @@ describe('Callout', () => {
     var expected = `
       <table>
         <tr>
-          <td class="callout primary"></td>
+          <th class="callout primary"></th>
         </tr>
       </table>
     `;
