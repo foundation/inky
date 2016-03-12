@@ -110,7 +110,7 @@ describe('Menu', () => {
     var expected = `
       <table class="menu">
         <tr>
-          <td><a href="http://zurb.com">Item</a></td>
+          <th><a href="http://zurb.com">Item</a></th>
         </tr>
       </table>
     `;
@@ -142,13 +142,13 @@ describe('Menu', () => {
     var expected = `
       <table class="menu vertical">
         <tr>
-          <td>
+          <th>
             <table class="menu-item">
               <tr>
-                <td><a href="#abc">ABC</a></td>
+                <th><a href="#abc">ABC</a></th>
               </tr>
             </table>
-          </td>
+          </th>
         </tr>
       </table>
     `;
