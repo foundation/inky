@@ -1,6 +1,6 @@
 {
   "name": "inky",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Convert a simple HTML syntax into tables compatible with Foundation for Emails.",
   "author": "ZURB <foundation@zurb.com> (http://foundation.zurb.com)",
   "keywords": [

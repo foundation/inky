@@ -120,12 +120,35 @@ describe('Menu', () => {
 
   it('creates a menu with classes', () => {
     var input = `
+      <menu class="awesome">
+      </menu>
+    `;
+    var expected = `
+      <table class="menu awesome">
+        <tr>
+        </tr>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+
+  it('treats vertical menus differently', () => {
+    var input = `
       <menu class="vertical">
+        <item href="#abc" >ABC</item>
       </menu>
     `;
     var expected = `
       <table class="menu vertical">
         <tr>
+          <td>
+            <table class="menu-item">
+              <tr>
+                <td><a href="#abc">ABC</a></td>
+              </tr>
+            </table>
+          </td>
         </tr>
       </table>
     `;
