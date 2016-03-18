@@ -90,6 +90,7 @@ Doesn't support advanced settings at the moment.
 - `dest` (String): Folder to output processed files to. You don't need to supply this when using Inky with Gulp.
 - `components` (Object): Tag names for custom components. See [custom components](#custom-components) below to learn more.
 - `columnCount` (Number): Column count for the grid. Make sure your Foundation for Emails project has the same column count in the Sass as well.
+- `xmlMode` (Boolean): Set to true for emails that are built using xhtml DOCTYPE.
 
 ## Custom Elements
 
