@@ -33,6 +33,30 @@ describe('Center', () => {
 
     compare(input, expected);
   });
+
+  it('applies the class float-center instead of text-center to <menu>', () => {
+    var input = `
+      <center>
+        <menu></menu>
+      </center>
+    `;
+
+    var expected = `
+      <center data-parsed="">
+        <table class="menu float-center" align="center">
+          <tr>
+            <td>
+              <table>
+                <tr></tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </center>
+    `;
+
+    compare(input, expected);
+  });
 });
 
 describe('Button', () => {
