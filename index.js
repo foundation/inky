@@ -35,7 +35,7 @@ module.exports = function(opts, cb) {
   function transform() {
     return through.obj(function(file, enc, callback) {
       var html = cheerio.load(file.contents.toString());
-      var convertedHtml = inky.releaseTheKraken(html).html();
+      var convertedHtml = inky.releaseTheKraken(html).xml();
 
       file.contents = new Buffer(convertedHtml);
 
