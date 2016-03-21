@@ -85,7 +85,6 @@ describe('Grid', () => {
         <table>
           <tr>
             <th>One</th>
-            <th class="expander"></th>
           </tr>
         </table>
       </th>
@@ -93,7 +92,6 @@ describe('Grid', () => {
         <table>
           <tr>
             <th>Two</th>
-            <th class="expander"></th>
           </tr>
         </table>
       </th>
@@ -113,7 +111,6 @@ describe('Grid', () => {
         <table>
           <tr>
             <th>One</th>
-            <th class="expander"></th>
           </tr>
         </table>
       </th>
@@ -121,7 +118,6 @@ describe('Grid', () => {
         <table>
           <tr>
             <th>Two</th>
-            <th class="expander"></th>
           </tr>
         </table>
       </th>
@@ -129,7 +125,6 @@ describe('Grid', () => {
         <table>
           <tr>
             <th>Three</th>
-            <th class="expander"></th>
           </tr>
         </table>
       </th>
@@ -165,7 +160,6 @@ describe('Grid', () => {
         <table>
           <tr>
             <th>One</th>
-            <th class="expander"></th>
           </tr>
         </table>
       </th>
@@ -173,7 +167,6 @@ describe('Grid', () => {
         <table>
           <tr>
             <th>Two</th>
-            <th class="expander"></th>
           </tr>
         </table>
       </th>
@@ -192,7 +185,6 @@ describe('Grid', () => {
         <table>
           <tr>
             <th>One</th>
-            <th class="expander"></th>
           </tr>
         </table>
       </th>
@@ -200,7 +192,6 @@ describe('Grid', () => {
         <table>
           <tr>
             <th>Two</th>
-            <th class="expander"></th>
           </tr>
         </table>
       </th>
@@ -225,7 +216,6 @@ describe('Grid', () => {
                       </tbody>
                     </table>
                   </th>
-
                 </tr>
               </table>
             </th>
