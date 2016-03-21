@@ -128,7 +128,6 @@ var html = cheerio.load(input)
 // Now unleash the fury
 var convertedHtml = i.releaseTheKraken(html);
 
-// The return value is a Cheerio object. Get the string value with .xml()
-// Note that we use .xml() and not .html(), because HTML emails should be written as XHTML
-convertedHtml.xml();
+// The return value is a Cheerio object. Get the string value with .html()
+convertedHtml.html();
 ```

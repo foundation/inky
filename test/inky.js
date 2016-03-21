@@ -55,13 +55,6 @@ describe('Inky', () => {
 
     compare(input, expected);
   });
-
-  it.only('preserves self-closing tags', () => {
-    var input = '<br/>';
-    var expected = '<br/>';
-
-    compare(input, expected);
-  });
 });
 
 describe('Inky wrappers', () => {
