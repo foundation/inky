@@ -110,7 +110,13 @@ describe('Menu', () => {
     var expected = `
       <table class="menu">
         <tr>
-          <th><a href="http://zurb.com">Item</a></th>
+          <td>
+            <table>
+              <tr>
+                <th class="menu-item"><a href="http://zurb.com">Item</a></th>
+              </tr>
+            </table>
+          </td>
         </tr>
       </table>
     `;
@@ -120,35 +126,18 @@ describe('Menu', () => {
 
   it('creates a menu with classes', () => {
     var input = `
-      <menu class="awesome">
-      </menu>
-    `;
-    var expected = `
-      <table class="menu awesome">
-        <tr>
-        </tr>
-      </table>
-    `;
-
-    compare(input, expected);
-  });
-
-  it('treats vertical menus differently', () => {
-    var input = `
       <menu class="vertical">
-        <item href="#abc" >ABC</item>
       </menu>
     `;
     var expected = `
       <table class="menu vertical">
         <tr>
-          <th>
-            <table class="menu-item">
+          <td>
+            <table>
               <tr>
-                <th><a href="#abc">ABC</a></th>
               </tr>
             </table>
-          </th>
+          </td>
         </tr>
       </table>
     `;
@@ -159,15 +148,19 @@ describe('Menu', () => {
   it('works without using an item tag', () => {
     var input = `
       <menu>
-        <td><a href="http://zurb.com">Item 1</a></td>
-        <td><a href="http://zurb.com">Item 2</a></td>
+        <th class="menu-item"><a href="http://zurb.com">Item 1</a></th>
       </menu>
     `;
     var expected = `
       <table class="menu">
         <tr>
-          <td><a href="http://zurb.com">Item 1</a></td>
-          <td><a href="http://zurb.com">Item 2</a></td>
+          <td>
+            <table>
+              <tr>
+                <th class="menu-item"><a href="http://zurb.com">Item 1</a></th>
+              </tr>
+            </table>
+          </td>
         </tr>
       </table>
     `;
