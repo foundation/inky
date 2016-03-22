@@ -34,20 +34,26 @@ describe('Center', () => {
     compare(input, expected);
   });
 
-  it('applies the class float-center instead of text-center to <menu>', () => {
+  it('applies the class float-center to <item> elements', () => {
     var input = `
       <center>
-        <menu></menu>
+        <menu>
+          <item href="#"></item>
+        </menu>
       </center>
     `;
 
     var expected = `
       <center data-parsed="">
-        <table class="menu float-center" align="center">
+        <table class="menu text-center" align="center">
           <tr>
             <td>
               <table>
-                <tr></tr>
+                <tr>
+                  <th class="menu-item float-center">
+                    <a href="#"></a>
+                  </th>
+                </tr>
               </table>
             </td>
           </tr>
