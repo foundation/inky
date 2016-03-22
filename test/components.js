@@ -197,7 +197,7 @@ describe('Callout', () => {
   it('creates a callout with correct syntax', () => {
     var input = '<callout></callout>';
     var expected = `
-      <table>
+      <table class="callout">
         <tr>
           <th class="callout"></th>
         </tr>
@@ -210,7 +210,7 @@ describe('Callout', () => {
   it('copies classes to the final HTML', () => {
     var input = '<callout class="primary"></callout>';
     var expected = `
-      <table>
+      <table class="callout">
         <tr>
           <th class="callout primary"></th>
         </tr>
