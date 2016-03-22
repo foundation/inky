@@ -202,11 +202,12 @@ describe('Menu', () => {
 
 describe('Callout', () => {
   it('creates a callout with correct syntax', () => {
-    var input = '<callout></callout>';
+    var input = '<callout>Callout</callout>';
     var expected = `
       <table class="callout">
         <tr>
-          <th class="callout"></th>
+          <td class="callout-inner">Callout</td>
+          <td class="expander"></td>
         </tr>
       </table>
     `;
@@ -215,11 +216,12 @@ describe('Callout', () => {
   });
 
   it('copies classes to the final HTML', () => {
-    var input = '<callout class="primary"></callout>';
+    var input = '<callout class="primary">Callout</callout>';
     var expected = `
       <table class="callout">
         <tr>
-          <th class="callout primary"></th>
+          <td class="callout-inner primary">Callout</td>
+          <td class="expander"></td>
         </tr>
       </table>
     `;
