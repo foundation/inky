@@ -229,3 +229,35 @@ describe('Callout', () => {
     compare(input, expected);
   });
 });
+  
+describe('Spacer', () => {
+  it('creates a spacer element with correct size', () => {
+    var input = '<spacer size="10"></spacer>';
+    var expected = `
+      <table class="spacer">
+        <tbody>
+          <tr>
+            <td height="10px" style="font-size:10px;line-height:10px;">&#xA0;</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+  
+  it('copies classes to the final spacer HTML', () => {
+    var input = '<spacer size="10" class="bgcolor"></spacer>';
+    var expected = `
+      <table class="spacer bgcolor">
+        <tbody>
+          <tr>
+            <td height="10px" style="font-size:10px;line-height:10px;">&#xA0;</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+});
