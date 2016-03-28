@@ -8,9 +8,9 @@ var htmlEqual = require('assert-html-equal');
  * @param {string} expected - Expected HTML output.
  * @throws {Error} Throws an error if the output is not identical.
  */
-module.exports = function compare(input, expected) {
+module.exports = function compare(input, expected, cheerioOpts) {
   var inky = new Inky();
-  var $ = cheerio.load(input);
+  var $ = cheerio.load(input, cheerioOpts);
   var output = inky.releaseTheKraken($).html();
 
   htmlEqual(output, expected);
