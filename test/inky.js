@@ -55,6 +55,22 @@ describe('Inky', () => {
 
     compare(input, expected);
   });
+
+  it(`doesn't decode entities if non default cheerio config is given`, () => {
+    var input = '<container>"should not replace quotes"</container>';
+    var expected = `
+      <table class="container">
+        <tbody>
+          <tr>
+            <td>"should not replace quotes"</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+
+    compare(input, expected, { decodeEntities: false });
+  });
+
 });
 
 describe('Inky wrappers', () => {
