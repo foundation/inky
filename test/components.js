@@ -9,7 +9,7 @@ describe('Center', () => {
     `;
     var expected = `
       <center data-parsed="">
-        <div align="center" class="text-center"></div>
+        <div align="center" class="float-center"></div>
       </center>
     `;
 
@@ -26,7 +26,7 @@ describe('Center', () => {
 
     var expected = `
       <center data-parsed="">
-        <center align="center" class="text-center" data-parsed="">
+        <center align="center" class="float-center" data-parsed="">
         </center>
       </center>
     `;
