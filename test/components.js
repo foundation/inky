@@ -45,7 +45,7 @@ describe('Center', () => {
 
     var expected = `
       <center data-parsed="">
-        <table class="menu text-center" align="center">
+        <table class="menu float-center" align="center">
           <tr>
             <td>
               <table>
