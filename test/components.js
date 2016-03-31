@@ -261,3 +261,20 @@ describe('Spacer', () => {
     compare(input, expected);
   });
 });
+
+describe('wrapper', () => {
+  it('creates a wrapper that you can attach classes to', () => {
+    var input = `<wrapper class="header"></wrapper>`;
+    var expected = `
+      <table class="wrapper header">
+        <tbody>
+          <tr>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+});
