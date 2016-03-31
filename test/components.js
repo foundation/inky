@@ -267,11 +267,9 @@ describe('wrapper', () => {
     var input = `<wrapper class="header"></wrapper>`;
     var expected = `
       <table class="wrapper header">
-        <tbody>
-          <tr>
-            <td class="wrapper-inner"></td>
-          </tr>
-        </tbody>
+        <tr>
+          <td class="wrapper-inner"></td>
+        </tr>
       </table>
     `;
 
