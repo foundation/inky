@@ -269,7 +269,7 @@ describe('wrapper', () => {
       <table class="wrapper header">
         <tbody>
           <tr>
-            <td></td>
+            <td class="wrapper-inner"></td>
           </tr>
         </tbody>
       </table>
