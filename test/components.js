@@ -266,7 +266,7 @@ describe('wrapper', () => {
   it('creates a wrapper that you can attach classes to', () => {
     var input = `<wrapper class="header"></wrapper>`;
     var expected = `
-      <table class="wrapper header">
+      <table class="wrapper header" align="center">
         <tr>
           <td class="wrapper-inner"></td>
         </tr>
