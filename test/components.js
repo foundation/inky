@@ -1,7 +1,7 @@
 var compare = require('./lib/compare');
 
 describe('Center', () => {
-  it('applies a text-center class and center alignment attribute to the first child', () => {
+  it('applies a float-center class and center alignment attribute to the first child', () => {
     var input = `
       <center>
         <div></div>

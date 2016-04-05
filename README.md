@@ -111,6 +111,30 @@ Here are the names of the defaults:
 }
 ```
 
+## Extending and Creating Elements
+
+You can extend current elements or create new ones.
+
+```js
+var Inky = require('inky').Inky;
+var format = require('util').format;
+
+Inky.prototype.componentLibrary.box = function (element) {
+  var classes = ['container'];
+  if (element.attr('class')) {
+    classes = classes.concat(element.attr('class').split(' '));
+  }
+
+  return format('<table class="box-wrapper"><tbody><tr><td><table class="%s"><tbody><tr><td>%s</td></tr></tbody></table></td></tr></tbody></table>', classes.join(' '), element.html());
+};
+
+var inky = new Inky({
+  components: {
+    box: 'box'
+  }
+});
+```
+
 ## Programmatic Use
 
 The Inky parser can be accessed directly for programmatic use. It takes in a [Cheerio](https://github.com/cheeriojs/cheerio) object of HTML, and gives you back a converted Cheerio object.
