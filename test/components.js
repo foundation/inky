@@ -85,6 +85,25 @@ describe('Button', () => {
     compare(input, expected);
   });
 
+  it('creates a button with target="_blank"', () => {
+    var input = '<button href="http://zurb.com" target="_blank">Button</button>';
+    var expected = `
+      <table class="button">
+        <tr>
+          <td>
+            <table>
+              <tr>
+                <td><a href="http://zurb.com" target="_blank">Button</a></td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+
   it('creates a button with classes', () => {
     var input = `
       <button class="small alert" href="http://zurb.com">Button</button>
@@ -229,7 +248,7 @@ describe('Callout', () => {
     compare(input, expected);
   });
 });
-  
+
 describe('Spacer', () => {
   it('creates a spacer element with correct size', () => {
     var input = '<spacer size="10"></spacer>';
@@ -245,7 +264,7 @@ describe('Spacer', () => {
 
     compare(input, expected);
   });
-  
+
   it('copies classes to the final spacer HTML', () => {
     var input = '<spacer size="10" class="bgcolor"></spacer>';
     var expected = `
