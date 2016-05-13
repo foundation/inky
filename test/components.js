@@ -295,3 +295,18 @@ describe('wrapper', () => {
     compare(input, expected);
   });
 });
+
+describe('h-line', () => {
+  it('creates a horizontal rule that you can attach classes to', () => {
+    var input = `<h-line class="dotted">`;
+    var expected = `
+      <table class="h-line dotted">
+        <tr>
+          <th>&nbsp;</th>
+        </tr>
+      </table>
+    `;
+ 
+    compare(input, expected);
+  });
+});
