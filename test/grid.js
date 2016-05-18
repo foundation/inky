@@ -75,6 +75,52 @@ describe('Grid', () => {
     compare(input, expected);
   });
 
+  it('creates a single column with first and last classes with no-expander', function () {
+    var input = '<columns large="12" small="12" no-expander>One</columns>';
+    var expected = `
+      <th class="small-12 large-12 columns first last">
+        <table>
+          <tr>
+            <th>One</th>
+          </tr>
+        </table>
+      </th>
+    `;
+
+  compare(input, expected);
+  });
+
+  it('creates a single column with first and last classes with no-expander="false"', function () {
+    var input = '<columns large="12" small="12" no-expander="false">One</columns>';
+    var expected = `
+      <th class="small-12 large-12 columns first last">
+        <table>
+          <tr>
+            <th>One</th>
+            <th class="expander"></th>
+          </tr>
+        </table>
+      </th>
+    `;
+
+  compare(input, expected);
+  });
+
+  it('creates a single column with first and last classes with no-expander="true"', function () {
+    var input = '<columns large="12" small="12" no-expander="true">One</columns>';
+    var expected = `
+      <th class="small-12 large-12 columns first last">
+        <table>
+          <tr>
+            <th>One</th>
+          </tr>
+        </table>
+      </th>
+    `;
+
+  compare(input, expected);
+  });
+
   it('creates two columns, one first, one last', function () {
     var input = `
       <columns large="6" small="12">One</columns>
