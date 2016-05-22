@@ -34,8 +34,17 @@ module.exports = function(opts, cb) {
   // This transform function takes in a Vinyl HTML file, converts the code from Inky to HTML, and returns the modified file.
   function transform() {
     return through.obj(function(file, enc, callback) {
+      // Load html from file as Cheerio object
       var html = cheerio.load(file.contents.toString(), opts.cheerio);
-      var convertedHtml = inky.releaseTheKraken(html).html();
+
+      // Convert the custom inky elements into regular html elements
+      var convertedHtml = inky.releaseTheKraken(html);
+
+      // Remove data-parsed attributes created from conversion process
+      convertedHtml('[data-parsed]').removeAttr('data-parsed');
+
+      // Convert Cheerio object back to html
+      convertedHtml = convertedHtml.html();
 
       file.contents = new Buffer(convertedHtml);
 
