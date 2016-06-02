@@ -47,7 +47,22 @@ describe('Inky', () => {
       <table class="container">
         <tbody>
           <tr>
-            <td>This is a link t&#xF6; <a href="#">ZURB.com</a>.</td>
+            <td>This is a link tö <a href="#">ZURB.com</a>.</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+
+  it(`doesn't convert these characters into entities`, () => {
+    var input = "<container>There's &nbsp; some amazing things here!</container>";
+    var expected = `
+      <table class="container">
+        <tbody>
+          <tr>
+            <td>There's &nbsp; some amazing things here!</td>
           </tr>
         </tbody>
       </table>
