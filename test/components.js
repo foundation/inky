@@ -246,6 +246,58 @@ describe('Spacer', () => {
     compare(input, expected);
   });
   
+  it('creates a spacer element for small screens with correct size', () => {
+    var input = '<spacer size-sm="10"></spacer>';
+    var expected = `
+      <table class="spacer hide-for-large">
+        <tbody>
+          <tr>
+            <td height="10px" style="font-size:10px;line-height:10px;">&#xA0;</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+  
+  it('creates a spacer element for large screens with correct size', () => {
+    var input = '<spacer size-lg="20"></spacer>';
+    var expected = `
+      <table class="spacer show-for-large">
+        <tbody>
+          <tr>
+            <td height="20px" style="font-size:20px;line-height:20px;">&#xA0;</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+  
+  it('creates a spacer element for small and large screens with correct sizes', () => {
+    var input = '<spacer size-sm="10" size-lg="20"></spacer>';
+    var expected = `
+      <table class="spacer hide-for-large">
+        <tbody>
+          <tr>
+            <td height="10px" style="font-size:10px;line-height:10px;">&#xA0;</td>
+          </tr>
+        </tbody>
+      </table>
+      <table class="spacer show-for-large">
+        <tbody>
+          <tr>
+            <td height="20px" style="font-size:20px;line-height:20px;">&#xA0;</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+  
   it('copies classes to the final spacer HTML', () => {
     var input = '<spacer size="10" class="bgcolor"></spacer>';
     var expected = `
