@@ -272,6 +272,22 @@ describe('Grid', () => {
 
     compare(input, expected);
   });
+
+  it('transfers attributes to the final HTML', () => {
+    var input = '<columns dir="rtl" valign="middle">One</columns>';
+    var expected = `
+      <th class="small-12 large-12 columns first last" dir="rtl" valign="middle">
+        <table>
+          <tr>
+            <th>One</th>
+            <th class="expander"></th>
+          </tr>
+        </table>
+      </th>
+    `;
+
+    compare(input, expected)
+  });
 });
 
 describe('Block Grid', () => {
