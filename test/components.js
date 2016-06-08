@@ -45,7 +45,7 @@ describe('Center', () => {
 
     var expected = `
       <center data-parsed="">
-        <table class="menu float-center" align="center">
+        <table align="center" class="menu float-center">
           <tr>
             <td>
               <table>
@@ -75,6 +75,25 @@ describe('Button', () => {
             <table>
               <tr>
                 <td><a href="http://zurb.com">Button</a></td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+
+  it('creates a button with target="_blank"', () => {
+    var input = '<button href="http://zurb.com" target="_blank">Button</button>';
+    var expected = `
+      <table class="button">
+        <tr>
+          <td>
+            <table>
+              <tr>
+                <td><a href="http://zurb.com" target="_blank">Button</a></td>
               </tr>
             </table>
           </td>
@@ -229,7 +248,7 @@ describe('Callout', () => {
     compare(input, expected);
   });
 });
-  
+
 describe('Spacer', () => {
   it('creates a spacer element with correct size', () => {
     var input = '<spacer size="10"></spacer>';
