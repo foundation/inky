@@ -295,3 +295,18 @@ describe('wrapper', () => {
     compare(input, expected);
   });
 });
+
+describe('hr', () => {
+  it('creates a horizontal rule that you can attach classes to', () => {
+    var input = `<hr class="dotted">`;
+    var expected = `
+      <table class="hr dotted">
+        <tr>
+          <th></th>
+        </tr>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+});
