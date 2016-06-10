@@ -78,6 +78,7 @@ describe('Button', () => {
               </tr>
             </table>
           </td>
+          <td class="button-spacer"></td>
         </tr>
       </table>
     `;
@@ -97,6 +98,7 @@ describe('Button', () => {
               </tr>
             </table>
           </td>
+          <td class="button-spacer"></td>
         </tr>
       </table>
     `;
@@ -118,6 +120,7 @@ describe('Button', () => {
               </tr>
             </table>
           </td>
+          <td class="button-spacer"></td>
         </tr>
       </table>
     `;
@@ -142,6 +145,7 @@ describe('Button', () => {
             </table>
           </td>
           <td class="expander"></td>
+          <td class="button-spacer"></td>
         </tr>
       </table>
     `;
