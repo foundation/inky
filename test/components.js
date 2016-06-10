@@ -302,7 +302,7 @@ describe('hr', () => {
     var expected = `
       <table class="hr dotted">
         <tr>
-          <th></th>
+          <th>&nbsp;</th>
         </tr>
       </table>
     `;
