@@ -86,6 +86,13 @@ describe('Inky', () => {
     compare(input, expected, { decodeEntities: false });
   });
 
+  it(`doesn't decode entities if non default cheerio config is given in nested center elements`, () => {
+    var input = '<center>"should not replace quotes"</center>';
+    var expected = `<center data-parsed="">"should not replace quotes"</center>`;
+
+    compare(input, expected, { decodeEntities: false });
+  });
+
 });
 
 describe('Inky wrappers', () => {
