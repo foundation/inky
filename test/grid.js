@@ -16,7 +16,7 @@ describe('Container', () => {
       <html>
         <head></head>
         <body>
-          <table class="container">
+          <table align="center" class="container">
             <tbody>
               <tr>
                 <td></td>
@@ -32,7 +32,7 @@ describe('Container', () => {
   it('creates a container table', () => {
     var input = '<container></container>';
     var expected = `
-      <table class="container">
+      <table align="center" class="container">
         <tbody>
           <tr>
             <td></td>
