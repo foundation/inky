@@ -85,7 +85,7 @@ describe('Button', () => {
     compare(input, expected);
   });
 
-  it('creates a button with target="_blank"', () => {
+  it('creates a button with target="_blank" attribute', () => {
     var input = '<button href="http://zurb.com" target="_blank">Button</button>';
     var expected = `
       <table class="button">
@@ -164,6 +164,29 @@ describe('Menu', () => {
             <table>
               <tr>
                 <th class="menu-item"><a href="http://zurb.com">Item</a></th>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+
+  it('creates a menu with items tags inside, containing target="_blank" attribute', () => {
+    var input = `
+      <menu>
+        <item href="http://zurb.com" target="_blank">Item</item>
+      </menu>
+    `;
+    var expected = `
+      <table class="menu">
+        <tr>
+          <td>
+            <table>
+              <tr>
+                <th class="menu-item"><a href="http://zurb.com" target="_blank">Item</a></th>
               </tr>
             </table>
           </td>
@@ -264,7 +287,7 @@ describe('Spacer', () => {
 
     compare(input, expected);
   });
-  
+
   it('creates a spacer element for small screens with correct size', () => {
     var input = '<spacer size-sm="10"></spacer>';
     var expected = `
@@ -279,7 +302,7 @@ describe('Spacer', () => {
 
     compare(input, expected);
   });
-  
+
   it('creates a spacer element for large screens with correct size', () => {
     var input = '<spacer size-lg="20"></spacer>';
     var expected = `
@@ -294,7 +317,7 @@ describe('Spacer', () => {
 
     compare(input, expected);
   });
-  
+
   it('creates a spacer element for small and large screens with correct sizes', () => {
     var input = '<spacer size-sm="10" size-lg="20"></spacer>';
     var expected = `
@@ -316,7 +339,7 @@ describe('Spacer', () => {
 
     compare(input, expected);
   });
-  
+
   it('copies classes to the final spacer HTML', () => {
     var input = '<spacer size="10" class="bgcolor"></spacer>';
     var expected = `
