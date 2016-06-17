@@ -86,6 +86,20 @@ describe('Inky', () => {
     compare(input, expected, { decodeEntities: false });
   });
 
+  it(`doesn't muck with stuff inside raw`, () => {
+    var input = '<raw><%= test %></raw>';
+    var expected = '<%= test %>';
+
+    compare(input, expected);
+  });
+
+  it(`can handle multiple raw tags`, () => {
+    var input = '<h1><raw><%= test %></raw></h1><h2>< raw >!!!</ raw ></h2>';
+    var expected = '<h1><%= test %></h1><h2>!!!</h2>';
+
+    compare(input, expected);
+  });
+
 });
 
 describe('Inky wrappers', () => {
