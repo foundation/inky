@@ -16,7 +16,7 @@ describe('Container', () => {
       <html>
         <head></head>
         <body>
-          <table class="container">
+          <table align="center" class="container">
             <tbody>
               <tr>
                 <td></td>
@@ -32,7 +32,7 @@ describe('Container', () => {
   it('creates a container table', () => {
     var input = '<container></container>';
     var expected = `
-      <table class="container">
+      <table align="center" class="container">
         <tbody>
           <tr>
             <td></td>
@@ -73,6 +73,52 @@ describe('Grid', () => {
     `;
 
     compare(input, expected);
+  });
+
+  it('creates a single column with first and last classes with no-expander', function () {
+    var input = '<columns large="12" small="12" no-expander>One</columns>';
+    var expected = `
+      <th class="small-12 large-12 columns first last">
+        <table>
+          <tr>
+            <th>One</th>
+          </tr>
+        </table>
+      </th>
+    `;
+
+  compare(input, expected);
+  });
+
+  it('creates a single column with first and last classes with no-expander="false"', function () {
+    var input = '<columns large="12" small="12" no-expander="false">One</columns>';
+    var expected = `
+      <th class="small-12 large-12 columns first last">
+        <table>
+          <tr>
+            <th>One</th>
+            <th class="expander"></th>
+          </tr>
+        </table>
+      </th>
+    `;
+
+  compare(input, expected);
+  });
+
+  it('creates a single column with first and last classes with no-expander="true"', function () {
+    var input = '<columns large="12" small="12" no-expander="true">One</columns>';
+    var expected = `
+      <th class="small-12 large-12 columns first last">
+        <table>
+          <tr>
+            <th>One</th>
+          </tr>
+        </table>
+      </th>
+    `;
+
+  compare(input, expected);
   });
 
   it('creates two columns, one first, one last', function () {
@@ -225,6 +271,28 @@ describe('Grid', () => {
     `;
 
     compare(input, expected);
+  });
+
+  it('transfers attributes to the final HTML', () => {
+    var input = '<row dir="rtl"><columns dir="rtl" valign="middle" align="center">One</columns></row>';
+    var expected = `
+      <table dir="rtl" class="row">
+        <tbody>
+          <tr>
+            <th class="small-12 large-12 columns first last" dir="rtl" valign="middle" align="center">
+              <table>
+                <tr>
+                  <th>One</th>
+                  <th class="expander"></th>
+                </tr>
+              </table>
+            </th>
+          </tr>
+        </tbody>
+      </table>
+    `;
+
+    compare(input, expected)
   });
 });
 

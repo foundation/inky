@@ -45,7 +45,7 @@ describe('Center', () => {
 
     var expected = `
       <center data-parsed="">
-        <table class="menu float-center" align="center">
+        <table align="center" class="menu float-center">
           <tr>
             <td>
               <table>
@@ -75,6 +75,25 @@ describe('Button', () => {
             <table>
               <tr>
                 <td><a href="http://zurb.com">Button</a></td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+
+  it('creates a button with target="_blank" attribute', () => {
+    var input = '<button href="http://zurb.com" target="_blank">Button</button>';
+    var expected = `
+      <table class="button">
+        <tr>
+          <td>
+            <table>
+              <tr>
+                <td><a href="http://zurb.com" target="_blank">Button</a></td>
               </tr>
             </table>
           </td>
@@ -145,6 +164,29 @@ describe('Menu', () => {
             <table>
               <tr>
                 <th class="menu-item"><a href="http://zurb.com">Item</a></th>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+
+  it('creates a menu with items tags inside, containing target="_blank" attribute', () => {
+    var input = `
+      <menu>
+        <item href="http://zurb.com" target="_blank">Item</item>
+      </menu>
+    `;
+    var expected = `
+      <table class="menu">
+        <tr>
+          <td>
+            <table>
+              <tr>
+                <th class="menu-item"><a href="http://zurb.com" target="_blank">Item</a></th>
               </tr>
             </table>
           </td>
@@ -229,7 +271,7 @@ describe('Callout', () => {
     compare(input, expected);
   });
 });
-  
+
 describe('Spacer', () => {
   it('creates a spacer element with correct size', () => {
     var input = '<spacer size="10"></spacer>';
@@ -245,7 +287,59 @@ describe('Spacer', () => {
 
     compare(input, expected);
   });
-  
+
+  it('creates a spacer element for small screens with correct size', () => {
+    var input = '<spacer size-sm="10"></spacer>';
+    var expected = `
+      <table class="spacer hide-for-large">
+        <tbody>
+          <tr>
+            <td height="10px" style="font-size:10px;line-height:10px;">&#xA0;</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+
+  it('creates a spacer element for large screens with correct size', () => {
+    var input = '<spacer size-lg="20"></spacer>';
+    var expected = `
+      <table class="spacer show-for-large">
+        <tbody>
+          <tr>
+            <td height="20px" style="font-size:20px;line-height:20px;">&#xA0;</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+
+  it('creates a spacer element for small and large screens with correct sizes', () => {
+    var input = '<spacer size-sm="10" size-lg="20"></spacer>';
+    var expected = `
+      <table class="spacer hide-for-large">
+        <tbody>
+          <tr>
+            <td height="10px" style="font-size:10px;line-height:10px;">&#xA0;</td>
+          </tr>
+        </tbody>
+      </table>
+      <table class="spacer show-for-large">
+        <tbody>
+          <tr>
+            <td height="20px" style="font-size:20px;line-height:20px;">&#xA0;</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+
   it('copies classes to the final spacer HTML', () => {
     var input = '<spacer size="10" class="bgcolor"></spacer>';
     var expected = `
