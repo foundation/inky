@@ -370,3 +370,12 @@ describe('wrapper', () => {
     compare(input, expected);
   });
 });
+
+describe('raw', () => {
+  it('creates a wrapper that ignores anything inside', () => {
+    var input = `<raw><<LCG Program\TG LCG Coupon Code Default='246996'>></raw>`;
+    var expected = `<<LCG Program\TG LCG Coupon Code Default='246996'>>`;
+
+    compare(input, expected);
+  });
+});
