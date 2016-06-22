@@ -288,6 +288,22 @@ describe('Spacer', () => {
     compare(input, expected);
   });
 
+
+  it('creates a spacer with a default size or no size defined', () => {
+    var input = '<spacer></spacer>';
+    var expected = `
+      <table class="spacer">
+        <tbody>
+          <tr>
+            <td height="16px" style="font-size:16px;line-height:16px;">&#xA0;</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+
+    compare(input, expected);
+  });
+
   it('creates a spacer element for small screens with correct size', () => {
     var input = '<spacer size-sm="10"></spacer>';
     var expected = `
