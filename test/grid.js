@@ -64,10 +64,12 @@ describe('Grid', () => {
     var expected = `
       <th class="small-12 large-12 columns first last">
         <table>
-          <tr>
-            <th>One</th>
-            <th class="expander"></th>
-          </tr>
+          <tbody>
+            <tr>
+              <th>One</th>
+              <th class="expander"></th>
+            </tr>
+          </tbody>
         </table>
       </th>
     `;
@@ -80,9 +82,11 @@ describe('Grid', () => {
     var expected = `
       <th class="small-12 large-12 columns first last">
         <table>
-          <tr>
-            <th>One</th>
-          </tr>
+          <tbody>
+            <tr>
+              <th>One</th>
+            </tr>
+          </tbody>
         </table>
       </th>
     `;
@@ -95,10 +99,12 @@ describe('Grid', () => {
     var expected = `
       <th class="small-12 large-12 columns first last">
         <table>
-          <tr>
-            <th>One</th>
-            <th class="expander"></th>
-          </tr>
+          <tbody>
+            <tr>
+              <th>One</th>
+              <th class="expander"></th>
+            </tr>
+          </tbody>
         </table>
       </th>
     `;
@@ -111,9 +117,11 @@ describe('Grid', () => {
     var expected = `
       <th class="small-12 large-12 columns first last">
         <table>
-          <tr>
-            <th>One</th>
-          </tr>
+          <tbody>
+            <tr>
+              <th>One</th>
+            </tr>
+          </tbody>
         </table>
       </th>
     `;
@@ -129,16 +137,20 @@ describe('Grid', () => {
     var expected = `
       <th class="small-12 large-6 columns first">
         <table>
-          <tr>
-            <th>One</th>
-          </tr>
+          <tbody>
+            <tr>
+              <th>One</th>
+            </tr>
+          </tbody>
         </table>
       </th>
       <th class="small-12 large-6 columns last">
         <table>
-          <tr>
-            <th>Two</th>
-          </tr>
+          <tbody>
+            <tr>
+              <th>Two</th>
+            </tr>
+          </tbody>
         </table>
       </th>
     `;
@@ -155,23 +167,29 @@ describe('Grid', () => {
     var expected = `
       <th class="small-12 large-4 columns first">
         <table>
-          <tr>
-            <th>One</th>
-          </tr>
+          <tbody>
+            <tr>
+              <th>One</th>
+            </tr>
+          </tbody>
         </table>
       </th>
       <th class="small-12 large-4 columns">
         <table>
-          <tr>
-            <th>Two</th>
-          </tr>
+          <tbody>
+            <tr>
+              <th>Two</th>
+            </tr>
+          </tbody>
         </table>
       </th>
       <th class="small-12 large-4 columns last">
         <table>
-          <tr>
-            <th>Three</th>
-          </tr>
+          <tbody>
+            <tr>
+              <th>Three</th>
+            </tr>
+          </tbody>
         </table>
       </th>
     `;
@@ -184,10 +202,12 @@ describe('Grid', () => {
     var expected = `
       <th class="small-offset-8 hide-for-small small-12 large-12 columns first last">
         <table>
-          <tr>
-            <th>One</th>
-            <th class="expander"></th>
-          </tr>
+          <tbody>
+            <tr>
+              <th>One</th>
+              <th class="expander"></th>
+            </tr>
+          </tbody>
         </table>
       </th>
     `;
@@ -204,16 +224,20 @@ describe('Grid', () => {
     var expected = `
       <th class="small-4 large-4 columns first">
         <table>
-          <tr>
-            <th>One</th>
-          </tr>
+          <tbody>
+            <tr>
+              <th>One</th>
+            </tr>
+          </tbody>
         </table>
       </th>
       <th class="small-8 large-8 columns last">
         <table>
-          <tr>
-            <th>Two</th>
-          </tr>
+          <tbody>
+            <tr>
+              <th>Two</th>
+            </tr>
+          </tbody>
         </table>
       </th>
     `;
@@ -229,16 +253,20 @@ describe('Grid', () => {
     var expected = `
       <th class="small-12 large-4 columns first">
         <table>
-          <tr>
-            <th>One</th>
-          </tr>
+          <tbody>
+            <tr>
+              <th>One</th>
+            </tr>
+          </tbody>
         </table>
       </th>
       <th class="small-12 large-8 columns last">
         <table>
-          <tr>
-            <th>Two</th>
-          </tr>
+          <tbody>
+            <tr>
+              <th>Two</th>
+            </tr>
+          </tbody>
         </table>
       </th>
     `;
@@ -254,15 +282,17 @@ describe('Grid', () => {
           <tr>
             <th class="small-12 large-12 columns first last">
               <table>
-                <tr>
-                  <th>
-                    <table class="row">
-                      <tbody>
-                        <tr></tr>
-                      </tbody>
-                    </table>
-                  </th>
-                </tr>
+                <tbody>
+                  <tr>
+                    <th>
+                      <table class="row">
+                        <tbody>
+                          <tr></tr>
+                        </tbody>
+                      </table>
+                    </th>
+                  </tr>
+                </tbody>
               </table>
             </th>
           </tr>
@@ -281,10 +311,12 @@ describe('Grid', () => {
           <tr>
             <th class="small-12 large-12 columns first last" dir="rtl" valign="middle" align="center">
               <table>
-                <tr>
-                  <th>One</th>
-                  <th class="expander"></th>
-                </tr>
+                <tbody>
+                  <tr>
+                    <th>One</th>
+                    <th class="expander"></th>
+                  </tr>
+                </tbody>
               </table>
             </th>
           </tr>
@@ -301,7 +333,9 @@ describe('Block Grid', () => {
     var input = '<block-grid up="4"></block-grid>';
     var expected = `
       <table class="block-grid up-4">
-        <tr></tr>
+        <tbody>
+          <tr></tr>
+        </tbody>
       </table>
     `;
 
@@ -312,7 +346,9 @@ describe('Block Grid', () => {
     var input = '<block-grid up="4" class="show-for-large"></block-grid>';
     var expected = `
       <table class="block-grid up-4 show-for-large">
-        <tr></tr>
+        <tbody>
+          <tr></tr>
+        </tbody>
       </table>
     `;
 
