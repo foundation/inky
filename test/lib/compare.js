@@ -10,7 +10,8 @@ var htmlEqual = require('assert-html-equal');
  */
 module.exports = function compare(input, expected, cheerioOpts) {
   var inky = new Inky();
-  var output = inky.releaseTheKraken(input, cheerioOpts);
+  var $ = cheerio.load(input, Inky.mergeCheerioOpts(cheerioOpts));
+  var output = inky.releaseTheKraken($).html();
 
   htmlEqual(output, expected);
 }
