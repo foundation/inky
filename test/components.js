@@ -397,6 +397,9 @@ describe('h-line', () => {
         </tr>
       </table>
     `;
+     compare(input, expected);
+  });
+});
  
 describe('raw', () => {
   it('creates a wrapper that ignores anything inside', () => {
