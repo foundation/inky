@@ -20,6 +20,18 @@ describe('Inky', () => {
     assert.equal(inky.components.column, 'col', 'Sets custom component tags');
     assert.equal(inky.columnCount, 16, 'Sets a custom column count');
   });
+  it('runs postbuild before re-injecting raws', () => {
+    var string = '<body><raw>FOO</raw></body>'
+    var config = {
+      postBuild: function(string) {
+        assert(!string.match(/FOO/));
+        return string;
+      }
+    }
+
+    var inky = new Inky(config);
+    inky.releaseTheKraken(string);
+  });
 
   it('should have an array of component tags', () => {
     var inky = new Inky();
