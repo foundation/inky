@@ -35,20 +35,21 @@ module.exports = function(opts, cb) {
   function transform() {
     return through.obj(function(file, enc, callback) {
       
-      var convertedHtml = inky.releaseTheKraken(file.contents.toString(), opts.cheerio);
+      inky.releaseTheKraken(file.contents.toString(), opts.cheerio, function(convertedHtml) {
 
-      file.contents = new Buffer(convertedHtml);
+        file.contents = new Buffer(convertedHtml);
 
-      // Write to disk manually if the user specified it
-      if (opts.dest) {
-        var outputPath = path.join(opts.dest, path.basename(file.path));
-        mkdirp(opts.dest, function() {
-          fs.writeFile(outputPath, convertedHtml, callback);
-        });
-      }
-      else {
-        callback(null, file);
-      }
+        // Write to disk manually if the user specified it
+        if (opts.dest) {
+          var outputPath = path.join(opts.dest, path.basename(file.path));
+          mkdirp(opts.dest, function() {
+            fs.writeFile(outputPath, convertedHtml, callback);
+          });
+        }
+        else {
+          callback(null, file);
+        }
+      });
     });
   }
 }

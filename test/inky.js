@@ -30,7 +30,8 @@ describe('Inky', () => {
     }
 
     var inky = new Inky(config);
-    inky.releaseTheKraken(string);
+    inky.releaseTheKraken(string, {}, function() {
+    });
   });
 
   it('should have an array of component tags', () => {
