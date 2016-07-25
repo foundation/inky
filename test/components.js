@@ -8,7 +8,7 @@ describe('Center', () => {
       </center>
     `;
     var expected = `
-      <center data-parsed="">
+      <center>
         <div align="center" class="float-center"></div>
       </center>
     `;
@@ -25,8 +25,8 @@ describe('Center', () => {
     `;
 
     var expected = `
-      <center data-parsed="">
-        <center align="center" class="float-center" data-parsed="">
+      <center>
+        <center align="center" class="float-center">
         </center>
       </center>
     `;
@@ -44,7 +44,7 @@ describe('Center', () => {
     `;
 
     var expected = `
-      <center data-parsed="">
+      <center>
         <table align="center" class="menu float-center">
           <tr>
             <td>
@@ -136,7 +136,7 @@ describe('Button', () => {
             <table>
               <tr>
                 <td>
-                  <center data-parsed=""><a href="http://zurb.com" align="center" class="float-center">Button</a></center>
+                  <center><a href="http://zurb.com" align="center" class="float-center">Button</a></center>
                 </td>
               </tr>
             </table>
