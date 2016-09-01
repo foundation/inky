@@ -3,7 +3,7 @@ var Inky = require('../lib/inky');
 
 var inky;
 
-var setupInky = function(opts, cb) {
+window.setupInky = function(opts, cb) {
   opts = opts || {};
   opts.cheerio = Inky.mergeCheerioOpts(opts.cheerio);
   if (typeof inky === 'undefined') {
@@ -25,7 +25,7 @@ if(typeof(window) !== 'undefined') {
       elem = opts;
       opts = {};
     }
-    setupInky(opts, function(transform) {
+    window.setupInky(opts, function(transform) {
       transform(elem.outerHTML, function(err, html) {
         if(err === null) {
           elem.outerHTML = html;
