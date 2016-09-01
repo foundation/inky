@@ -35,5 +35,9 @@ if(typeof(window) !== 'undefined') {
       });
     });
   }
+  var elems = document.body.getElementsByTagName('container')
+  for(var i = 0; i < elems.length; i++) {
+    window.runInky(elems[i]);
+  }
 }
 
