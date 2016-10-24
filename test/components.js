@@ -387,6 +387,20 @@ describe('wrapper', () => {
   });
 });
 
+describe('h-line', () => {
+  it('creates a horizontal rule that you can attach classes to', () => {
+    var input = `<h-line class="dotted">`;
+    var expected = `
+      <table class="h-line dotted">
+        <tr>
+          <th>&nbsp;</th>
+        </tr>
+      </table>
+    `;
+     compare(input, expected);
+  });
+});
+ 
 describe('raw', () => {
   it('creates a wrapper that ignores anything inside', () => {
     var input = `<raw><<LCG Program\TG LCG Coupon Code Default='246996'>></raw>`;
