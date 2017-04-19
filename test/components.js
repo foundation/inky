@@ -46,17 +46,21 @@ describe('Center', () => {
     var expected = `
       <center>
         <table align="center" class="menu float-center">
-          <tr>
-            <td>
-              <table>
-                <tr>
-                  <th class="menu-item float-center">
-                    <a href="#"></a>
-                  </th>
-                </tr>
-              </table>
-            </td>
-          </tr>
+          <tbody>
+            <tr>
+              <td>
+                <table>
+                  <tbody>
+                    <tr>
+                      <th class="menu-item float-center">
+                        <a href="#"></a>
+                      </th>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          </tbody>
         </table>
       </center>
     `;
@@ -70,15 +74,19 @@ describe('Button', () => {
     var input = '<button href="http://zurb.com">Button</button>';
     var expected = `
       <table class="button">
-        <tr>
-          <td>
-            <table>
-              <tr>
-                <td><a href="http://zurb.com">Button</a></td>
-              </tr>
-            </table>
-          </td>
-        </tr>
+        <tbody>
+          <tr>
+            <td>
+              <table>
+                <tbody>
+                  <tr>
+                    <td><a href="http://zurb.com">Button</a></td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </tbody>
       </table>
     `;
 
@@ -89,15 +97,19 @@ describe('Button', () => {
     var input = '<button href="http://zurb.com" target="_blank">Button</button>';
     var expected = `
       <table class="button">
-        <tr>
-          <td>
-            <table>
-              <tr>
-                <td><a href="http://zurb.com" target="_blank">Button</a></td>
-              </tr>
-            </table>
-          </td>
-        </tr>
+        <tbody>
+          <tr>
+            <td>
+              <table>
+                <tbody>
+                  <tr>
+                    <td><a href="http://zurb.com" target="_blank">Button</a></td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </tbody>
       </table>
     `;
 
@@ -110,15 +122,19 @@ describe('Button', () => {
     `;
     var expected = `
       <table class="button small alert">
-        <tr>
-          <td>
-            <table>
-              <tr>
-                <td><a href="http://zurb.com">Button</a></td>
-              </tr>
-            </table>
-          </td>
-        </tr>
+        <tbody>
+          <tr>
+            <td>
+              <table>
+                <tbody>
+                  <tr>
+                    <td><a href="http://zurb.com">Button</a></td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </tbody>
       </table>
     `;
 
@@ -131,18 +147,22 @@ describe('Button', () => {
     `;
     var expected = `
       <table class="button expand">
-        <tr>
-          <td>
-            <table>
-              <tr>
-                <td>
-                  <center><a href="http://zurb.com" align="center" class="float-center">Button</a></center>
-                </td>
-              </tr>
-            </table>
-          </td>
-          <td class="expander"></td>
-        </tr>
+        <tbody>
+          <tr>
+            <td>
+              <table>
+                <tbody>
+                  <tr>
+                    <td>
+                      <center><a href="http://zurb.com" align="center" class="float-center">Button</a></center>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+            <td class="expander"></td>
+          </tr>
+        </tbody>
       </table>
     `;
 
@@ -159,15 +179,19 @@ describe('Menu', () => {
     `;
     var expected = `
       <table class="menu">
-        <tr>
-          <td>
-            <table>
-              <tr>
-                <th class="menu-item"><a href="http://zurb.com">Item</a></th>
-              </tr>
-            </table>
-          </td>
-        </tr>
+        <tbody>
+          <tr>
+            <td>
+              <table>
+                <tbody>
+                  <tr>
+                    <th class="menu-item"><a href="http://zurb.com">Item</a></th>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </tbody>
       </table>
     `;
 
@@ -182,15 +206,19 @@ describe('Menu', () => {
     `;
     var expected = `
       <table class="menu">
-        <tr>
-          <td>
-            <table>
-              <tr>
-                <th class="menu-item"><a href="http://zurb.com" target="_blank">Item</a></th>
-              </tr>
-            </table>
-          </td>
-        </tr>
+        <tbody>
+          <tr>
+            <td>
+              <table>
+                <tbody>
+                  <tr>
+                    <th class="menu-item"><a href="http://zurb.com" target="_blank">Item</a></th>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </tbody>
       </table>
     `;
 
@@ -204,14 +232,18 @@ describe('Menu', () => {
     `;
     var expected = `
       <table class="menu vertical">
-        <tr>
-          <td>
-            <table>
-              <tr>
-              </tr>
-            </table>
-          </td>
-        </tr>
+        <tbody>
+          <tr>
+            <td>
+              <table>
+                <tbody>
+                  <tr>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </tbody>
       </table>
     `;
 
@@ -226,15 +258,19 @@ describe('Menu', () => {
     `;
     var expected = `
       <table class="menu">
-        <tr>
-          <td>
-            <table>
-              <tr>
-                <th class="menu-item"><a href="http://zurb.com">Item 1</a></th>
-              </tr>
-            </table>
-          </td>
-        </tr>
+        <tbody>
+          <tr>
+            <td>
+              <table>
+                <tbody>
+                  <tr>
+                    <th class="menu-item"><a href="http://zurb.com">Item 1</a></th>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </tbody>
       </table>
     `;
 
@@ -247,10 +283,12 @@ describe('Callout', () => {
     var input = '<callout>Callout</callout>';
     var expected = `
       <table class="callout">
-        <tr>
-          <th class="callout-inner">Callout</th>
-          <th class="expander"></th>
-        </tr>
+        <tbody>
+          <tr>
+            <th class="callout-inner">Callout</th>
+            <th class="expander"></th>
+          </tr>
+        </tbody>
       </table>
     `;
 
@@ -261,10 +299,12 @@ describe('Callout', () => {
     var input = '<callout class="primary">Callout</callout>';
     var expected = `
       <table class="callout">
-        <tr>
-          <th class="callout-inner primary">Callout</th>
-          <th class="expander"></th>
-        </tr>
+        <tbody>
+          <tr>
+            <th class="callout-inner primary">Callout</th>
+            <th class="expander"></th>
+          </tr>
+        </tbody>
       </table>
     `;
 
@@ -377,9 +417,11 @@ describe('wrapper', () => {
     var input = `<wrapper class="header"></wrapper>`;
     var expected = `
       <table class="wrapper header" align="center">
-        <tr>
-          <td class="wrapper-inner"></td>
-        </tr>
+        <tbody>
+          <tr>
+            <td class="wrapper-inner"></td>
+          </tr>
+        </tbody>
       </table>
     `;
 
