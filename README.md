@@ -84,6 +84,20 @@ inky src/pages/**/*.html dist --watch
 
 Doesn't support advanced settings at the moment.
 
+### In the browser / with browserify
+
+Include the dist/inky-browser.js script (`<script src="dist/inky-browser.js" charset="utf-8"></script>`) in a page to convert any inky <container> elements to html. Note that you'll want to include the script after any <container> elements on the page.
+
+Alternatively, you can browserify Inky yourself. Here's a Hello World example that can be browserified with `browserify inky.js -o inky.bundle.js`:
+
+```js
+//inky.js
+var Inky = require('inky/lib/inky.js')
+inky = new Inky()
+convertedHtml = inky.releaseTheKraken('<container> <row> <columns> <p>Hello World!</p> </columns> </row> </container>')
+console.log(convertedHtml)
+```
+
 ## Plugin Settings
 
 - `src` (String): Glob of files to process. You don't need to supply this when using Inky with Gulp.
