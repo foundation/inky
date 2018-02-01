@@ -11,7 +11,7 @@
   ],
   "main": "index.js",
   "scripts": {
-    "test": "mocha --compilers js:babel-register",
+    "test": "xo && mocha",
     "browser": "gulp browser"
   },
   "dependencies": {
@@ -25,15 +25,21 @@
   "devDependencies": {
     "assert-html-equal": "^1.0.0",
     "babel-preset-es2015": "^6.3.13",
-    "babel-register": "^6.4.3",
     "browserify": "^13.1.0",
     "chalk": "^1.1.1",
-    "gulp": "git+https://github.com/gulpjs/gulp.git#4.0",
+    "gulp": "^4.0.0",
     "gulp-uglify": "^2.0.0",
     "mocha": "^2.4.5",
     "rimraf": "^2.5.1",
     "vinyl-buffer": "^1.0.0",
-    "vinyl-source-stream": "^1.1.0"
+    "vinyl-source-stream": "^1.1.0",
+    "xo": "^0.18.2"
+  },
+  "engines": {
+    "node": ">=4"
+  },
+  "xo": {
+    "space": true
   },
   "repository": "https://github.com/zurb/inky.git",
   "bugs": "https://github.com/zurb/inky/issues",

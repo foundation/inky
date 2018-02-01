@@ -1,8 +1,12 @@
-var compare = require('./lib/compare');
+/* eslint-env mocha */
+
+'use strict';
+
+const compare = require('./lib/compare');
 
 describe('Container', () => {
   it('works when parsing a full HTML document', () => {
-    var input = `
+    const input = `
       <!doctype html>
       <html>
         <head></head>
@@ -11,7 +15,7 @@ describe('Container', () => {
         </body>
       </html>
     `;
-    var expected = `
+    const expected = `
       <!doctype html>
       <html>
         <head></head>
@@ -25,13 +29,13 @@ describe('Container', () => {
           </table>
         </body>
       </html>
-    `
+    `;
     compare(input, expected);
   });
 
   it('creates a container table', () => {
-    var input = '<container></container>';
-    var expected = `
+    const input = '<container></container>';
+    const expected = `
       <table align="center" class="container">
         <tbody>
           <tr>
@@ -47,8 +51,8 @@ describe('Container', () => {
 
 describe('Grid', () => {
   it('creates a row', () => {
-    var input = '<row></row>';
-    var expected =  `
+    const input = '<row></row>';
+    const expected = `
       <table class="row">
         <tbody>
           <tr></tr>
@@ -59,9 +63,9 @@ describe('Grid', () => {
     compare(input, expected);
   });
 
-  it('creates a single column with first and last classes', function () {
-    var input = '<columns large="12" small="12">One</columns>';
-    var expected = `
+  it('creates a single column with first and last classes', () => {
+    const input = '<columns large="12" small="12">One</columns>';
+    const expected = `
       <th class="small-12 large-12 columns first last">
         <table>
           <tbody>
@@ -77,9 +81,9 @@ describe('Grid', () => {
     compare(input, expected);
   });
 
-  it('creates a single column with first and last classes with no-expander', function () {
-    var input = '<columns large="12" small="12" no-expander>One</columns>';
-    var expected = `
+  it('creates a single column with first and last classes with no-expander', () => {
+    const input = '<columns large="12" small="12" no-expander>One</columns>';
+    const expected = `
       <th class="small-12 large-12 columns first last">
         <table>
           <tbody>
@@ -91,12 +95,12 @@ describe('Grid', () => {
       </th>
     `;
 
-  compare(input, expected);
+    compare(input, expected);
   });
 
-  it('creates a single column with first and last classes with no-expander="false"', function () {
-    var input = '<columns large="12" small="12" no-expander="false">One</columns>';
-    var expected = `
+  it('creates a single column with first and last classes with no-expander="false"', () => {
+    const input = '<columns large="12" small="12" no-expander="false">One</columns>';
+    const expected = `
       <th class="small-12 large-12 columns first last">
         <table>
           <tbody>
@@ -109,12 +113,12 @@ describe('Grid', () => {
       </th>
     `;
 
-  compare(input, expected);
+    compare(input, expected);
   });
 
-  it('creates a single column with first and last classes with no-expander="true"', function () {
-    var input = '<columns large="12" small="12" no-expander="true">One</columns>';
-    var expected = `
+  it('creates a single column with first and last classes with no-expander="true"', () => {
+    const input = '<columns large="12" small="12" no-expander="true">One</columns>';
+    const expected = `
       <th class="small-12 large-12 columns first last">
         <table>
           <tbody>
@@ -126,15 +130,15 @@ describe('Grid', () => {
       </th>
     `;
 
-  compare(input, expected);
+    compare(input, expected);
   });
 
-  it('creates two columns, one first, one last', function () {
-    var input = `
+  it('creates two columns, one first, one last', () => {
+    const input = `
       <columns large="6" small="12">One</columns>
       <columns large="6" small="12">Two</columns>
     `;
-    var expected = `
+    const expected = `
       <th class="small-12 large-6 columns first">
         <table>
           <tbody>
@@ -159,12 +163,12 @@ describe('Grid', () => {
   });
 
   it('creates 3+ columns, first is first, last is last', () => {
-    var input = `
+    const input = `
       <columns large="4" small="12">One</columns>
       <columns large="4" small="12">Two</columns>
       <columns large="4" small="12">Three</columns>
     `;
-    var expected = `
+    const expected = `
       <th class="small-12 large-4 columns first">
         <table>
           <tbody>
@@ -198,8 +202,8 @@ describe('Grid', () => {
   });
 
   it('transfers classes to the final HTML', () => {
-    var input = '<columns class="small-offset-8 hide-for-small">One</columns>';
-    var expected = `
+    const input = '<columns class="small-offset-8 hide-for-small">One</columns>';
+    const expected = `
       <th class="small-offset-8 hide-for-small small-12 large-12 columns first last">
         <table>
           <tbody>
@@ -212,16 +216,16 @@ describe('Grid', () => {
       </th>
     `;
 
-    compare(input, expected)
+    compare(input, expected);
   });
 
-  //if it just has small, borrow from small for large
+  // If it just has small, borrow from small for large
   it('automatically assigns large columns if no large attribute is assigned', () => {
-    var input = `
+    const input = `
       <columns small="4">One</columns>
       <columns small="8">Two</columns>
     `;
-    var expected = `
+    const expected = `
       <th class="small-4 large-4 columns first">
         <table>
           <tbody>
@@ -246,11 +250,11 @@ describe('Grid', () => {
   });
 
   it('automatically assigns small columns as full width if only large defined', () => {
-    var input = `
+    const input = `
       <columns large="4">One</columns>
       <columns large="8">Two</columns>
     `;
-    var expected = `
+    const expected = `
       <th class="small-12 large-4 columns first">
         <table>
           <tbody>
@@ -275,8 +279,8 @@ describe('Grid', () => {
   });
 
   it('supports nested grids', () => {
-    var input = '<row><columns><row></row></columns></row>'
-    var expected = `
+    const input = '<row><columns><row></row></columns></row>';
+    const expected = `
       <table class="row">
         <tbody>
           <tr>
@@ -304,8 +308,8 @@ describe('Grid', () => {
   });
 
   it('transfers attributes to the final HTML', () => {
-    var input = '<row dir="rtl"><columns dir="rtl" valign="middle" align="center">One</columns></row>';
-    var expected = `
+    const input = '<row dir="rtl"><columns dir="rtl" valign="middle" align="center">One</columns></row>';
+    const expected = `
       <table dir="rtl" class="row">
         <tbody>
           <tr>
@@ -324,14 +328,14 @@ describe('Grid', () => {
       </table>
     `;
 
-    compare(input, expected)
+    compare(input, expected);
   });
 });
 
 describe('Block Grid', () => {
   it('returns the correct block grid syntax', () => {
-    var input = '<block-grid up="4"></block-grid>';
-    var expected = `
+    const input = '<block-grid up="4"></block-grid>';
+    const expected = `
       <table class="block-grid up-4">
         <tbody>
           <tr></tr>
@@ -343,8 +347,8 @@ describe('Block Grid', () => {
   });
 
   it('copies classes to the final HTML output', () => {
-    var input = '<block-grid up="4" class="show-for-large"></block-grid>';
-    var expected = `
+    const input = '<block-grid up="4" class="show-for-large"></block-grid>';
+    const expected = `
       <table class="block-grid up-4 show-for-large">
         <tbody>
           <tr></tr>

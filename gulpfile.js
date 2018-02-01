@@ -1,11 +1,11 @@
-var browserify = require('browserify');
-var gulp = require('gulp');
-var source = require('vinyl-source-stream');
-var buffer = require('vinyl-buffer');
-var uglify = require('gulp-uglify');
+const browserify = require('browserify');
+const gulp = require('gulp');
+const source = require('vinyl-source-stream');
+const buffer = require('vinyl-buffer');
+const uglify = require('gulp-uglify');
 
-gulp.task('browser', function() {
-  var b = browserify({
+gulp.task('browser', () => {
+  const b = browserify({
     entries: 'bin/inky-browser.js',
     debug: false
   });

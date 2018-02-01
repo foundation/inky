@@ -1,13 +1,18 @@
-var compare = require('./lib/compare');
+/* eslint-env mocha */
+/* eslint-disable no-useless-escape */
+
+'use strict';
+
+const compare = require('./lib/compare');
 
 describe('Center', () => {
   it('applies a text-center class and center alignment attribute to the first child', () => {
-    var input = `
+    const input = `
       <center>
         <div></div>
       </center>
     `;
-    var expected = `
+    const expected = `
       <center>
         <div align="center" class="float-center"></div>
       </center>
@@ -17,14 +22,14 @@ describe('Center', () => {
   });
 
   it(`doesn't choke if center tags are nested`, () => {
-    var input = `
+    const input = `
       <center>
         <center>
         </center>
       </center>
     `;
 
-    var expected = `
+    const expected = `
       <center>
         <center align="center" class="float-center">
         </center>
@@ -35,7 +40,7 @@ describe('Center', () => {
   });
 
   it('applies the class float-center to <item> elements', () => {
-    var input = `
+    const input = `
       <center>
         <menu>
           <item href="#"></item>
@@ -43,7 +48,7 @@ describe('Center', () => {
       </center>
     `;
 
-    var expected = `
+    const expected = `
       <center>
         <table align="center" class="menu float-center">
           <tbody>
@@ -69,8 +74,8 @@ describe('Center', () => {
 
 describe('Button', () => {
   it('creates a simple button', () => {
-    var input = '<button href="http://zurb.com">Button</button>';
-    var expected = `
+    const input = '<button href="http://zurb.com">Button</button>';
+    const expected = `
       <table class="button">
         <tbody>
           <tr>
@@ -92,8 +97,8 @@ describe('Button', () => {
   });
 
   it('creates a button with target="_blank" attribute', () => {
-    var input = '<button href="http://zurb.com" target="_blank">Button</button>';
-    var expected = `
+    const input = '<button href="http://zurb.com" target="_blank">Button</button>';
+    const expected = `
       <table class="button">
         <tbody>
           <tr>
@@ -115,10 +120,10 @@ describe('Button', () => {
   });
 
   it('creates a button with classes', () => {
-    var input = `
+    const input = `
       <button class="small alert" href="http://zurb.com">Button</button>
     `;
-    var expected = `
+    const expected = `
       <table class="button small alert">
         <tbody>
           <tr>
@@ -140,10 +145,10 @@ describe('Button', () => {
   });
 
   it('creates a correct expanded button', () => {
-    var input = `
+    const input = `
       <button class="expand" href="http://zurb.com">Button</button>
     `;
-    var expected = `
+    const expected = `
       <table class="button expand">
         <tbody>
           <tr>
@@ -170,12 +175,12 @@ describe('Button', () => {
 
 describe('Menu', () => {
   it('creates a menu with item tags inside', () => {
-    var input = `
+    const input = `
       <menu>
         <item href="http://zurb.com">Item</item>
       </menu>
     `;
-    var expected = `
+    const expected = `
       <table class="menu">
         <tbody>
           <tr>
@@ -197,12 +202,12 @@ describe('Menu', () => {
   });
 
   it('creates a menu with items tags inside, containing target="_blank" attribute', () => {
-    var input = `
+    const input = `
       <menu>
         <item href="http://zurb.com" target="_blank">Item</item>
       </menu>
     `;
-    var expected = `
+    const expected = `
       <table class="menu">
         <tbody>
           <tr>
@@ -224,11 +229,11 @@ describe('Menu', () => {
   });
 
   it('creates a menu with classes', () => {
-    var input = `
+    const input = `
       <menu class="vertical">
       </menu>
     `;
-    var expected = `
+    const expected = `
       <table class="menu vertical">
         <tbody>
           <tr>
@@ -249,12 +254,12 @@ describe('Menu', () => {
   });
 
   it('works without using an item tag', () => {
-    var input = `
+    const input = `
       <menu>
         <th class="menu-item"><a href="http://zurb.com">Item 1</a></th>
       </menu>
     `;
-    var expected = `
+    const expected = `
       <table class="menu">
         <tbody>
           <tr>
@@ -278,8 +283,8 @@ describe('Menu', () => {
 
 describe('Callout', () => {
   it('creates a callout with correct syntax', () => {
-    var input = '<callout>Callout</callout>';
-    var expected = `
+    const input = '<callout>Callout</callout>';
+    const expected = `
       <table class="callout">
         <tbody>
           <tr>
@@ -294,8 +299,8 @@ describe('Callout', () => {
   });
 
   it('copies classes to the final HTML', () => {
-    var input = '<callout class="primary">Callout</callout>';
-    var expected = `
+    const input = '<callout class="primary">Callout</callout>';
+    const expected = `
       <table class="callout">
         <tbody>
           <tr>
@@ -312,8 +317,8 @@ describe('Callout', () => {
 
 describe('Spacer', () => {
   it('creates a spacer element with correct size', () => {
-    var input = '<spacer size="10"></spacer>';
-    var expected = `
+    const input = '<spacer size="10"></spacer>';
+    const expected = `
       <table class="spacer">
         <tbody>
           <tr>
@@ -326,10 +331,9 @@ describe('Spacer', () => {
     compare(input, expected);
   });
 
-
   it('creates a spacer with a default size or no size defined', () => {
-    var input = '<spacer></spacer>';
-    var expected = `
+    const input = '<spacer></spacer>';
+    const expected = `
       <table class="spacer">
         <tbody>
           <tr>
@@ -343,8 +347,8 @@ describe('Spacer', () => {
   });
 
   it('creates a spacer element for small screens with correct size', () => {
-    var input = '<spacer size-sm="10"></spacer>';
-    var expected = `
+    const input = '<spacer size-sm="10"></spacer>';
+    const expected = `
       <table class="spacer hide-for-large">
         <tbody>
           <tr>
@@ -358,8 +362,8 @@ describe('Spacer', () => {
   });
 
   it('creates a spacer element for large screens with correct size', () => {
-    var input = '<spacer size-lg="20"></spacer>';
-    var expected = `
+    const input = '<spacer size-lg="20"></spacer>';
+    const expected = `
       <table class="spacer show-for-large">
         <tbody>
           <tr>
@@ -373,8 +377,8 @@ describe('Spacer', () => {
   });
 
   it('creates a spacer element for small and large screens with correct sizes', () => {
-    var input = '<spacer size-sm="10" size-lg="20"></spacer>';
-    var expected = `
+    const input = '<spacer size-sm="10" size-lg="20"></spacer>';
+    const expected = `
       <table class="spacer hide-for-large">
         <tbody>
           <tr>
@@ -395,8 +399,8 @@ describe('Spacer', () => {
   });
 
   it('copies classes to the final spacer HTML', () => {
-    var input = '<spacer size="10" class="bgcolor"></spacer>';
-    var expected = `
+    const input = '<spacer size="10" class="bgcolor"></spacer>';
+    const expected = `
       <table class="spacer bgcolor">
         <tbody>
           <tr>
@@ -412,8 +416,8 @@ describe('Spacer', () => {
 
 describe('wrapper', () => {
   it('creates a wrapper that you can attach classes to', () => {
-    var input = `<wrapper class="header"></wrapper>`;
-    var expected = `
+    const input = `<wrapper class="header"></wrapper>`;
+    const expected = `
       <table class="wrapper header" align="center">
         <tbody>
           <tr>
@@ -429,22 +433,22 @@ describe('wrapper', () => {
 
 describe('h-line', () => {
   it('creates a horizontal rule that you can attach classes to', () => {
-    var input = `<h-line class="dotted">`;
-    var expected = `
+    const input = `<h-line class="dotted">`;
+    const expected = `
       <table class="h-line dotted">
         <tr>
           <th>&nbsp;</th>
         </tr>
       </table>
     `;
-     compare(input, expected);
+    compare(input, expected);
   });
 });
 
 describe('raw', () => {
   it('creates a wrapper that ignores anything inside', () => {
-    var input = `<raw><<LCG Program\TG LCG Coupon Code Default='246996'>></raw>`;
-    var expected = `<<LCG Program\TG LCG Coupon Code Default='246996'>>`;
+    const input = `<raw><<LCG Program\TG LCG Coupon Code Default='246996'>></raw>`;
+    const expected = `<<LCG Program\TG LCG Coupon Code Default='246996'>>`;
 
     compare(input, expected);
   });
