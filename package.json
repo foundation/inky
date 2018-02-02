@@ -16,9 +16,11 @@
   },
   "dependencies": {
     "cheerio": "^0.20.0",
+    "classnames": "^2.2.5",
     "foundation-emails": "^2.2.0",
     "mkdirp": "^0.5.1",
     "object-values": "^1.0.0",
+    "require-dir": "^0.3.2",
     "through2": "^2.0.0",
     "vinyl-fs": "^3.0.2"
   },

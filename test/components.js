@@ -431,9 +431,9 @@ describe('wrapper', () => {
   });
 });
 
-describe('h-line', () => {
+describe('divider', () => {
   it('creates a horizontal rule that you can attach classes to', () => {
-    const input = `<h-line class="dotted">`;
+    const input = `<Divider class="dotted">`;
     const expected = `
       <table class="h-line dotted">
         <tr>
