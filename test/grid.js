@@ -51,7 +51,7 @@ describe('Container', () => {
 
 describe('Grid', () => {
   it('creates a row', () => {
-    const input = '<row></row>';
+    const input = '<Row></Row>';
     const expected = `
       <table class="row">
         <tbody>
@@ -64,7 +64,7 @@ describe('Grid', () => {
   });
 
   it('creates a single column with first and last classes', () => {
-    const input = '<columns large="12" small="12">One</columns>';
+    const input = '<Column large="12" small="12">One</Column>';
     const expected = `
       <th class="small-12 large-12 columns first last">
         <table>
@@ -82,7 +82,7 @@ describe('Grid', () => {
   });
 
   it('creates a single column with first and last classes with no-expander', () => {
-    const input = '<columns large="12" small="12" no-expander>One</columns>';
+    const input = '<Column large="12" small="12" no-expander>One</Column>';
     const expected = `
       <th class="small-12 large-12 columns first last">
         <table>
@@ -99,7 +99,7 @@ describe('Grid', () => {
   });
 
   it('creates a single column with first and last classes with no-expander="false"', () => {
-    const input = '<columns large="12" small="12" no-expander="false">One</columns>';
+    const input = '<Column large="12" small="12" no-expander="false">One</Column>';
     const expected = `
       <th class="small-12 large-12 columns first last">
         <table>
@@ -117,7 +117,7 @@ describe('Grid', () => {
   });
 
   it('creates a single column with first and last classes with no-expander="true"', () => {
-    const input = '<columns large="12" small="12" no-expander="true">One</columns>';
+    const input = '<Column large="12" small="12" no-expander="true">One</Column>';
     const expected = `
       <th class="small-12 large-12 columns first last">
         <table>
@@ -135,8 +135,8 @@ describe('Grid', () => {
 
   it('creates two columns, one first, one last', () => {
     const input = `
-      <columns large="6" small="12">One</columns>
-      <columns large="6" small="12">Two</columns>
+      <Column large="6" small="12">One</Column>
+      <Column large="6" small="12">Two</Column>
     `;
     const expected = `
       <th class="small-12 large-6 columns first">
@@ -164,9 +164,9 @@ describe('Grid', () => {
 
   it('creates 3+ columns, first is first, last is last', () => {
     const input = `
-      <columns large="4" small="12">One</columns>
-      <columns large="4" small="12">Two</columns>
-      <columns large="4" small="12">Three</columns>
+      <Column large="4" small="12">One</Column>
+      <Column large="4" small="12">Two</Column>
+      <Column large="4" small="12">Three</Column>
     `;
     const expected = `
       <th class="small-12 large-4 columns first">
@@ -202,7 +202,7 @@ describe('Grid', () => {
   });
 
   it('transfers classes to the final HTML', () => {
-    const input = '<columns class="small-offset-8 hide-for-small">One</columns>';
+    const input = '<Column class="small-offset-8 hide-for-small">One</Column>';
     const expected = `
       <th class="small-offset-8 hide-for-small small-12 large-12 columns first last">
         <table>
@@ -222,8 +222,8 @@ describe('Grid', () => {
   // If it just has small, borrow from small for large
   it('automatically assigns large columns if no large attribute is assigned', () => {
     const input = `
-      <columns small="4">One</columns>
-      <columns small="8">Two</columns>
+      <Column small="4">One</Column>
+      <Column small="8">Two</Column>
     `;
     const expected = `
       <th class="small-4 large-4 columns first">
@@ -251,8 +251,8 @@ describe('Grid', () => {
 
   it('automatically assigns small columns as full width if only large defined', () => {
     const input = `
-      <columns large="4">One</columns>
-      <columns large="8">Two</columns>
+      <Column large="4">One</Column>
+      <Column large="8">Two</Column>
     `;
     const expected = `
       <th class="small-12 large-4 columns first">
@@ -279,7 +279,7 @@ describe('Grid', () => {
   });
 
   it('supports nested grids', () => {
-    const input = '<row><columns><row></row></columns></row>';
+    const input = '<Row><Column><Row></Row></Column></Row>';
     const expected = `
       <table class="row">
         <tbody>
@@ -308,7 +308,7 @@ describe('Grid', () => {
   });
 
   it('transfers attributes to the final HTML', () => {
-    const input = '<row dir="rtl"><columns dir="rtl" valign="middle" align="center">One</columns></row>';
+    const input = '<Row dir="rtl"><Column dir="rtl" valign="middle" align="center">One</Column></Row>';
     const expected = `
       <table dir="rtl" class="row">
         <tbody>

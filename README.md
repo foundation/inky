@@ -7,10 +7,10 @@ Inky is an HTML-based templating language that converts simple HTML into complex
 Give Inky simple HTML like this:
 
 ```html
-<row>
-  <columns large="6"></columns>
-  <columns large="6"></columns>
-</row>
+<Row>
+  <Column large="6"></Column>
+  <Column large="6"></Column>
+</Row>
 ```
 
 And get complicated, but battle-tested, email-ready HTML like this:
@@ -94,7 +94,7 @@ Doesn't support advanced settings at the moment.
 
 ## Custom Elements
 
-Inky simplifies the process of creating HTML emails by expanding out simple tags like `<row>` and `<column>` into full table syntax. The names of the tags can be changed with the `components` setting.
+Inky simplifies the process of creating HTML emails by expanding out simple tags like `<Row>` and `<column>` into full table syntax. The names of the tags can be changed with the `components` setting.
 
 Here are the names of the defaults:
 
@@ -120,7 +120,7 @@ var Inky = require('inky').Inky;
 var cheerio = require('cheerio');
 
 var options = {};
-var input = '<row></row>';
+var input = '<Row></Row>';
 
 // The same plugin settings are passed in the constructor
 var i = new Inky(options);
