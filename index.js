@@ -9,9 +9,7 @@ const Inky = require('./lib/inky');
 
 let inky;
 
-module.exports = function (opts, cb) {
-  let stream;
-
+module.exports = function (opts) {
   opts = opts || {};
 
   if (typeof inky === 'undefined') {
@@ -20,12 +18,15 @@ module.exports = function (opts, cb) {
 
   // If the user passed in source files, create a stream
   if (opts.src) {
-    stream = vfs
+    const stream = vfs
       .src(opts.src)
       .pipe(transform());
 
-    if (opts.dest && typeof cb === 'function') {
-      stream.on('finish', cb);
+    if (opts.dest) {
+      return new Promise((resolve, reject) => {
+        stream.on('finish', resolve);
+        stream.on('error', reject);
+      });
     }
   } else {
 		// Otherwise, return the transform function
@@ -34,7 +35,7 @@ module.exports = function (opts, cb) {
 
   // This transform function takes in a Vinyl HTML file, converts the code from Inky to HTML, and returns the modified file.
   function transform() {
-    return through.obj((file, enc, callback) => {
+    return through.obj((file, enc, cb) => {
       const convertedHtml = inky.releaseTheKraken(file.contents.toString(), opts.cheerio);
 
       file.contents = Buffer.from(convertedHtml);
@@ -43,10 +44,10 @@ module.exports = function (opts, cb) {
       if (opts.dest) {
         const outputPath = path.join(opts.dest, path.basename(file.path));
         mkdirp(opts.dest, () => {
-          fs.writeFile(outputPath, convertedHtml, callback);
+          fs.writeFile(outputPath, convertedHtml, cb);
         });
       } else {
-        callback(null, file);
+        cb(null, file);
       }
     });
   }

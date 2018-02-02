@@ -41,7 +41,7 @@ And get complicated, but battle-tested, email-ready HTML like this:
 ## Installation
 
 ```bash
-npm install inky --save-dev
+npm install inky
 ```
 
 ## Usage
@@ -56,7 +56,7 @@ var inky = require('inky');
 inky({
   src: 'src/pages/**/*.html',
   dest: 'dist'
-}, function() {
+}).then(() => {
   console.log('Done parsing.');
 });
 ```
@@ -84,51 +84,25 @@ inky src/pages/**/*.html dist --watch
 
 Doesn't support advanced settings at the moment.
 
-## Plugin Settings
+## API
 
-- `src` (String): Glob of files to process. You don't need to supply this when using Inky with Gulp.
-- `dest` (String): Folder to output processed files to. You don't need to supply this when using Inky with Gulp.
-- `components` (Object): Tag names for custom components. See [custom components](#custom-components) below to learn more.
-- `columnCount` (Number): Column count for the grid. Make sure your Foundation for Emails project has the same column count in the Sass as well.
-- `cheerio` (Object): cheerio settings (for available options please refer to [cheerio project at github](https://github.com/cheeriojs/cheerio)).
+### `inky([opts])`
 
-## Custom Elements
+Parse a set of Inky HTML files and output them to a folder. Or, transform the files in a Gulp stream from Inky HTML to plain HTML.
 
-Inky simplifies the process of creating HTML emails by expanding out simple tags like `<Row>` and `<column>` into full table syntax. The names of the tags can be changed with the `components` setting.
+- **opts** (Object) Plugin options.
+  - **src** (String): [Glob](https://www.npmjs.com/package/glob) of files to process. You don't need to supply this when using Inky with Gulp.
+  - **dest** (String): Folder to output processed files to. You don't need to supply this when using Inky with Gulp.
+  - **columnCount** (Number): Column count for the grid. Make sure your Foundation for Emails project has the same column count in the Sass as well.
+  - **cheerio** (Object): [Cheerio](https://www.npmjs.com/package/cheerio) settings.
 
-Here are the names of the defaults:
+When used standalone, returns a Promise which resolves when all files have been parsed. When used in a Gulp stream, returns a stream transform function.
 
-```js
-{
-  button: 'button',
-  row: 'row',
-  columns: 'columns',
-  container: 'container',
-  inky: 'inky',
-  blockGrid: 'block-grid',
-  menu: 'menu',
-  menuItem: 'item'
-}
-```
+## Related
 
-## Programmatic Use
+- **[inky-cli](https://github.com/zurb/inky-cli)** - CLI for Inky
+- **[Foundation for Emails](http://foundation.zurb.com/inky)** - Responsive HTML email framework
 
-The Inky parser can be accessed directly for programmatic use. It takes in a [Cheerio](https://github.com/cheeriojs/cheerio) object of HTML, and gives you back a converted Cheerio object.
+## License
 
-```js
-var Inky = require('inky').Inky;
-var cheerio = require('cheerio');
-
-var options = {};
-var input = '<Row></Row>';
-
-// The same plugin settings are passed in the constructor
-var i = new Inky(options);
-var html = cheerio.load(input)
-
-// Now unleash the fury
-var convertedHtml = i.releaseTheKraken(html);
-
-// The return value is a Cheerio object. Get the string value with .html()
-convertedHtml.html();
-```
+&copy; [ZURB](https://zurb.com)

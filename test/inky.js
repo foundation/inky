@@ -105,13 +105,12 @@ describe('Inky wrappers', () => {
     rimraf(OUTPUT, done);
   });
 
-  it('can process a glob of files', done => {
-    parse({
+  it('can process a glob of files', () => {
+    return parse({
       src: INPUT,
       dest: OUTPUT
-    }, () => {
+    }).then(() => {
       assert(fs.existsSync(OUTFILE), 'Output file exists');
-      done();
     });
   });
 
