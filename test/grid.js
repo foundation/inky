@@ -334,7 +334,7 @@ describe('Grid', () => {
 
 describe('Block Grid', () => {
   it('returns the correct block grid syntax', () => {
-    const input = '<block-grid up="4"></block-grid>';
+    const input = '<BlockGrid up="4"></BlockGrid>';
     const expected = `
       <table class="block-grid up-4">
         <tbody>
@@ -347,7 +347,7 @@ describe('Block Grid', () => {
   });
 
   it('copies classes to the final HTML output', () => {
-    const input = '<block-grid up="4" class="show-for-large"></block-grid>';
+    const input = '<BlockGrid up="4" class="show-for-large"></BlockGrid>';
     const expected = `
       <table class="block-grid up-4 show-for-large">
         <tbody>
