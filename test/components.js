@@ -39,12 +39,12 @@ describe('Center', () => {
     compare(input, expected);
   });
 
-  it('applies the class float-center to <item> elements', () => {
+  it('applies the class float-center to <Item> elements', () => {
     const input = `
       <Center>
-        <menu>
-          <item href="#"></item>
-        </menu>
+        <Menu>
+          <Item href="#"></Item>
+        </Menu>
       </Center>
     `;
 
@@ -176,9 +176,9 @@ describe('Button', () => {
 describe('Menu', () => {
   it('creates a menu with item tags inside', () => {
     const input = `
-      <menu>
-        <item href="http://zurb.com">Item</item>
-      </menu>
+      <Menu>
+        <Item href="http://zurb.com">Item</Item>
+      </Menu>
     `;
     const expected = `
       <table class="menu">
@@ -203,9 +203,9 @@ describe('Menu', () => {
 
   it('creates a menu with items tags inside, containing target="_blank" attribute', () => {
     const input = `
-      <menu>
-        <item href="http://zurb.com" target="_blank">Item</item>
-      </menu>
+      <Menu>
+        <Item href="http://zurb.com" target="_blank">Item</Item>
+      </Menu>
     `;
     const expected = `
       <table class="menu">
@@ -230,8 +230,8 @@ describe('Menu', () => {
 
   it('creates a menu with classes', () => {
     const input = `
-      <menu class="vertical">
-      </menu>
+      <Menu class="vertical">
+      </Menu>
     `;
     const expected = `
       <table class="menu vertical">
@@ -255,9 +255,9 @@ describe('Menu', () => {
 
   it('works without using an item tag', () => {
     const input = `
-      <menu>
+      <Menu>
         <th class="menu-item"><a href="http://zurb.com">Item 1</a></th>
-      </menu>
+      </Menu>
     `;
     const expected = `
       <table class="menu">
