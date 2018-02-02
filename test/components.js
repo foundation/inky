@@ -8,9 +8,9 @@ const compare = require('./lib/compare');
 describe('Center', () => {
   it('applies a text-center class and center alignment attribute to the first child', () => {
     const input = `
-      <center>
+      <Center>
         <div></div>
-      </center>
+      </Center>
     `;
     const expected = `
       <center>
@@ -23,10 +23,10 @@ describe('Center', () => {
 
   it(`doesn't choke if center tags are nested`, () => {
     const input = `
-      <center>
-        <center>
-        </center>
-      </center>
+      <Center>
+        <Center>
+        </Center>
+      </Center>
     `;
 
     const expected = `
@@ -41,11 +41,11 @@ describe('Center', () => {
 
   it('applies the class float-center to <item> elements', () => {
     const input = `
-      <center>
+      <Center>
         <menu>
           <item href="#"></item>
         </menu>
-      </center>
+      </Center>
     `;
 
     const expected = `
@@ -74,7 +74,7 @@ describe('Center', () => {
 
 describe('Button', () => {
   it('creates a simple button', () => {
-    const input = '<button href="http://zurb.com">Button</button>';
+    const input = '<Button href="http://zurb.com">Button</Button>';
     const expected = `
       <table class="button">
         <tbody>
@@ -97,7 +97,7 @@ describe('Button', () => {
   });
 
   it('creates a button with target="_blank" attribute', () => {
-    const input = '<button href="http://zurb.com" target="_blank">Button</button>';
+    const input = '<Button href="http://zurb.com" target="_blank">Button</Button>';
     const expected = `
       <table class="button">
         <tbody>
@@ -121,7 +121,7 @@ describe('Button', () => {
 
   it('creates a button with classes', () => {
     const input = `
-      <button class="small alert" href="http://zurb.com">Button</button>
+      <Button class="small alert" href="http://zurb.com">Button</Button>
     `;
     const expected = `
       <table class="button small alert">
@@ -146,7 +146,7 @@ describe('Button', () => {
 
   it('creates a correct expanded button', () => {
     const input = `
-      <button class="expand" href="http://zurb.com">Button</button>
+      <Button class="expand" href="http://zurb.com">Button</Button>
     `;
     const expected = `
       <table class="button expand">

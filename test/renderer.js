@@ -8,9 +8,11 @@ const opts = {};
 const components = {
   mock: {
     name: 'Mock',
-    class: ['mock'],
+    props: {
+      class: ''
+    },
     render(element, props) {
-      return `<div class="${props.class.join(' ')}">${props.children}</div>`;
+      return `<div class="mock ${props.class}">${props.children()}</div>`;
     }
   }
 };
