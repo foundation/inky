@@ -416,7 +416,7 @@ describe('Spacer', () => {
 
 describe('wrapper', () => {
   it('creates a wrapper that you can attach classes to', () => {
-    const input = `<wrapper class="header"></wrapper>`;
+    const input = `<Wrapper class="header"></Wrapper>`;
     const expected = `
       <table class="wrapper header" align="center">
         <tbody>
