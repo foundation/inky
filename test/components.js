@@ -317,7 +317,7 @@ describe('Callout', () => {
 
 describe('Spacer', () => {
   it('creates a spacer element with correct size', () => {
-    const input = '<spacer size="10"></spacer>';
+    const input = '<Spacer size="10"></Spacer>';
     const expected = `
       <table class="spacer">
         <tbody>
@@ -332,7 +332,7 @@ describe('Spacer', () => {
   });
 
   it('creates a spacer with a default size or no size defined', () => {
-    const input = '<spacer></spacer>';
+    const input = '<Spacer></Spacer>';
     const expected = `
       <table class="spacer">
         <tbody>
@@ -347,7 +347,7 @@ describe('Spacer', () => {
   });
 
   it('creates a spacer element for small screens with correct size', () => {
-    const input = '<spacer size-sm="10"></spacer>';
+    const input = '<Spacer size-sm="10"></Spacer>';
     const expected = `
       <table class="spacer hide-for-large">
         <tbody>
@@ -362,7 +362,7 @@ describe('Spacer', () => {
   });
 
   it('creates a spacer element for large screens with correct size', () => {
-    const input = '<spacer size-lg="20"></spacer>';
+    const input = '<Spacer size-lg="20"></Spacer>';
     const expected = `
       <table class="spacer show-for-large">
         <tbody>
@@ -377,7 +377,7 @@ describe('Spacer', () => {
   });
 
   it('creates a spacer element for small and large screens with correct sizes', () => {
-    const input = '<spacer size-sm="10" size-lg="20"></spacer>';
+    const input = '<Spacer size-sm="10" size-lg="20"></Spacer>';
     const expected = `
       <table class="spacer hide-for-large">
         <tbody>
@@ -399,7 +399,7 @@ describe('Spacer', () => {
   });
 
   it('copies classes to the final spacer HTML', () => {
-    const input = '<spacer size="10" class="bgcolor"></spacer>';
+    const input = '<Spacer size="10" class="bgcolor"></Spacer>';
     const expected = `
       <table class="spacer bgcolor">
         <tbody>

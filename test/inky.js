@@ -13,13 +13,11 @@ const compare = require('./lib/compare');
 describe('Inky', () => {
   it('can take in settings in the constructor', () => {
     const config = {
-      components: {column: 'col'},
       columnCount: 16
     };
 
     const inky = new Inky(config);
 
-    assert.equal(inky.components.column, 'col', 'Sets custom component tags');
     assert.equal(inky.columnCount, 16, 'Sets a custom column count');
   });
 
