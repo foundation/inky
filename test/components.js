@@ -283,7 +283,7 @@ describe('Menu', () => {
 
 describe('Callout', () => {
   it('creates a callout with correct syntax', () => {
-    const input = '<callout>Callout</callout>';
+    const input = '<Callout>Callout</Callout>';
     const expected = `
       <table class="callout">
         <tbody>
@@ -299,7 +299,7 @@ describe('Callout', () => {
   });
 
   it('copies classes to the final HTML', () => {
-    const input = '<callout class="primary">Callout</callout>';
+    const input = '<Callout class="primary">Callout</Callout>';
     const expected = `
       <table class="callout">
         <tbody>
