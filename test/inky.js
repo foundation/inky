@@ -29,7 +29,7 @@ describe('Inky', () => {
   });
 
   it(`doesn't choke on inline elements`, () => {
-    const input = '<container>This is a link to <a href="#">ZURB.com</a>.</container>';
+    const input = '<Container>This is a link to <a href="#">ZURB.com</a>.</Container>';
     const expected = `
       <table align="center" class="container">
         <tbody>
@@ -44,7 +44,7 @@ describe('Inky', () => {
   });
 
   it(`doesn't choke on special characters`, () => {
-    const input = '<container>This is a link tö <a href="#">ZURB.com</a>.</container>';
+    const input = '<Container>This is a link tö <a href="#">ZURB.com</a>.</Container>';
     const expected = `
       <table align="center" class="container">
         <tbody>
@@ -59,7 +59,7 @@ describe('Inky', () => {
   });
 
   it(`doesn't convert these characters into entities`, () => {
-    const input = '<container>There\'s &nbsp; some amazing things here!</container>';
+    const input = '<Container>There\'s &nbsp; some amazing things here!</Container>';
     const expected = `
       <table align="center" class="container">
         <tbody>
@@ -74,7 +74,7 @@ describe('Inky', () => {
   });
 
   it(`doesn't decode entities if non default cheerio config is given`, () => {
-    const input = '<container>"should not replace quotes"</container>';
+    const input = '<Container>"should not replace quotes"</Container>';
     const expected = `
       <table align="center" class="container">
         <tbody>

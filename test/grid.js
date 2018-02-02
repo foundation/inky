@@ -11,7 +11,7 @@ describe('Container', () => {
       <html>
         <head></head>
         <body>
-          <container></container>
+          <Container></Container>
         </body>
       </html>
     `;
@@ -34,7 +34,7 @@ describe('Container', () => {
   });
 
   it('creates a container table', () => {
-    const input = '<container></container>';
+    const input = '<Container></Container>';
     const expected = `
       <table align="center" class="container">
         <tbody>
