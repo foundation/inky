@@ -11,8 +11,8 @@ let inky;
 
 module.exports = function (opts, cb) {
   let stream;
+
   opts = opts || {};
-  opts.cheerio = Inky.mergeCheerioOpts(opts.cheerio);
 
   if (typeof inky === 'undefined') {
     inky = new Inky(opts);

@@ -18,12 +18,7 @@ describe('Inky', () => {
 
     const inky = new Inky(config);
 
-    assert.equal(inky.columnCount, 16, 'Sets a custom column count');
-  });
-
-  it('should have an array of component tags', () => {
-    const inky = new Inky();
-    assert(Array.isArray(inky.componentTags), 'Inky.zftags is an array');
+    assert.equal(inky.options.columnCount, 16, 'Sets a custom column count');
   });
 
   it(`doesn't choke on inline elements`, () => {
