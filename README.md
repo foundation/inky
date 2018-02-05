@@ -122,6 +122,16 @@ Parse a set of Inky HTML files and output them to a folder. Or, transform the fi
 
 When used standalone, returns a Promise which resolves when all files have been parsed. When used in a Gulp stream, returns a stream transform function.
 
+## Local Development
+
+```bash
+git clone https://github.com/zurb/inky
+cd inky
+npm install
+```
+
+To test in a Node environment, run `npm run test:node`. To test in a browser environment, run `npm run test:browser`. Testing in a browser enviornment requires Node.js 6 or higher.
+
 ## Related
 
 - **[inky-cli](https://github.com/zurb/inky-cli)** - CLI for Inky

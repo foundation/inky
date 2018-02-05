@@ -11,8 +11,12 @@
   ],
   "main": "index.js",
   "scripts": {
-    "test": "xo && mocha test/core test/node && mocha-puppeteer test/core test/browser",
-    "browser": "webpack"
+    "test": "xo && npm run test:node && npm run test:browser",
+    "test:node": "mocha test/core test/node",
+    "pretest:browser": "npm install mocha-puppeteer && npm run bundle",
+    "test:browser": "mocha-puppeteer test/core test/browser",
+    "bundle": "webpack",
+    "prepublishOnly": "npm run bundle"
   },
   "dependencies": {
     "cheerio": "^0.20.0",
@@ -33,7 +37,6 @@
     "gulp-uglify": "^3.0.0",
     "lasso-babel-transform": "^1.0.2",
     "mocha": "^5.0.0",
-    "mocha-puppeteer": "^0.13.0",
     "rimraf": "^2.5.1",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^2.0.0",

@@ -3,3 +3,12 @@ node_js:
   - "4"
   - "6"
   - "8"
+script: npm run test:node
+jobs:
+  include:
+    - node_js: 8
+      script: npm run test:browser
+      sudo: required
+      # This env variable doesn't do anything; it just marks which test is which in Travis
+      env:
+        TESTING=browser
