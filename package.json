@@ -13,7 +13,7 @@
   "scripts": {
     "test": "xo && npm run test:node && npm run test:browser",
     "test:node": "mocha test/core test/node",
-    "pretest:browser": "npm install mocha-puppeteer && npm run bundle",
+    "pretest:browser": "npm install mocha-puppeteer --no-save && npm run bundle",
     "test:browser": "mocha-puppeteer test/core test/browser",
     "bundle": "webpack",
     "prepublishOnly": "npm run bundle"
@@ -24,7 +24,6 @@
     "deep-assign": "^2.0.0",
     "foundation-emails": "^2.2.0",
     "mkdirp": "^0.5.1",
-    "mocha-puppeteer": "^0.13.0",
     "through2": "^2.0.0",
     "vinyl-fs": "^3.0.2"
   },
