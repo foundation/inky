@@ -2,7 +2,7 @@
 
 const expect = require('chai').expect;
 
-describe('Inky in browser', () => {
+describe('Inky Browser', () => {
   it('exists on the window', () => {
     expect(window.Inky).to.be.a('function');
   });

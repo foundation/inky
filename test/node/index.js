@@ -1,35 +1,35 @@
 /* eslint-env mocha */
 
 const fs = require('fs');
+const path = require('path');
 const assert = require('assert');
-const rimraf = require('rimraf');
 const vfs = require('vinyl-fs');
+const tempy = require('tempy');
 const inky = require('../..');
 
-describe('Inky wrappers', () => {
-  const INPUT = 'test/fixtures/test.html';
-  const OUTPUT = 'test/fixtures/_build';
-  const OUTFILE = 'test/fixtures/_build/test.html';
-
-  afterEach(done => {
-    rimraf(OUTPUT, done);
-  });
+describe('Inky Node', () => {
+  const testFile = 'test.html';
+  const input = path.join('test/fixtures', testFile);
 
   it('can process a glob of files', () => {
+    const dir = tempy.directory();
+
     return inky({
-      src: INPUT,
-      dest: OUTPUT
+      src: input,
+      dest: dir
     }).then(() => {
-      assert(fs.existsSync(OUTFILE), 'Output file exists');
+      assert(fs.existsSync(path.join(dir, testFile)), 'Output file exists');
     });
   });
 
   it('can process a Gulp stream of files', done => {
-    vfs.src(INPUT)
+    const dir = tempy.directory();
+
+    vfs.src(input)
       .pipe(inky())
-      .pipe(vfs.dest(OUTPUT))
+      .pipe(vfs.dest(dir))
       .on('finish', () => {
-        assert(fs.existsSync(OUTFILE), 'Output file exists');
+        assert(fs.existsSync(path.join(dir, testFile)), 'Output file exists');
         done();
       });
   });
