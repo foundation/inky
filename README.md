@@ -50,6 +50,8 @@ Inky can be used standalone, as a Gulp plugin, or with a CLI. You can also acces
 
 ### Standalone
 
+To transform a bunch of Inky files:
+
 ```js
 var inky = require('inky');
 
@@ -59,6 +61,15 @@ inky({
 }).then(() => {
   console.log('Done parsing.');
 });
+```
+
+To transform a single string:
+
+```js
+const inky;
+
+const parser = new inky.Inky();
+const output = parser.releaseTheKraken('<Row>...</Row>');
 ```
 
 ### With Gulp
@@ -83,6 +94,19 @@ inky src/pages/**/*.html dist --watch
 ```
 
 Doesn't support advanced settings at the moment.
+
+### In the Browser
+
+If you're using Webpack or another module bundler, import `inky/browser` to get a browser-friendly version of Inky.
+
+```js
+const Inky = require('inky/browser');
+
+const parser = new Inky();
+const output = parser.releaseTheKraken('<Row>...</Row>');
+```
+
+You can also access the parser at `window.Inky`.
 
 ## API
 
