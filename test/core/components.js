@@ -3,7 +3,7 @@
 
 'use strict';
 
-const compare = require('./lib/compare');
+const compare = require('../lib/compare');
 
 describe('Center', () => {
   it('applies a text-center class and center alignment attribute to the first child', () => {

@@ -2,7 +2,7 @@
 
 const assert = require('assert');
 const $ = require('cheerio');
-const renderer = require('../lib/renderer');
+const renderer = require('../../lib/renderer');
 
 const opts = {};
 const components = {

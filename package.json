@@ -11,7 +11,7 @@
   ],
   "main": "index.js",
   "scripts": {
-    "test": "xo && mocha",
+    "test": "xo && mocha test/core test/node && mocha-puppeteer test/core test/browser",
     "browser": "webpack"
   },
   "dependencies": {
@@ -28,9 +28,12 @@
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.2",
     "babel-preset-env": "^1.6.1",
+    "chai": "^4.1.2",
     "gulp": "^4.0.0",
     "gulp-uglify": "^3.0.0",
+    "lasso-babel-transform": "^1.0.2",
     "mocha": "^5.0.0",
+    "mocha-puppeteer": "^0.13.0",
     "rimraf": "^2.5.1",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^2.0.0",

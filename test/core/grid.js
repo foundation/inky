@@ -2,7 +2,7 @@
 
 'use strict';
 
-const compare = require('./lib/compare');
+const compare = require('../lib/compare');
 
 describe('Container', () => {
   it('works when parsing a full HTML document', () => {

@@ -2,4 +2,6 @@
 *.DS_Store
 test/fixtures/_build
 *.swp
-browser.js
+/browser.js
+.mocha-puppeteer
+.cache
