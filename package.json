@@ -24,6 +24,7 @@
     "deep-assign": "^2.0.0",
     "foundation-emails": "^2.2.0",
     "mkdirp": "^0.5.1",
+    "mocha-puppeteer": "^0.13.0",
     "through2": "^2.0.0",
     "vinyl-fs": "^3.0.2"
   },

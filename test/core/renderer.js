@@ -11,7 +11,7 @@ const components = {
     props: {
       class: ''
     },
-    render(element, props) {
+    render(props) {
       return `<div class="mock ${props.class}">${props.children()}</div>`;
     }
   }
