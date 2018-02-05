@@ -114,13 +114,29 @@ You can also access the parser at `window.Inky`.
 
 Parse a set of Inky HTML files and output them to a folder. Or, transform the files in a Gulp stream from Inky HTML to plain HTML.
 
-- **opts** (Object) Plugin options.
+- **opts** (Object): Plugin options.
   - **src** (String): [Glob](https://www.npmjs.com/package/glob) of files to process. You don't need to supply this when using Inky with Gulp.
   - **dest** (String): Folder to output processed files to. You don't need to supply this when using Inky with Gulp.
   - **columnCount** (Number): Column count for the grid. Make sure your Foundation for Emails project has the same column count in the Sass as well.
   - **cheerio** (Object): [Cheerio](https://www.npmjs.com/package/cheerio) settings.
 
 When used standalone, returns a Promise which resolves when all files have been parsed. When used in a Gulp stream, returns a stream transform function.
+
+### `new inky.Inky([opts])`
+
+Create an Inky parser.
+
+- **opts** (Object) Parser options.
+  - **columnCount** (Number): Column count for the grid. Make sure your Foundation for Emails project has the same column count in the Sass as well.
+  - **cheerio** (Object): [Cheerio](https://www.npmjs.com/package/cheerio) settings.
+
+#### `.releaseTheKraken(input)`
+
+Convert Inky HTML into plain HTML.
+
+- **input** (String): Input HTML. It can be a fragment of HTML or a full document.
+
+Returns converted HTML as a String.
 
 ## Local Development
 
