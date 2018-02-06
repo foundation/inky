@@ -5,20 +5,15 @@ const $ = require('cheerio');
 const renderer = require('../../lib/renderer');
 
 const opts = {};
-const components = {
-  mock: {
-    name: 'Mock',
-    props: {
-      class: ''
-    },
-    render(props) {
-      return `<div class="mock ${props.class}">${props.children()}</div>`;
-    }
+const library = new Map([['Mock', {
+  name: 'Mock',
+  props: {
+    class: ''
+  },
+  render(props) {
+    return `<div class="mock ${props.class}">${props.children()}</div>`;
   }
-};
-const library = new Map(
-  Object.keys(components).map(k => [components[k].name, components[k]])
-);
+}]]);
 
 describe('renderer', () => {
   it('works', () => {
