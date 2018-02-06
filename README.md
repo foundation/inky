@@ -48,6 +48,7 @@ And get complicated, but battle-tested, email-ready HTML like this:
   - [In the Browser](#in-the-browser)
 - [API](#api)
 - [Custom Components](#custom-components)
+  - [Importing](#importing)
   - [Basics](#basics)
   - [Props](#props)
 - [Upgrading from Inky 1.0](#upgrading-from-inky-10)
@@ -159,9 +160,9 @@ Returns converted HTML as a String.
 
 You can add your own custom components to the Inky parser. A component is a function that takes the attributes on the custom element (referred to here as "props"), and returns a string of new HTML to replace the original code with.
 
-### Basics
+### Importing
 
-Custom components are passed to the constructor as an array:
+There are two ways to bring in custom components. They can be passed to the options object as an array:
 
 ```js
 const inky = require('inky');
@@ -173,10 +174,24 @@ inky({
 })
 ```
 
+Or, you can point to a folder with custom components, one per file. Each component should be a `.js` file with a `module.exports` containing the component definition. Note that this approach doesn't work if you're using Inky in a browser environment, because there's no filesystem.
+
+```js
+const inky = require('inky');
+
+inky({
+  src: 'src/*.html',
+  dest: 'dest',
+  components: 'src/components/'
+})
+```
+
+### Basics
+
 A component looks something like this:
 
 ```js
-const thing = {
+module.exports = {
   name: 'Thing',
   props: {
     class: ''
