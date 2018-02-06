@@ -74,4 +74,15 @@ describe('Inky', () => {
 
     compare(input, expected);
   });
+
+  it('allows custom components to be added', () => {
+    const components = [{
+      name: 'Mock',
+      render: () => '<div class="mock"></div>'
+    }];
+    const input = '<Mock></Mock>';
+    const expected = components[0].render();
+
+    compare(input, expected, {components});
+  });
 });

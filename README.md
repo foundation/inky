@@ -38,6 +38,23 @@ And get complicated, but battle-tested, email-ready HTML like this:
 </table>
 ```
 
+## Contents
+
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Standalone](#standalone)
+  - [With Gulp](#with-gulp)
+  - [Command Line](#command-line)
+  - [In the Browser](#in-the-browser)
+- [API](#api)
+- [Custom Components](#custom-components)
+  - [Basics](#basics)
+  - [Props](#props)
+- [Upgrading from Inky 1.0](#upgrading-from-inky-10)
+- [Local Development](#local-development)
+- [Related](#related)
+- [License](#license)
+
 ## Installation
 
 ```bash
@@ -117,8 +134,7 @@ Parse a set of Inky HTML files and output them to a folder. Or, transform the fi
 - **opts** (Object): Plugin options.
   - **src** (String): [Glob](https://www.npmjs.com/package/glob) of files to process. You don't need to supply this when using Inky with Gulp.
   - **dest** (String): Folder to output processed files to. You don't need to supply this when using Inky with Gulp.
-  - **columnCount** (Number): Column count for the grid. Make sure your Foundation for Emails project has the same column count in the Sass as well.
-  - **cheerio** (Object): [Cheerio](https://www.npmjs.com/package/cheerio) settings.
+  - Pass options to the `Inky` constructor here as well.
 
 When used standalone, returns a Promise which resolves when all files have been parsed. When used in a Gulp stream, returns a stream transform function.
 
@@ -127,8 +143,9 @@ When used standalone, returns a Promise which resolves when all files have been 
 Create an Inky parser.
 
 - **opts** (Object) Parser options.
-  - **columnCount** (Number): Column count for the grid. Make sure your Foundation for Emails project has the same column count in the Sass as well.
   - **cheerio** (Object): [Cheerio](https://www.npmjs.com/package/cheerio) settings.
+  - **columnCount** (Number): Column count for the grid. Make sure your Foundation for Emails project has the same column count in the Sass as well.
+  - **components** (Array of Objects): Custom components to use. See [Custom Components](#custom-components).
 
 #### `.releaseTheKraken(input)`
 
@@ -137,6 +154,77 @@ Convert Inky HTML into plain HTML.
 - **input** (String): Input HTML. It can be a fragment of HTML or a full document.
 
 Returns converted HTML as a String.
+
+## Custom Components
+
+You can add your own custom components to the Inky parser. A component is a function that takes the attributes on the custom element (referred to here as "props"), and returns a string of new HTML to replace the original code with.
+
+### Basics
+
+Custom components are passed to the constructor as an array:
+
+```js
+const inky = require('inky');
+
+inky({
+  src: 'src/*.html',
+  dest: 'dest',
+  components: [{ /* ...component... */ }, { /* ... */ }]
+})
+```
+
+A component looks something like this:
+
+```js
+const thing = {
+  name: 'Thing',
+  props: {
+    class: ''
+  },
+  render(props) {
+    return `
+      <table class="${props.class}" ${props.rest}>
+        ${props.children()}
+      </table>
+    `;
+  }
+}
+```
+
+The `name` property is the name of the tag. We like using title case, to make the custom tags stand out from normal HTML. In the above example, the component would be rendered by writing `<Thing></Thing>`.
+
+The `render()` function is where the magic happens. It's a function that returns the HTML your custom component generates. It's called with three parameters, but in most cases you'll only need the first one.
+
+- `props` is an object containing the HTML attributes used on the component.
+- `element` is the Cheerio object for this component instance.
+- `options` is the Panini parser options.
+
+### Props
+
+Components can also have props. These are the attributes set on the root element of the component. For example, the `<Column>` component built-in to Inky has the `small` and `large` props to set the size of the column. These props are used to calculate the final HTML.
+
+You can define props for your component. Props can be built-in HTML attributes (like `class`) or custom attributes (like `small` and `large`). In the above example, we just define a `class` prop. Note that it's an object: the key is `class` and the value is `''`. That's the default value. If an instance of `<Thing>` doesn't have a `class` attribute, this default value will be used instead.
+
+All of a component's props are collected into the `props` object, which is passed to the `render()` function. If an instance of a component has any other attributes not defined in `props`, they're added to `props.rest`. For example, a user might want to set an `id` on a `<Thing>`, or add one of Mailchimp's custom attributes. Our component needs to copy over these attributes to the final HTML, even though we aren't going to use them directly.
+
+Lastly, all components have a `children` prop. It's a function that returns the HTML inside the component instance. If a component is meant to be a wrapper of some kind, you'll need this.
+
+## Upgrading from Inky 1.0
+
+In terms of HTML output, Inky 2.0 is identical to 1.0. However, there's one major change: all the custom tags are now CamelCase instead of lowercase. This was done to prevent Inky HTML from clashing with regular HTML, and to make the custom elements stand out in your code.
+
+- `<block-grid>` => `<BlockGrid>`
+- `<button>` => `<Button>`
+- `<callout>` => `<Callout>`
+- `<center>` => `<Center>`
+- `<columns>` => `<Column>`
+- `<container>` => `<Container>`
+- `<divider>` => `<Divider>`
+- `<item>` => `<Item>`
+- `<menu>` => `<Menu>`
+- `<row>` => `<Row>`
+- `<spacer>` => `<Spacer>`
+- `<wrapper>` => `<Wrapper>`
 
 ## Local Development
 
@@ -155,4 +243,4 @@ To test in a Node environment, run `npm run test:node`. To test in a browser env
 
 ## License
 
-&copy; [ZURB](https://zurb.com)
+MIT &copy; [ZURB](https://zurb.com)
