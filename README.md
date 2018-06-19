@@ -16,18 +16,18 @@ Give Inky simple HTML like this:
 And get complicated, but battle-tested, email-ready HTML like this:
 
 ```html
-<table class="row">
+<table class="row" role="presentation">
   <tbody>
     <tr>
       <th class="small-12 large-6 columns first">
-        <table>
+        <table role="presentation">
           <tr>
             <th class="expander"></th>
           </tr>
         </table>
       </th>
       <th class="small-12 large-6 columns first">
-        <table>
+        <table role="presentation">
           <tr>
             <th class="expander"></th>
           </tr>
@@ -132,3 +132,7 @@ var convertedHtml = i.releaseTheKraken(html);
 // The return value is a Cheerio object. Get the string value with .html()
 convertedHtml.html();
 ```
+
+## Accessibility
+
+Since the tables in Inky's generated HTML are purely for styling purposes, we add the WAI-ARIA `role="presentation"` to them. This ensures that someone using a screen reader doesn't get confused by the quantum of nested tables with no useful semantics and only the important information gets to them.

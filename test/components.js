@@ -45,10 +45,10 @@ describe('Center', () => {
 
     var expected = `
       <center data-parsed="">
-        <table class="menu float-center" align="center">
+        <table class="menu float-center" role="presentation" align="center">
           <tr>
             <td>
-              <table>
+              <table role="presentation">
                 <tr>
                   <th class="menu-item float-center">
                     <a href="#"></a>
@@ -69,10 +69,10 @@ describe('Button', () => {
   it('creates a simple button', () => {
     var input = '<button href="http://zurb.com">Button</button>';
     var expected = `
-      <table class="button">
+      <table class="button" role="presentation">
         <tr>
           <td>
-            <table>
+            <table role="presentation">
               <tr>
                 <td><a href="http://zurb.com">Button</a></td>
               </tr>
@@ -90,10 +90,10 @@ describe('Button', () => {
       <button class="small alert" href="http://zurb.com">Button</button>
     `;
     var expected = `
-      <table class="button small alert">
+      <table class="button small alert" role="presentation">
         <tr>
           <td>
-            <table>
+            <table role="presentation">
               <tr>
                 <td><a href="http://zurb.com">Button</a></td>
               </tr>
@@ -111,10 +111,10 @@ describe('Button', () => {
       <button class="expand" href="http://zurb.com">Button</button>
     `;
     var expected = `
-      <table class="button expand">
+      <table class="button expand" role="presentation">
         <tr>
           <td>
-            <table>
+            <table role="presentation">
               <tr>
                 <td>
                   <center data-parsed=""><a href="http://zurb.com" align="center" class="float-center">Button</a></center>
@@ -139,10 +139,10 @@ describe('Menu', () => {
       </menu>
     `;
     var expected = `
-      <table class="menu">
+      <table class="menu" role="presentation">
         <tr>
           <td>
-            <table>
+            <table role="presentation">
               <tr>
                 <th class="menu-item"><a href="http://zurb.com">Item</a></th>
               </tr>
@@ -161,10 +161,10 @@ describe('Menu', () => {
       </menu>
     `;
     var expected = `
-      <table class="menu vertical">
+      <table class="menu vertical" role="presentation">
         <tr>
           <td>
-            <table>
+            <table role="presentation">
               <tr>
               </tr>
             </table>
@@ -183,10 +183,10 @@ describe('Menu', () => {
       </menu>
     `;
     var expected = `
-      <table class="menu">
+      <table class="menu" role="presentation">
         <tr>
           <td>
-            <table>
+            <table role="presentation">
               <tr>
                 <th class="menu-item"><a href="http://zurb.com">Item 1</a></th>
               </tr>
@@ -204,7 +204,7 @@ describe('Callout', () => {
   it('creates a callout with correct syntax', () => {
     var input = '<callout>Callout</callout>';
     var expected = `
-      <table class="callout">
+      <table class="callout" role="presentation">
         <tr>
           <th class="callout-inner">Callout</th>
           <th class="expander"></th>
@@ -218,7 +218,7 @@ describe('Callout', () => {
   it('copies classes to the final HTML', () => {
     var input = '<callout class="primary">Callout</callout>';
     var expected = `
-      <table class="callout">
+      <table class="callout" role="presentation">
         <tr>
           <th class="callout-inner primary">Callout</th>
           <th class="expander"></th>
@@ -229,12 +229,12 @@ describe('Callout', () => {
     compare(input, expected);
   });
 });
-  
+
 describe('Spacer', () => {
   it('creates a spacer element with correct size', () => {
     var input = '<spacer size="10"></spacer>';
     var expected = `
-      <table class="spacer">
+      <table class="spacer" role="presentation">
         <tbody>
           <tr>
             <td height="10px" style="font-size:10px;line-height:10px;">&#xA0;</td>
@@ -245,11 +245,11 @@ describe('Spacer', () => {
 
     compare(input, expected);
   });
-  
+
   it('copies classes to the final spacer HTML', () => {
     var input = '<spacer size="10" class="bgcolor"></spacer>';
     var expected = `
-      <table class="spacer bgcolor">
+      <table class="spacer bgcolor" role="presentation">
         <tbody>
           <tr>
             <td height="10px" style="font-size:10px;line-height:10px;">&#xA0;</td>
@@ -266,7 +266,7 @@ describe('wrapper', () => {
   it('creates a wrapper that you can attach classes to', () => {
     var input = `<wrapper class="header"></wrapper>`;
     var expected = `
-      <table class="wrapper header" align="center">
+      <table class="wrapper header" role="presentation" align="center">
         <tr>
           <td class="wrapper-inner"></td>
         </tr>
