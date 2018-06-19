@@ -135,4 +135,4 @@ convertedHtml.html();
 
 ## Accessibility
 
-Since the tables in the generated HTML are purly for styling purpouses, we add the WAI-ARIA `role="presentation"` to them. This ensures that someone using a screen reader doesn't get confused by the quantum of nested tables with no useful semantics and only the important information gets to them.
+Since the tables in Inky's generated HTML are purely for styling purposes, we add the WAI-ARIA `role="presentation"` to them. This ensures that someone using a screen reader doesn't get confused by the quantum of nested tables with no useful semantics and only the important information gets to them.
