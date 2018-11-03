@@ -52,9 +52,7 @@ describe('Center', () => {
                 <table>
                   <tbody>
                     <tr>
-                      <th class="menu-item float-center">
-                        <a href="#"></a>
-                      </th>
+                      <th class="menu-item float-center"><a href="#"></a></th>
                     </tr>
                   </tbody>
                 </table>
@@ -442,7 +440,7 @@ describe('h-line', () => {
      compare(input, expected);
   });
 });
- 
+
 describe('raw', () => {
   it('creates a wrapper that ignores anything inside', () => {
     var input = `<raw><<LCG Program\TG LCG Coupon Code Default='246996'>></raw>`;
