@@ -28,7 +28,7 @@
     "babel-register": "^6.4.3",
     "browserify": "^13.1.0",
     "chalk": "^1.1.1",
-    "gulp": "git+https://github.com/gulpjs/gulp.git#4.0",
+    "gulp": "4.0",
     "gulp-uglify": "^2.0.0",
     "mocha": "^2.4.5",
     "rimraf": "^2.5.1",

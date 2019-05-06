@@ -111,6 +111,22 @@ Here are the names of the defaults:
 }
 ```
 
+## Raw HTML
+
+If you need to include raw html, you can wrap raw content in `<raw>` tags
+
+```html
+<raw>
+  <button></button>
+  <asdf></asdf>
+</raw>
+```
+
+This is a feature intended for advanced users. You will be responsible for ensuring all markup between `<raw>` tags is valid. All content after an opening `<raw>` tag will be inserted "As Is" until the next closing `</raw>` tag.
+
+This means that `<raw>` tags CANNOT be nested
+
+
 ## Programmatic Use
 
 The Inky parser can be accessed directly for programmatic use. It takes in a [Cheerio](https://github.com/cheeriojs/cheerio) object of HTML, and gives you back a converted Cheerio object.

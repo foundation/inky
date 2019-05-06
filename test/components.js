@@ -52,9 +52,7 @@ describe('Center', () => {
                 <table>
                   <tbody>
                     <tr>
-                      <th class="menu-item float-center">
-                        <a href="#"></a>
-                      </th>
+                      <th class="menu-item float-center"><a href="#"></a></th>
                     </tr>
                   </tbody>
                 </table>
@@ -442,11 +440,105 @@ describe('h-line', () => {
      compare(input, expected);
   });
 });
- 
+
 describe('raw', () => {
   it('creates a wrapper that ignores anything inside', () => {
     var input = `<raw><<LCG Program\TG LCG Coupon Code Default='246996'>></raw>`;
     var expected = `<<LCG Program\TG LCG Coupon Code Default='246996'>>`;
+
+    compare(input, expected);
+  });
+
+
+  it('works across multiple lines', () => {
+    var input = `
+      <body>
+        <raw>
+          <<LCG ProgramTG LCG Coupon Code Default='246996'>>
+          <button href="#">Test</button>
+        </raw>
+      </body>
+    `;
+    var expected = `
+      <body>
+        <<LCG ProgramTG LCG Coupon Code Default='246996'>>
+        <button href="#">Test</button>
+      </body>
+    `;
+
+    compare(input, expected);
+  });
+
+  it('stops at the first </raw> tag', () => {
+    var input = `
+      <body>
+        <raw>
+          <<LCG ProgramTG LCG Coupon Code Default='246996'>>
+        </raw>
+        <button href="#">Test</button>
+        </raw>
+      </body>
+    `;
+    var expected = `
+      <body>
+        <<LCG ProgramTG LCG Coupon Code Default='246996'>>
+        <table class="button">
+          <tbody>
+            <tr>
+              <td>
+                <table>
+                  <tbody>
+                    <tr>
+                      <td><a href="#">Test</a></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+      </body>
+    `;
+
+    compare(input, expected);
+  });
+
+  it('matches all raw tags', () => {
+    var first = "<<LCG ProgramTG LCG Coupon Code Default='246996'>>";
+    var second = "<asdf>more raw content</asdf>";
+    var input = `
+      <body>
+        <raw>
+          ${first}
+        </raw>
+        <button href="#">Test</button>
+        <raw>
+          ${second}
+        </raw>
+      </body>
+    `
+    var expected = `
+      <body>
+        ${first}
+        <table class="button">
+          <tbody>
+            <tr>
+              <td>
+                <table>
+                  <tbody>
+                    <tr>
+                      <td><a href="#">Test</a></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        ${second}
+      </body>
+    `
 
     compare(input, expected);
   });
