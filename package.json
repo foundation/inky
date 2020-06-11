@@ -20,7 +20,7 @@
     "mkdirp": "^0.5.1",
     "object-values": "^1.0.0",
     "through2": "^2.0.0",
-    "vinyl-fs": "^2.3.0"
+    "vinyl-fs": "^3.0.3"
   },
   "devDependencies": {
     "assert-html-equal": "^1.0.0",
