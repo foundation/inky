@@ -20,7 +20,7 @@
     "mkdirp": "^0.5.1",
     "object-values": "^1.0.0",
     "through2": "^2.0.0",
-    "vinyl-fs": "^2.3.0"
+    "vinyl-fs": "^3.0.3"
   },
   "devDependencies": {
     "assert-html-equal": "^1.0.0",
@@ -32,10 +32,10 @@
     "gulp-uglify": "^2.0.0",
     "mocha": "^2.4.5",
     "rimraf": "^2.5.1",
-    "vinyl-buffer": "^1.0.0",
-    "vinyl-source-stream": "^1.1.0"
+    "vinyl-buffer": "^1.0.1",
+    "vinyl-source-stream": "^2.0.0"
   },
-  "repository": "https://github.com/zurb/inky.git",
-  "bugs": "https://github.com/zurb/inky/issues",
+  "repository": "https://github.com/foundation/inky.git",
+  "bugs": "https://github.com/foundation/inky/issues",
   "license": "MIT"
 }
