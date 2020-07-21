@@ -53,7 +53,7 @@ describe('Grid', () => {
         <tbody>
           <tr></tr>
         </tbody>
-      </table>
+      </table>&zwj;
     `;
 
     compare(input, expected);
@@ -289,7 +289,7 @@ describe('Grid', () => {
                         <tbody>
                           <tr></tr>
                         </tbody>
-                      </table>
+                      </table>&zwj;
                     </th>
                   </tr>
                 </tbody>
@@ -297,7 +297,7 @@ describe('Grid', () => {
             </th>
           </tr>
         </tbody>
-      </table>
+      </table>&zwj;
     `;
 
     compare(input, expected);
@@ -321,7 +321,7 @@ describe('Grid', () => {
             </th>
           </tr>
         </tbody>
-      </table>
+      </table>&zwj;
     `;
 
     compare(input, expected)
