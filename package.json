@@ -1,8 +1,8 @@
 {
   "name": "inky",
-  "version": "1.3.5",
+  "version": "1.3.7",
   "description": "Convert a simple HTML syntax into tables compatible with Foundation for Emails.",
-  "author": "ZURB <foundation@zurb.com> (http://foundation.zurb.com)",
+  "author": "Foundation <contact@get.foundation> (https://get.foundation)",
   "keywords": [
     "ink",
     "foundation",
@@ -11,26 +11,31 @@
   ],
   "main": "index.js",
   "scripts": {
-    "test": "mocha --compilers js:babel-register"
+    "test": "mocha --require babel-core/register",
+    "browser": "gulp browser"
   },
   "dependencies": {
     "cheerio": "^0.20.0",
-    "foundation-emails": "^2.1.0",
+    "foundation-emails": "^2.2.0",
     "mkdirp": "^0.5.1",
-    "multiline": "^1.0.2",
     "object-values": "^1.0.0",
     "through2": "^2.0.0",
-    "vinyl-fs": "^2.3.0"
+    "vinyl-fs": "^3.0.3"
   },
   "devDependencies": {
     "assert-html-equal": "^1.0.0",
     "babel-preset-es2015": "^6.3.13",
     "babel-register": "^6.4.3",
+    "browserify": "^13.1.0",
     "chalk": "^1.1.1",
-    "mocha": "^2.4.5",
-    "rimraf": "^2.5.1"
+    "gulp": "4.0",
+    "gulp-uglify": "^2.0.0",
+    "mocha": "^8.0.1",
+    "rimraf": "^2.5.1",
+    "vinyl-buffer": "^1.0.1",
+    "vinyl-source-stream": "^2.0.0"
   },
-  "repository": "https://github.com/zurb/inky.git",
-  "bugs": "https://github.com/zurb/inky/issues",
+  "repository": "https://github.com/foundation/inky.git",
+  "bugs": "https://github.com/foundation/inky/issues",
   "license": "MIT"
 }

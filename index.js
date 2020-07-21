@@ -12,6 +12,7 @@ module.exports = function(opts, cb) {
   var stream;
   opts = opts || {};
   opts.cheerio = Inky.mergeCheerioOpts(opts.cheerio);
+
   if (typeof inky === 'undefined') {
     inky = new Inky(opts);
   }
@@ -34,9 +35,8 @@ module.exports = function(opts, cb) {
   // This transform function takes in a Vinyl HTML file, converts the code from Inky to HTML, and returns the modified file.
   function transform() {
     return through.obj(function(file, enc, callback) {
-      var html = cheerio.load(file.contents.toString(), opts.cheerio);
       
-      var convertedHtml = inky.releaseTheKraken(html).html();
+      var convertedHtml = inky.releaseTheKraken(file.contents.toString(), opts.cheerio);
 
       file.contents = new Buffer(convertedHtml);
 

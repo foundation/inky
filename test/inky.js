@@ -29,7 +29,7 @@ describe('Inky', () => {
   it(`doesn't choke on inline elements`, () => {
     var input = '<container>This is a link to <a href="#">ZURB.com</a>.</container>';
     var expected = `
-      <table class="container">
+      <table align="center" class="container">
         <tbody>
           <tr>
             <td>This is a link to <a href="#">ZURB.com</a>.</td>
@@ -44,7 +44,7 @@ describe('Inky', () => {
   it(`doesn't choke on special characters`, () => {
     var input = '<container>This is a link tö <a href="#">ZURB.com</a>.</container>';
     var expected = `
-      <table class="container">
+      <table align="center" class="container">
         <tbody>
           <tr>
             <td>This is a link tö <a href="#">ZURB.com</a>.</td>
@@ -59,7 +59,7 @@ describe('Inky', () => {
   it(`doesn't convert these characters into entities`, () => {
     var input = "<container>There's &nbsp; some amazing things here!</container>";
     var expected = `
-      <table class="container">
+      <table align="center" class="container">
         <tbody>
           <tr>
             <td>There's &nbsp; some amazing things here!</td>
@@ -74,7 +74,7 @@ describe('Inky', () => {
   it(`doesn't decode entities if non default cheerio config is given`, () => {
     var input = '<container>"should not replace quotes"</container>';
     var expected = `
-      <table class="container">
+      <table align="center" class="container">
         <tbody>
           <tr>
             <td>"should not replace quotes"</td>
@@ -84,6 +84,20 @@ describe('Inky', () => {
     `;
 
     compare(input, expected, { decodeEntities: false });
+  });
+
+  it(`doesn't muck with stuff inside raw`, () => {
+    var input = '<raw><%= test %></raw>';
+    var expected = '<%= test %>';
+
+    compare(input, expected);
+  });
+
+  it(`can handle multiple raw tags`, () => {
+    var input = '<h1><raw><%= test %></raw></h1><h2>< raw >!!!</ raw ></h2>';
+    var expected = '<h1><%= test %></h1><h2>!!!</h2>';
+
+    compare(input, expected);
   });
 
 });
