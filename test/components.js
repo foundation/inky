@@ -317,7 +317,7 @@ describe('Spacer', () => {
       <table class="spacer">
         <tbody>
           <tr>
-            <td height="10px" style="font-size:10px;line-height:10px;">&nbsp;</td>
+            <td height="10" style="font-size:10px;line-height:10px;">&nbsp;</td>
           </tr>
         </tbody>
       </table>
@@ -333,7 +333,7 @@ describe('Spacer', () => {
       <table class="spacer">
         <tbody>
           <tr>
-            <td height="16px" style="font-size:16px;line-height:16px;">&nbsp;</td>
+            <td height="16" style="font-size:16px;line-height:16px;">&nbsp;</td>
           </tr>
         </tbody>
       </table>
@@ -348,7 +348,7 @@ describe('Spacer', () => {
       <table class="spacer hide-for-large">
         <tbody>
           <tr>
-            <td height="10px" style="font-size:10px;line-height:10px;">&nbsp;</td>
+            <td height="10" style="font-size:10px;line-height:10px;">&nbsp;</td>
           </tr>
         </tbody>
       </table>
@@ -363,7 +363,7 @@ describe('Spacer', () => {
       <table class="spacer show-for-large">
         <tbody>
           <tr>
-            <td height="20px" style="font-size:20px;line-height:20px;">&nbsp;</td>
+            <td height="20" style="font-size:20px;line-height:20px;">&nbsp;</td>
           </tr>
         </tbody>
       </table>
@@ -378,14 +378,14 @@ describe('Spacer', () => {
       <table class="spacer hide-for-large">
         <tbody>
           <tr>
-            <td height="10px" style="font-size:10px;line-height:10px;">&nbsp;</td>
+            <td height="10" style="font-size:10px;line-height:10px;">&nbsp;</td>
           </tr>
         </tbody>
       </table>
       <table class="spacer show-for-large">
         <tbody>
           <tr>
-            <td height="20px" style="font-size:20px;line-height:20px;">&nbsp;</td>
+            <td height="20" style="font-size:20px;line-height:20px;">&nbsp;</td>
           </tr>
         </tbody>
       </table>
@@ -400,7 +400,7 @@ describe('Spacer', () => {
       <table class="spacer bgcolor">
         <tbody>
           <tr>
-            <td height="10px" style="font-size:10px;line-height:10px;">&nbsp;</td>
+            <td height="10" style="font-size:10px;line-height:10px;">&nbsp;</td>
           </tr>
         </tbody>
       </table>
