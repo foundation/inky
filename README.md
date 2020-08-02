@@ -1,6 +1,6 @@
 # Inky
 
-[![Build Status](https://travis-ci.org/foundation/inky.svg?branch=master)](https://travis-ci.org/foundation/inky) [![npm version](https://badge.fury.io/js/inky.svg)](https://badge.fury.io/js/inky)
+[![Build Status](https://travis-ci.com/foundation/inky.svg?branch=master)](https://travis-ci.com/foundation/inky) [![npm version](https://badge.fury.io/js/inky.svg)](https://badge.fury.io/js/inky)
 
 Inky is an HTML-based templating language that converts simple HTML into complex, responsive email-ready HTML. Designed for [Foundation for Emails](https://get.foundation/emails).
 
