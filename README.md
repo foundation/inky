@@ -1,8 +1,8 @@
 # Inky
 
-[![Build Status](https://travis-ci.org/zurb/inky.svg?branch=master)](https://travis-ci.org/zurb/inky) [![npm version](https://badge.fury.io/js/inky.svg)](https://badge.fury.io/js/inky)
+[![Build Status](https://travis-ci.com/foundation/inky.svg?branch=master)](https://travis-ci.com/foundation/inky) [![npm version](https://badge.fury.io/js/inky.svg)](https://badge.fury.io/js/inky)
 
-Inky is an HTML-based templating language that converts simple HTML into complex, responsive email-ready HTML. Designed for [Foundation for Emails](http://foundation.zurb.com/emails), a responsive email framework from [ZURB](http://zurb.com).
+Inky is an HTML-based templating language that converts simple HTML into complex, responsive email-ready HTML. Designed for [Foundation for Emails](https://get.foundation/emails).
 
 Give Inky simple HTML like this:
 
@@ -75,14 +75,7 @@ function parse() {
 
 ### Command Line
 
-Install [inky-cli](https://github.com/zurb/inky-cli) to get the `inky` command. The first option is a glob of input files, and the second option is a folder to output them to. Add the `--watch` flag to re-compile when files are added or changed.
-
-```bash
-npm install inky-cli --global
-inky src/pages/**/*.html dist --watch
-```
-
-Doesn't support advanced settings at the moment.
+Install [foundation-cli](https://github.com/foundation/foundation-cli) to get the `foundation` command.
 
 ### In the browser / with browserify
 
