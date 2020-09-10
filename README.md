@@ -85,7 +85,7 @@ Install [foundation-cli](https://github.com/foundation/foundation-cli) to get th
 - `columnCount` (Number): Column count for the grid. Make sure your Foundation for Emails project has the same column count in the Sass as well.
 - `cheerio` (Object): cheerio settings (for available options please refer to [cheerio project at github](https://github.com/cheeriojs/cheerio)).
 
-## Custom Elements
+## Custom Components
 
 Inky simplifies the process of creating HTML emails by expanding out simple tags like `<row>` and `<column>` into full table syntax. The names of the tags can be changed with the `components` setting.
 
