@@ -23,7 +23,7 @@ describe('Inky', () => {
 
   it('should have an array of component tags', () => {
     var inky = new Inky();
-    assert(Array.isArray(inky.componentTags), 'Inky.zftags is an array');
+    assert(Array.isArray(inky.componentTags), 'Inky.componentTags is an array');
   });
 
   it(`doesn't choke on inline elements`, () => {
