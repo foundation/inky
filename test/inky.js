@@ -3,7 +3,7 @@ var parse = require('..');
 var cheerio = require('cheerio');
 var assert = require('assert');
 var fs = require('fs');
-var rimraf = require('rimraf');
+var { rimrafSync } = require('rimraf');
 var vfs = require('vinyl-fs');
 var exec = require('child_process').exec;
 var compare = require('./lib/compare');
@@ -107,8 +107,8 @@ describe('Inky wrappers', () => {
   const OUTPUT = 'test/fixtures/_build';
   const OUTFILE = 'test/fixtures/_build/test.html';
 
-  afterEach(done => {
-    rimraf(OUTPUT, done);
+  afterEach(() => {
+    rimrafSync(OUTPUT);
   });
 
   it('can process a glob of files', done => {

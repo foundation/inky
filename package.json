@@ -11,27 +11,28 @@
   ],
   "main": "index.js",
   "scripts": {
-    "test": "mocha --require babel-core/register",
+    "test": "mocha --require @babel/register",
     "browser": "gulp browser"
   },
   "dependencies": {
     "cheerio": "^0.20.0",
-    "foundation-emails": "^2.2.0",
+    "foundation-emails": "^2.4.0",
     "mkdirp": "^0.5.1",
     "object-values": "^1.0.0",
     "through2": "^2.0.0",
     "vinyl-fs": "^3.0.3"
   },
   "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.0",
+    "@babel/register": "^7.28.6",
     "assert-html-equal": "^1.0.0",
-    "babel-preset-es2015": "^6.3.13",
-    "babel-register": "^6.4.3",
     "browserify": "^13.1.0",
     "chalk": "^1.1.1",
     "gulp": "4.0",
     "gulp-uglify": "^2.0.0",
-    "mocha": "^8.0.1",
-    "rimraf": "^2.5.1",
+    "mocha": "^11.7.5",
+    "rimraf": "^6.1.3",
     "vinyl-buffer": "^1.0.1",
     "vinyl-source-stream": "^2.0.0"
   },
