@@ -927,3 +927,4 @@ Any language with C FFI support can use the shared library directly without an o
 | 14 | Write migration guide for each language | Documentation |
 | 15 | Publish v2.0.0 to npm, crates.io, Packagist, PyPI, RubyGems | Release |
 | 16 | Archive `foundation/inky-rb` with pointer to new gem | Cleanup |
+| 17 | Re-enable Dependabot security updates (disabled during 1.x→2.x transition) | Cleanup |
