@@ -69,7 +69,7 @@ describe('Center', () => {
 
 describe('Button', () => {
   it('creates a simple button', () => {
-    var input = '<button href="http://zurb.com">Button</button>';
+    var input = '<button href="http://get.foundation">Button</button>';
     var expected = `
       <table class="button">
         <tbody>
@@ -78,7 +78,7 @@ describe('Button', () => {
               <table>
                 <tbody>
                   <tr>
-                    <td><a href="http://zurb.com">Button</a></td>
+                    <td><a href="http://get.foundation">Button</a></td>
                   </tr>
                 </tbody>
               </table>
@@ -92,7 +92,7 @@ describe('Button', () => {
   });
 
   it('creates a button with target="_blank" attribute', () => {
-    var input = '<button href="http://zurb.com" target="_blank">Button</button>';
+    var input = '<button href="http://get.foundation" target="_blank">Button</button>';
     var expected = `
       <table class="button">
         <tbody>
@@ -101,7 +101,7 @@ describe('Button', () => {
               <table>
                 <tbody>
                   <tr>
-                    <td><a href="http://zurb.com" target="_blank">Button</a></td>
+                    <td><a href="http://get.foundation" target="_blank">Button</a></td>
                   </tr>
                 </tbody>
               </table>
@@ -116,7 +116,7 @@ describe('Button', () => {
 
   it('creates a button with classes', () => {
     var input = `
-      <button class="small alert" href="http://zurb.com">Button</button>
+      <button class="small alert" href="http://get.foundation">Button</button>
     `;
     var expected = `
       <table class="button small alert">
@@ -126,7 +126,7 @@ describe('Button', () => {
               <table>
                 <tbody>
                   <tr>
-                    <td><a href="http://zurb.com">Button</a></td>
+                    <td><a href="http://get.foundation">Button</a></td>
                   </tr>
                 </tbody>
               </table>
@@ -141,7 +141,7 @@ describe('Button', () => {
 
   it('creates a correct expanded button', () => {
     var input = `
-      <button class="expand" href="http://zurb.com">Button</button>
+      <button class="expand" href="http://get.foundation">Button</button>
     `;
     var expected = `
       <table class="button expand">
@@ -152,7 +152,7 @@ describe('Button', () => {
                 <tbody>
                   <tr>
                     <td>
-                      <center><a href="http://zurb.com" align="center" class="float-center">Button</a></center>
+                      <center><a href="http://get.foundation" align="center" class="float-center">Button</a></center>
                     </td>
                   </tr>
                 </tbody>
@@ -172,7 +172,7 @@ describe('Menu', () => {
   it('creates a menu with item tags inside', () => {
     var input = `
       <menu>
-        <item href="http://zurb.com">Item</item>
+        <item href="http://get.foundation">Item</item>
       </menu>
     `;
     var expected = `
@@ -183,7 +183,7 @@ describe('Menu', () => {
               <table>
                 <tbody>
                   <tr>
-                    <th class="menu-item"><a href="http://zurb.com">Item</a></th>
+                    <th class="menu-item"><a href="http://get.foundation">Item</a></th>
                   </tr>
                 </tbody>
               </table>
@@ -199,7 +199,7 @@ describe('Menu', () => {
   it('creates a menu with items tags inside, containing target="_blank" attribute', () => {
     var input = `
       <menu>
-        <item href="http://zurb.com" target="_blank">Item</item>
+        <item href="http://get.foundation" target="_blank">Item</item>
       </menu>
     `;
     var expected = `
@@ -210,7 +210,7 @@ describe('Menu', () => {
               <table>
                 <tbody>
                   <tr>
-                    <th class="menu-item"><a href="http://zurb.com" target="_blank">Item</a></th>
+                    <th class="menu-item"><a href="http://get.foundation" target="_blank">Item</a></th>
                   </tr>
                 </tbody>
               </table>
@@ -251,7 +251,7 @@ describe('Menu', () => {
   it('works without using an item tag', () => {
     var input = `
       <menu>
-        <th class="menu-item"><a href="http://zurb.com">Item 1</a></th>
+        <th class="menu-item"><a href="http://get.foundation">Item 1</a></th>
       </menu>
     `;
     var expected = `
@@ -262,7 +262,7 @@ describe('Menu', () => {
               <table>
                 <tbody>
                   <tr>
-                    <th class="menu-item"><a href="http://zurb.com">Item 1</a></th>
+                    <th class="menu-item"><a href="http://get.foundation">Item 1</a></th>
                   </tr>
                 </tbody>
               </table>
