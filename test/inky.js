@@ -27,12 +27,12 @@ describe('Inky', () => {
   });
 
   it(`doesn't choke on inline elements`, () => {
-    var input = '<container>This is a link to <a href="#">ZURB.com</a>.</container>';
+    var input = '<container>This is a link to <a href="#">get.foundation</a>.</container>';
     var expected = `
       <table align="center" class="container">
         <tbody>
           <tr>
-            <td>This is a link to <a href="#">ZURB.com</a>.</td>
+            <td>This is a link to <a href="#">get.foundation</a>.</td>
           </tr>
         </tbody>
       </table>
@@ -42,12 +42,12 @@ describe('Inky', () => {
   });
 
   it(`doesn't choke on special characters`, () => {
-    var input = '<container>This is a link tö <a href="#">ZURB.com</a>.</container>';
+    var input = '<container>This is a link tö <a href="#">get.foundation</a>.</container>';
     var expected = `
       <table align="center" class="container">
         <tbody>
           <tr>
-            <td>This is a link tö <a href="#">ZURB.com</a>.</td>
+            <td>This is a link tö <a href="#">get.foundation</a>.</td>
           </tr>
         </tbody>
       </table>

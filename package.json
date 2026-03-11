@@ -1,6 +1,6 @@
 {
   "name": "inky",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "description": "Convert a simple HTML syntax into tables compatible with Foundation for Emails.",
   "author": "Foundation <contact@get.foundation> (https://get.foundation)",
   "keywords": [

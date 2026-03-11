@@ -744,8 +744,8 @@ Port all 52 existing test cases into language-agnostic JSON fixtures. Every lang
   "tests": [
     {
       "name": "creates a simple button",
-      "input": "<button href=\"http://zurb.com\">Button</button>",
-      "expected": "<table class=\"button\"><tbody><tr><td><table><tbody><tr><td><a href=\"http://zurb.com\">Button</a></td></tr></tbody></table></td></tr></tbody></table>"
+      "input": "<button href=\"http://get.foundation\">Button</button>",
+      "expected": "<table class=\"button\"><tbody><tr><td><table><tbody><tr><td><a href=\"http://get.foundation\">Button</a></td></tr></tbody></table></td></tr></tbody></table>"
     },
     {
       "name": "creates a spacer with default size",
