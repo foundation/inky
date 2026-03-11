@@ -3,7 +3,7 @@ var parse = require('..');
 var cheerio = require('cheerio');
 var assert = require('assert');
 var fs = require('fs');
-var rimraf = require('rimraf');
+var { rimrafSync } = require('rimraf');
 var vfs = require('vinyl-fs');
 var exec = require('child_process').exec;
 var compare = require('./lib/compare');
@@ -23,16 +23,16 @@ describe('Inky', () => {
 
   it('should have an array of component tags', () => {
     var inky = new Inky();
-    assert(Array.isArray(inky.componentTags), 'Inky.zftags is an array');
+    assert(Array.isArray(inky.componentTags), 'Inky.componentTags is an array');
   });
 
   it(`doesn't choke on inline elements`, () => {
-    var input = '<container>This is a link to <a href="#">ZURB.com</a>.</container>';
+    var input = '<container>This is a link to <a href="#">get.foundation</a>.</container>';
     var expected = `
       <table align="center" class="container">
         <tbody>
           <tr>
-            <td>This is a link to <a href="#">ZURB.com</a>.</td>
+            <td>This is a link to <a href="#">get.foundation</a>.</td>
           </tr>
         </tbody>
       </table>
@@ -42,12 +42,12 @@ describe('Inky', () => {
   });
 
   it(`doesn't choke on special characters`, () => {
-    var input = '<container>This is a link tö <a href="#">ZURB.com</a>.</container>';
+    var input = '<container>This is a link tö <a href="#">get.foundation</a>.</container>';
     var expected = `
       <table align="center" class="container">
         <tbody>
           <tr>
-            <td>This is a link tö <a href="#">ZURB.com</a>.</td>
+            <td>This is a link tö <a href="#">get.foundation</a>.</td>
           </tr>
         </tbody>
       </table>
@@ -107,8 +107,8 @@ describe('Inky wrappers', () => {
   const OUTPUT = 'test/fixtures/_build';
   const OUTFILE = 'test/fixtures/_build/test.html';
 
-  afterEach(done => {
-    rimraf(OUTPUT, done);
+  afterEach(() => {
+    rimrafSync(OUTPUT);
   });
 
   it('can process a glob of files', done => {

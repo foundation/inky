@@ -1,6 +1,6 @@
 # Inky
 
-[![Build Status](https://travis-ci.com/foundation/inky.svg?branch=master)](https://travis-ci.com/foundation/inky) [![npm version](https://badge.fury.io/js/inky.svg)](https://badge.fury.io/js/inky)
+[![npm version](https://badge.fury.io/js/inky.svg)](https://badge.fury.io/js/inky)
 
 Inky is an HTML-based templating language that converts simple HTML into complex, responsive email-ready HTML. Designed for [Foundation for Emails](https://get.foundation/emails).
 
@@ -85,7 +85,7 @@ Install [foundation-cli](https://github.com/foundation/foundation-cli) to get th
 - `columnCount` (Number): Column count for the grid. Make sure your Foundation for Emails project has the same column count in the Sass as well.
 - `cheerio` (Object): cheerio settings (for available options please refer to [cheerio project at github](https://github.com/cheeriojs/cheerio)).
 
-## Custom Elements
+## Custom Components
 
 Inky simplifies the process of creating HTML emails by expanding out simple tags like `<row>` and `<column>` into full table syntax. The names of the tags can be changed with the `components` setting.
 
@@ -103,6 +103,22 @@ Here are the names of the defaults:
   menuItem: 'item'
 }
 ```
+
+## Raw HTML
+
+If you need to include raw html, you can wrap raw content in `<raw>` tags
+
+```html
+<raw>
+  <button></button>
+  <asdf></asdf>
+</raw>
+```
+
+This is a feature intended for advanced users. You will be responsible for ensuring all markup between `<raw>` tags is valid. All content after an opening `<raw>` tag will be inserted "As Is" until the next closing `</raw>` tag.
+
+This means that `<raw>` tags CANNOT be nested
+
 
 ## Programmatic Use
 
