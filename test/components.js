@@ -432,9 +432,11 @@ describe('h-line', () => {
     var input = `<h-line class="dotted">`;
     var expected = `
       <table class="h-line dotted">
-        <tr>
-          <th>&nbsp;</th>
-        </tr>
+        <tbody>
+          <tr>
+            <th>&nbsp;</th>
+          </tr>
+        </tbody>
       </table>
     `;
      compare(input, expected);
