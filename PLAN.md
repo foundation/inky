@@ -1,14 +1,23 @@
-# Inky Rust Rewrite Plan
+# Inky v2 Plan
+
+## Vision
+
+Inky becomes a complete email framework — absorbing what was previously "Foundation for Emails" into a single product and brand. Inky v2 includes:
+
+- **Inky Engine** — Rust core that transforms simple HTML into email-safe table markup
+- **Inky Styles** — SCSS/CSS framework for responsive email components (formerly Foundation for Emails)
+- **Inky Templates** — Starter email templates
+- **Language Bindings** — Official packages for JS, PHP, Python, Ruby, and Go
 
 ## Overview
 
-Rewrite the Inky HTML-to-email transpiler in Rust and distribute it as:
+Rewrite the Inky engine in Rust and distribute it as:
 
 1. **WASM module** — for JS/Node.js/browser (drop-in replacement for current npm package)
 2. **Native shared library** (.so/.dylib/.dll) — for PHP (via FFI), Python (via ctypes), Ruby (via fiddle), and any other language with C FFI support
 3. **Rust crate** — for Rust consumers and as the canonical source of truth
 
-This eliminates the need for language-specific reimplementations (inky-rb, lorenzo/pinky, etc.) and ensures all consumers produce identical output.
+The npm `inky` package becomes the "batteries included" package — transpiler, styles, and templates in one install. This eliminates the need for language-specific reimplementations (inky-rb, lorenzo/pinky, etc.) and ensures all consumers produce identical output.
 
 ---
 
@@ -39,12 +48,43 @@ inky/
 │       │   └── lib.rs            # extern "C" exported functions
 │       └── inky.h                # Generated C header (via cbindgen)
 │
+├── scss/                         # Inky Styles (formerly Foundation for Emails)
+│   ├── inky.scss                 # Main stylesheet entry point
+│   ├── _global.scss              # Global variables and resets
+│   ├── components/               # Component styles
+│   │   ├── _button.scss
+│   │   ├── _callout.scss
+│   │   ├── _menu.scss
+│   │   ├── _normalize.scss
+│   │   ├── _outlook-first.scss
+│   │   ├── _typography.scss
+│   │   ├── _visibility.scss
+│   │   └── ...
+│   ├── grid/
+│   │   ├── _grid.scss
+│   │   └── _block-grid.scss
+│   ├── settings/
+│   │   └── _settings.scss
+│   └── util/
+│       └── _util.scss
+│
+├── dist/                         # Prebuilt CSS
+│   ├── inky.css
+│   └── inky.min.css
+│
+├── templates/                    # Starter email templates
+│   ├── basic.html
+│   ├── hero.html
+│   ├── newsletter.html
+│   ├── marketing.html
+│   └── ...
+│
 ├── bindings/
-│   ├── node/                     # npm package wrapper
+│   ├── node/                     # npm: "inky" — WASM transpiler + SCSS + CSS + templates
 │   │   ├── package.json
 │   │   └── index.js              # JS API wrapping WASM
 │   │
-│   ├── php/                      # Composer package wrapper
+│   ├── php/                      # Composer: "foundation/inky" — FFI transpiler
 │   │   ├── composer.json
 │   │   ├── src/
 │   │   │   └── Inky.php          # PHP FFI wrapper class
@@ -52,7 +92,7 @@ inky/
 │   │   │   └── InkyTest.php      # PHPUnit tests against shared fixtures
 │   │   └── lib/                  # Prebuilt .so/.dylib binaries
 │   │
-│   ├── python/                   # PyPI package wrapper
+│   ├── python/                   # PyPI: "inky-email" — ctypes transpiler
 │   │   ├── pyproject.toml
 │   │   ├── src/
 │   │   │   └── inky/__init__.py  # ctypes wrapper
@@ -60,7 +100,7 @@ inky/
 │   │   │   └── test_inky.py      # pytest tests against shared fixtures
 │   │   └── lib/                  # Prebuilt .so/.dylib binaries
 │   │
-│   └── ruby/                     # RubyGems package wrapper
+│   └── ruby/                     # RubyGems: "inky-email" — fiddle transpiler
 │       ├── inky.gemspec
 │       ├── lib/
 │       │   └── inky.rb           # fiddle wrapper
@@ -74,6 +114,8 @@ inky/
 │   │   ├── grid.json             # All grid test cases
 │   │   └── parser.json           # General parser test cases
 │   └── integration/              # Cross-language integration tests
+│
+├── docs/                         # Simple markdown documentation
 │
 └── .github/
     └── workflows/
@@ -258,8 +300,10 @@ wasm-pack build crates/inky-wasm --target nodejs      # for Node.js
 {
   "name": "inky",
   "version": "2.0.0",
+  "description": "Inky — the complete responsive email framework",
   "main": "index.js",
-  "types": "index.d.ts"
+  "types": "index.d.ts",
+  "style": "dist/inky.min.css"
 }
 ```
 
@@ -825,7 +869,7 @@ jobs:
 
 ### npm (JS/Node.js)
 
-The v2.0.0 npm package maintains backward compatibility:
+**Inky users:** The v2.0.0 npm package maintains backward compatibility:
 
 ```javascript
 // This still works exactly as before
@@ -838,10 +882,24 @@ const { transform } = require('inky');
 const html = transform(input);
 ```
 
+**Foundation for Emails users:** The `inky` npm package now includes everything:
+
+```javascript
+// Before: two packages
+// npm install inky foundation-emails
+
+// After: one package
+// npm install inky
+// CSS available at: node_modules/inky/dist/inky.css
+// SCSS available at: node_modules/inky/scss/inky.scss
+```
+
 Breaking changes:
 - Gulp stream integration removed (Gulp usage has declined significantly)
 - Cheerio options no longer accepted (Rust uses its own HTML parser)
 - Minimum Node.js version: 16+ (for WASM support)
+- CSS files renamed from `foundation-emails.css` to `inky.css`
+- SCSS entry point renamed from `foundation-emails.scss` to `inky.scss`
 
 ### PHP
 
@@ -918,13 +976,25 @@ Any language with C FFI support can use the shared library directly without an o
 | 10 | Create Ruby gem (fiddle) | ~40 lines |
 | 11 | Create Go module in separate repo (cgo) | ~50 lines |
 
-### Stage 4: Ship it
+### Stage 4: Consolidate styles
 
 | Step | Task | Scope |
 |------|------|-------|
-| 12 | Set up CI: test Rust + all bindings on all platforms | CI config |
-| 13 | Set up release pipeline: cross-compile + publish to all registries | CD config |
-| 14 | Write migration guide for each language | Documentation |
-| 15 | Publish v2.0.0 to npm, crates.io, Packagist, PyPI, RubyGems | Release |
-| 16 | Archive `foundation/inky-rb` with pointer to new gem | Cleanup |
-| 17 | Re-enable Dependabot security updates (disabled during 1.x→2.x transition) | Cleanup |
+| 12 | Move SCSS from `foundation-emails` into `inky/scss/` | File migration |
+| 13 | Rename entry point from `foundation-emails.scss` to `inky.scss` | Rebrand |
+| 14 | Update SCSS variable prefixes if needed | Rebrand |
+| 15 | Build dist CSS with simple `sass` command (no gulp) | Build simplification |
+| 16 | Move starter templates into `inky/templates/` | File migration |
+| 17 | Write simple markdown docs (replace panini/supercollider) | Documentation |
+
+### Stage 5: Ship it
+
+| Step | Task | Scope |
+|------|------|-------|
+| 18 | Set up CI: test Rust + all bindings on all platforms | CI config |
+| 19 | Set up release pipeline: cross-compile + publish to all registries | CD config |
+| 20 | Write migration guide for each language | Documentation |
+| 21 | Publish v2.0.0 to npm, crates.io, Packagist, PyPI, RubyGems | Release |
+| 22 | Archive `foundation/inky-rb` with pointer to new gem | Cleanup |
+| 23 | Archive `foundation/foundation-emails` with pointer to `inky` | Cleanup |
+| 24 | Re-enable Dependabot security updates (disabled during 1.x→2.x transition) | Cleanup |
