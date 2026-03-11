@@ -2,22 +2,293 @@
 
 ## Vision
 
-Inky becomes a complete email framework — absorbing what was previously "Foundation for Emails" into a single product and brand. Inky v2 includes:
+Inky becomes a complete email framework — absorbing what was previously "Foundation for Emails" into a single product and brand. Inky v2 is a ground-up rethink with:
 
-- **Inky Engine** — Rust core that transforms simple HTML into email-safe table markup
+- **Modern syntax** — attributes over classes, cleaner naming, new components
+- **Accessibility by default** — `role="presentation"` on all layout tables, alt text validation
+- **Dark mode support** — color-scheme meta, compatible style patterns
+- **Inky CLI** — build, migrate, validate from the command line
 - **Inky Styles** — SCSS/CSS framework for responsive email components (formerly Foundation for Emails)
 - **Inky Templates** — Starter email templates
 - **Language Bindings** — Official packages for JS, PHP, Python, Ruby, and Go
+- **Legacy migration** — `inky migrate` converts v1 syntax to v2 automatically
 
-## Overview
+## Distribution
 
-Rewrite the Inky engine in Rust and distribute it as:
+The Inky engine is written in Rust and distributed as:
 
-1. **WASM module** — for JS/Node.js/browser (drop-in replacement for current npm package)
-2. **Native shared library** (.so/.dylib/.dll) — for PHP (via FFI), Python (via ctypes), Ruby (via fiddle), and any other language with C FFI support
-3. **Rust crate** — for Rust consumers and as the canonical source of truth
+1. **CLI binary** — `inky` command, installable via Homebrew, npm, cargo, or direct download
+2. **WASM module** — for JS/Node.js/browser
+3. **Native shared library** (.so/.dylib/.dll) — for PHP (via FFI), Python (via ctypes), Ruby (via fiddle), Go (via cgo)
+4. **Rust crate** — for Rust consumers and as the canonical source of truth
 
-The npm `inky` package becomes the "batteries included" package — transpiler, styles, and templates in one install. This eliminates the need for language-specific reimplementations (inky-rb, lorenzo/pinky, etc.) and ensures all consumers produce identical output.
+---
+
+## Modern Syntax (v2)
+
+### Design Principles
+
+1. **Attributes over classes** — explicit, parseable, validatable with useful error messages
+2. **Accessibility by default** — layout tables always get `role="presentation"`
+3. **Consistent naming** — `sm`/`lg` everywhere, singular `<column>`, clear attribute names
+4. **Auto-detected template tags** — `{{...}}`, `<%= %>`, `${...}` pass through without `<raw>`
+5. **Helpful errors** — "unknown attribute `colr` on button — did you mean `color`?"
+
+### Component Reference
+
+#### Layout
+
+```html
+<container>
+  <row align="center" dir="rtl">
+    <column sm="12" lg="6">Content</column>
+    <column sm="12" lg="6">Content</column>
+  </row>
+</container>
+```
+
+- `<column>` (singular, renamed from `<columns>`)
+- `sm` / `lg` (shortened from `small` / `large`)
+- `align` attribute on `<row>` (was not supported)
+- `no-expander` still supported
+
+#### Button
+
+```html
+<button href="https://example.com"
+        target="_blank"
+        size="small"
+        color="alert"
+        expand
+        radius
+        hollow>
+  Click Me
+</button>
+```
+
+- `size` attribute: `tiny`, `small`, `default`, `large` (was `class="small"`)
+- `color` attribute: `primary`, `secondary`, `success`, `alert`, `warning` (was `class="alert"`)
+- `expand`, `radius`, `rounded`, `hollow` remain as bare attributes (was classes)
+
+#### Spacer
+
+```html
+<spacer height="16">
+<spacer sm="10" lg="20">
+```
+
+- `height` (renamed from `size` — clearer intent)
+- `sm` / `lg` (renamed from `size-sm` / `size-lg`)
+
+#### Divider
+
+```html
+<divider>
+<divider class="dotted">
+```
+
+- Renamed from `<h-line>` — more intuitive name
+- `<h-line>` still works in legacy mode
+
+#### Callout
+
+```html
+<callout color="primary">Important message</callout>
+```
+
+- `color` attribute (was `class="primary"`)
+
+#### Menu
+
+```html
+<menu align="center" direction="vertical">
+  <item href="#">Link 1</item>
+  <item href="#" target="_blank">Link 2</item>
+</menu>
+```
+
+- `align="center"` replaces wrapping in `<center>` tag
+- `direction="vertical"` (was `class="vertical"`)
+
+#### Wrapper
+
+```html
+<wrapper class="header">Content</wrapper>
+```
+
+- Unchanged
+
+#### Block Grid
+
+```html
+<block-grid up="3">
+  <td>Item</td>
+</block-grid>
+```
+
+- Unchanged
+
+#### Image (NEW)
+
+```html
+<image src="hero.jpg" alt="Hero banner" width="600">
+<image src="hero.jpg" alt="Hero banner" width="600" retina>
+```
+
+- Responsive image with proper width attributes for email clients
+- `retina` flag: renders at half the source width for crisp display on high-DPI screens
+- `alt` text is required — parser warns if missing
+
+#### Outlook Conditional (NEW)
+
+```html
+<outlook>
+  <!-- This content only renders in Outlook/mso -->
+  <table width="600"><tr><td>Fallback</td></tr></table>
+</outlook>
+
+<not-outlook>
+  <!-- This content renders everywhere except Outlook -->
+  <div style="max-width: 600px;">Modern layout</div>
+</not-outlook>
+```
+
+- Wraps content in `<!--[if mso]>...<![endif]-->` / `<!--[if !mso]><!-->...<!--<![endif]-->`
+- Much cleaner than writing conditional comments by hand
+
+#### Raw
+
+```html
+<raw><<LCG Program\TG LCG Coupon Code>></raw>
+```
+
+- Unchanged, still available for edge cases
+- Most template tags auto-detected (see below)
+
+### Auto-Detected Template Tags
+
+These patterns pass through untouched without needing `<raw>`:
+
+- `{{variable}}` — Handlebars, Mustache, Jinja2, Twig, Blade
+- `<%= expression %>` — ERB, EJS
+- `${expression}` — ES6 template literals
+- `<% code %>` — ERB, EJS, ASP
+- `{variable}` — (only when not valid HTML attribute syntax)
+- `*|MERGE_TAG|*` — Mailchimp
+- `%%variable%%` — Salesforce Marketing Cloud
+
+### Output Changes (vs v1)
+
+All layout tables include accessibility attributes:
+```html
+<table role="presentation" class="row">
+```
+
+Dark mode meta tag added when transforming a full HTML document:
+```html
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+```
+
+---
+
+## Legacy Syntax (v1 Compatibility)
+
+The parser auto-detects legacy syntax. If it encounters `<columns>` (plural) it uses v1 rules for that element. This means existing templates work without changes, but new code should use the modern syntax.
+
+### Migration Tool
+
+`inky migrate` converts v1 → v2 syntax:
+
+| v1 (Legacy) | v2 (Modern) |
+|---|---|
+| `<columns large="6" small="12">` | `<column lg="6" sm="12">` |
+| `<columns>` (plural) | `<column>` (singular) |
+| `<button class="small alert expand">` | `<button size="small" color="alert" expand>` |
+| `<spacer size="16">` | `<spacer height="16">` |
+| `<spacer size-sm="10" size-lg="20">` | `<spacer sm="10" lg="20">` |
+| `<h-line>` | `<divider>` |
+| `<callout class="primary">` | `<callout color="primary">` |
+| `<center><menu class="vertical">` | `<menu align="center" direction="vertical">` |
+
+The migration preserves all other attributes and content. It's a safe, reversible transformation.
+
+---
+
+## Inky CLI (`inky-cli`)
+
+A standalone command-line tool for transforming, migrating, and validating Inky templates.
+
+### Installation
+
+```bash
+# Homebrew
+brew install inky
+
+# npm (installs the binary via WASM)
+npm install -g inky
+
+# Cargo
+cargo install inky-cli
+
+# Direct download (GitHub releases)
+curl -fsSL https://get.inky.email/install.sh | sh
+```
+
+### Commands
+
+```bash
+# Transform files
+inky build input.html                    # outputs to stdout
+inky build input.html -o output.html     # outputs to file
+inky build src/ -o dist/                 # transforms a directory
+inky build src/ -o dist/ --inline-css    # transform + inline CSS (future)
+cat input.html | inky build              # stdin/stdout pipe
+
+# Migrate v1 → v2
+inky migrate old.html                    # prints migrated to stdout
+inky migrate old.html -o new.html        # writes to file
+inky migrate src/ --in-place             # rewrites files in-place
+
+# Validate templates
+inky validate input.html                 # checks for issues
+inky validate src/                       # validates a directory
+
+# Watch mode
+inky watch src/ -o dist/                 # rebuilds on file changes
+
+# Version and help
+inky --version
+inky help
+inky help build
+```
+
+### Validation Checks
+
+`inky validate` warns about:
+- Images missing `alt` text
+- Buttons missing `href`
+- Nesting rows more than 2 levels deep (Gmail issues)
+- Unknown attributes on Inky components
+- Deprecated v1 syntax (suggests v2 equivalent)
+
+### Exit Codes
+
+- `0` — success
+- `1` — transform/parse error
+- `2` — validation warnings (with `--strict`)
+
+### Configuration File
+
+Optional `inky.config.json` or `inky` key in `package.json`:
+
+```json
+{
+  "columnCount": 12,
+  "syntax": "modern",
+  "validate": true
+}
+```
 
 ---
 
@@ -31,11 +302,16 @@ inky/
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       ├── lib.rs            # Public API: transform(html) -> html
-│   │       ├── parser.rs         # HTML parsing and component detection
 │   │       ├── components.rs     # Component factory (all transformation rules)
-│   │       ├── column.rs         # Column/grid sizing logic
 │   │       ├── attrs.rs          # Attribute extraction and filtering
-│   │       └── config.rs         # Configuration (column count, tag names)
+│   │       ├── config.rs         # Configuration (column count, syntax mode)
+│   │       ├── migrate.rs        # v1 → v2 syntax migration
+│   │       └── validate.rs       # Template validation and warnings
+│   │
+│   ├── inky-cli/                 # CLI binary
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       └── main.rs           # CLI entry point (clap-based)
 │   │
 │   ├── inky-wasm/                # WASM bindings (wasm-bindgen)
 │   │   ├── Cargo.toml
@@ -46,90 +322,66 @@ inky/
 │       ├── Cargo.toml
 │       ├── src/
 │       │   └── lib.rs            # extern "C" exported functions
-│       └── inky.h                # Generated C header (via cbindgen)
+│       ├── build.rs              # cbindgen header generation
+│       └── inky.h                # Generated C header
 │
 ├── scss/                         # Inky Styles (formerly Foundation for Emails)
-│   ├── inky.scss                 # Main stylesheet entry point
-│   ├── _global.scss              # Global variables and resets
-│   ├── components/               # Component styles
+│   ├── inky.scss
+│   ├── _global.scss
+│   ├── components/
 │   │   ├── _button.scss
 │   │   ├── _callout.scss
 │   │   ├── _menu.scss
 │   │   ├── _normalize.scss
-│   │   ├── _outlook-first.scss
 │   │   ├── _typography.scss
 │   │   ├── _visibility.scss
-│   │   └── ...
+│   │   └── _dark-mode.scss       # NEW: dark mode utilities
 │   ├── grid/
 │   │   ├── _grid.scss
 │   │   └── _block-grid.scss
-│   ├── settings/
-│   │   └── _settings.scss
-│   └── util/
-│       └── _util.scss
+│   └── settings/
+│       └── _settings.scss
 │
 ├── dist/                         # Prebuilt CSS
 │   ├── inky.css
 │   └── inky.min.css
 │
-├── templates/                    # Starter email templates
+├── templates/                    # Starter email templates (v2 syntax)
 │   ├── basic.html
 │   ├── hero.html
 │   ├── newsletter.html
-│   ├── marketing.html
-│   └── ...
+│   └── marketing.html
 │
 ├── bindings/
-│   ├── node/                     # npm: "inky" — WASM transpiler + SCSS + CSS + templates
+│   ├── node/                     # npm: "inky"
 │   │   ├── package.json
-│   │   └── index.js              # JS API wrapping WASM
-│   │
-│   ├── php/                      # Composer: "foundation/inky" — FFI transpiler
+│   │   └── index.js
+│   ├── php/                      # Composer: "foundation/inky"
 │   │   ├── composer.json
-│   │   ├── src/
-│   │   │   └── Inky.php          # PHP FFI wrapper class
-│   │   ├── tests/
-│   │   │   └── InkyTest.php      # PHPUnit tests against shared fixtures
-│   │   └── lib/                  # Prebuilt .so/.dylib binaries
-│   │
-│   ├── python/                   # PyPI: "inky-email" — ctypes transpiler
+│   │   └── src/Inky.php
+│   ├── python/                   # PyPI: "inky-email"
 │   │   ├── pyproject.toml
-│   │   ├── src/
-│   │   │   └── inky/__init__.py  # ctypes wrapper
-│   │   ├── tests/
-│   │   │   └── test_inky.py      # pytest tests against shared fixtures
-│   │   └── lib/                  # Prebuilt .so/.dylib binaries
-│   │
-│   └── ruby/                     # RubyGems: "inky-email" — fiddle transpiler
+│   │   └── src/inky/__init__.py
+│   └── ruby/                     # RubyGems: "inky-email"
 │       ├── inky.gemspec
-│       ├── lib/
-│       │   └── inky.rb           # fiddle wrapper
-│       ├── spec/
-│       │   └── inky_spec.rb      # RSpec tests against shared fixtures
-│       └── ext/                  # Prebuilt .so/.dylib binaries
+│       └── lib/inky.rb
 │
 ├── tests/
-│   ├── fixtures/                 # Shared test fixtures (input/output HTML pairs)
-│   │   ├── components.json       # All component test cases
-│   │   ├── grid.json             # All grid test cases
-│   │   └── parser.json           # General parser test cases
-│   └── integration/              # Cross-language integration tests
-│
-├── docs/                         # Simple markdown documentation
+│   └── fixtures/                 # Shared test fixtures (JSON)
+│       ├── components.json       # Component test cases
+│       ├── grid.json             # Grid/column test cases
+│       ├── modern.json           # v2 modern syntax test cases
+│       └── migration.json        # v1 → v2 migration test cases
 │
 └── .github/
     └── workflows/
-        ├── ci.yml                # Test on every push
-        └── release.yml           # Build + publish all targets
+        ├── ci.yml
+        └── release.yml
 ```
 
 ---
 
-## Phase 1: Rust Core (`inky-core`)
-
-The core library is a pure Rust crate with no platform dependencies. It takes an HTML string and returns transformed HTML.
-
-### Public API
+## Rust Core API
 
 ```rust
 pub struct Inky {
@@ -137,864 +389,146 @@ pub struct Inky {
 }
 
 pub struct Config {
-    pub column_count: u32,          // default: 12
-    pub components: ComponentNames, // customizable tag names
+    pub column_count: u32,
+    pub syntax: SyntaxMode,
 }
 
-pub struct ComponentNames {
-    pub button: String,      // default: "button"
-    pub row: String,         // default: "row"
-    pub columns: String,     // default: "columns"
-    pub container: String,   // default: "container"
-    pub callout: String,     // default: "callout"
-    pub inky: String,        // default: "inky"
-    pub block_grid: String,  // default: "block-grid"
-    pub menu: String,        // default: "menu"
-    pub menu_item: String,   // default: "item"
-    pub center: String,      // default: "center"
-    pub spacer: String,      // default: "spacer"
-    pub wrapper: String,     // default: "wrapper"
-    pub h_line: String,      // default: "h-line"
+pub enum SyntaxMode {
+    Modern,     // v2 syntax (default)
+    Legacy,     // v1 syntax
+    Auto,       // auto-detect per element
 }
 
 impl Inky {
     pub fn new() -> Self;
     pub fn with_config(config: Config) -> Self;
+
+    /// Transform Inky HTML into email-safe table HTML.
     pub fn transform(&self, html: &str) -> String;
+
+    /// Migrate v1 syntax to v2 syntax (no table transformation).
+    pub fn migrate(&self, html: &str) -> String;
+
+    /// Validate a template and return warnings.
+    pub fn validate(&self, html: &str) -> Vec<Warning>;
 }
 
-// Convenience function
+pub struct Warning {
+    pub message: String,
+    pub severity: Severity,     // Error, Warning, Info
+    pub line: Option<usize>,
+    pub suggestion: Option<String>,
+}
+
+// Convenience functions
 pub fn transform(html: &str) -> String;
-```
-
-### Dependencies
-
-```toml
-[dependencies]
-scraper = "0.22"      # HTML parsing (built on html5ever + selectors)
-ego-tree = "0.10"     # Tree traversal (used by scraper)
-regex = "1"           # Raw tag extraction
-```
-
-The `scraper` crate provides CSS selector-based element querying similar to Cheerio/jQuery, making the port straightforward.
-
-### Core Algorithm (mirrors current JS implementation)
-
-```
-1. Extract <raw> blocks → replace with ###RAW{i}### placeholders
-2. Parse HTML string into DOM tree (scraper::Html)
-3. Loop while custom component elements exist in the tree:
-   a. Find first matching component element
-   b. Transform it via component factory → HTML string
-   c. Replace element in tree with transformed HTML
-4. Remove data-parsed attributes from <center> tags
-5. Serialize DOM back to HTML string
-6. Re-inject raw block content into placeholders
-7. Return final HTML string
-```
-
-### Component Transformation Rules
-
-Each component maps directly from the current JS implementation:
-
-| Component | Input Tag | Output Summary |
-|-----------|-----------|----------------|
-| `h-line` | `<h-line>` | `<table class="h-line [classes]"><tr><th>&nbsp;</th></tr></table>` |
-| `columns` | `<columns>` | `<th class="small-N large-N columns [first] [last]"><table><tbody><tr><th>[content]</th>[expander]</tr></tbody></table></th>` |
-| `row` | `<row>` | `<table class="row [classes]" [attrs]><tbody><tr>[content]</tr></tbody></table>` |
-| `button` | `<button>` | Nested table with `<a>`, optional expand/center |
-| `container` | `<container>` | `<table align="center" class="container [classes]"><tbody><tr><td>[content]</td></tr></tbody></table>` |
-| `inky` | `<inky>` | Easter egg octopus image |
-| `block-grid` | `<block-grid>` | `<table class="block-grid up-N [classes]"><tbody><tr>[content]</tr></tbody></table>` |
-| `menu` | `<menu>` | Double-nested table structure |
-| `item` | `<item>` | `<th class="menu-item [classes]"><a href="...">[content]</a></th>` |
-| `center` | `<center>` | Modifies children in-place: adds `align="center"` + `class="float-center"` |
-| `callout` | `<callout>` | `<table class="callout"><tbody><tr><th class="callout-inner [classes]">[content]</th><th class="expander"></th></tr></tbody></table>` |
-| `spacer` | `<spacer>` | Table with height/font-size/line-height styling. Responsive: two tables with hide/show classes |
-| `wrapper` | `<wrapper>` | `<table class="wrapper [classes]" align="center"><tbody><tr><td class="wrapper-inner">[content]</td></tr></tbody></table>` |
-
-### Column Sizing Logic
-
-```rust
-fn make_column(element, column_count: u32) -> String {
-    let col_count = sibling_column_count + 1;
-    let small = attr("small").unwrap_or(column_count);
-    let large = attr("large")
-        .or(attr("small"))
-        .unwrap_or(column_count / col_count);
-
-    let mut classes = vec![
-        format!("small-{small}"),
-        format!("large-{large}"),
-        "columns".to_string(),
-    ];
-
-    // Add "first" if no previous column sibling
-    // Add "last" if no next column sibling
-
-    // Add expander unless:
-    //   - large != column_count, OR
-    //   - element contains nested row, OR
-    //   - no-expander attribute is set (and not "false")
-}
-```
-
-### Attribute Filtering
-
-Blacklisted attributes (stripped from output):
-```
-class, id, href, size, size-sm, size-lg, large, no-expander, small, target
-```
-
-All other attributes are passed through to the output HTML.
-
----
-
-## Phase 2: WASM Bindings (`inky-wasm`)
-
-### Build Target
-
-```toml
-[lib]
-crate-type = ["cdylib"]
-
-[dependencies]
-inky-core = { path = "../inky-core" }
-wasm-bindgen = "0.2"
-serde = { version = "1", features = ["derive"] }
-serde-wasm-bindgen = "0.6"
-```
-
-### Exported Functions
-
-```rust
-use wasm_bindgen::prelude::*;
-use inky_core::{Inky, Config};
-
-#[wasm_bindgen]
-pub fn transform(html: &str) -> String {
-    Inky::new().transform(html)
-}
-
-#[wasm_bindgen]
-pub fn transform_with_config(html: &str, column_count: u32) -> String {
-    let config = Config {
-        column_count,
-        ..Default::default()
-    };
-    Inky::with_config(config).transform(html)
-}
-```
-
-### Build Command
-
-```bash
-wasm-pack build crates/inky-wasm --target bundler    # for npm/bundlers
-wasm-pack build crates/inky-wasm --target web        # for browsers
-wasm-pack build crates/inky-wasm --target nodejs      # for Node.js
-```
-
-### npm Package Wrapper (`bindings/node/`)
-
-```json
-{
-  "name": "inky",
-  "version": "2.0.0",
-  "description": "Inky — the complete responsive email framework",
-  "main": "index.js",
-  "types": "index.d.ts",
-  "style": "dist/inky.min.css"
-}
-```
-
-```javascript
-// bindings/node/index.js
-const { transform, transform_with_config } = require('../crates/inky-wasm/pkg');
-
-class Inky {
-  constructor(options = {}) {
-    this.columnCount = options.columnCount || 12;
-  }
-
-  releaseTheKraken(html) {
-    return transform_with_config(html, this.columnCount);
-  }
-}
-
-// Backwards-compatible API
-module.exports = function(opts, cb) { /* stream wrapper */ };
-module.exports.Inky = Inky;
+pub fn migrate(html: &str) -> String;
+pub fn validate(html: &str) -> Vec<Warning>;
 ```
 
 ---
 
-## Phase 3: C FFI Bindings (`inky-ffi`)
-
-### Build Target
+## CLI Crate (`inky-cli`)
 
 ```toml
-[lib]
-crate-type = ["cdylib", "staticlib"]
-name = "inky"
-
-[dependencies]
-inky-core = { path = "../inky-core" }
-
-[build-dependencies]
-cbindgen = "0.27"    # Auto-generates C header file
-```
-
-### Exported Functions
-
-```rust
-use std::ffi::{CStr, CString};
-use std::os::raw::c_char;
-use inky_core::Inky;
-
-/// Transform Inky HTML to email-safe HTML.
-/// Caller must free the returned string with inky_free().
-#[no_mangle]
-pub extern "C" fn inky_transform(input: *const c_char) -> *mut c_char {
-    let c_str = unsafe { CStr::from_ptr(input) };
-    let html = c_str.to_str().unwrap_or("");
-    let result = Inky::new().transform(html);
-    CString::new(result).unwrap_or_default().into_raw()
-}
-
-/// Transform with custom column count.
-/// Caller must free the returned string with inky_free().
-#[no_mangle]
-pub extern "C" fn inky_transform_with_columns(
-    input: *const c_char,
-    column_count: u32,
-) -> *mut c_char {
-    let c_str = unsafe { CStr::from_ptr(input) };
-    let html = c_str.to_str().unwrap_or("");
-    let config = inky_core::Config {
-        column_count,
-        ..Default::default()
-    };
-    let result = Inky::with_config(config).transform(html);
-    CString::new(result).unwrap_or_default().into_raw()
-}
-
-/// Free a string returned by inky_transform.
-#[no_mangle]
-pub extern "C" fn inky_free(ptr: *mut c_char) {
-    if !ptr.is_null() {
-        unsafe { drop(CString::from_raw(ptr)); }
-    }
-}
-```
-
-### Generated C Header (`inky.h`)
-
-```c
-#ifndef INKY_H
-#define INKY_H
-
-#include <stdint.h>
-
-char* inky_transform(const char* input);
-char* inky_transform_with_columns(const char* input, uint32_t column_count);
-void inky_free(char* ptr);
-
-#endif
-```
-
-### Build Commands
-
-```bash
-# Linux
-cargo build --release -p inky-ffi --target x86_64-unknown-linux-gnu
-# Output: target/x86_64-unknown-linux-gnu/release/libinky.so
-
-# macOS (Intel)
-cargo build --release -p inky-ffi --target x86_64-apple-darwin
-# Output: target/x86_64-apple-darwin/release/libinky.dylib
-
-# macOS (Apple Silicon)
-cargo build --release -p inky-ffi --target aarch64-apple-darwin
-# Output: target/aarch64-apple-darwin/release/libinky.dylib
-
-# Windows
-cargo build --release -p inky-ffi --target x86_64-pc-windows-msvc
-# Output: target/x86_64-pc-windows-msvc/release/inky.dll
-```
-
----
-
-## Phase 4: PHP Bindings (`bindings/php/`)
-
-### Composer Package
-
-```json
-{
-  "name": "foundation/inky",
-  "description": "Inky HTML-to-email transpiler for PHP via FFI",
-  "type": "library",
-  "require": {
-    "php": ">=7.4",
-    "ext-ffi": "*"
-  },
-  "autoload": {
-    "psr-4": {
-      "Foundation\\Inky\\": "src/"
-    }
-  }
-}
-```
-
-### PHP Wrapper Class
-
-```php
-<?php
-// bindings/php/src/Inky.php
-
-namespace Foundation\Inky;
-
-use FFI;
-
-class Inky
-{
-    private static ?FFI $ffi = null;
-    private int $columnCount;
-
-    public function __construct(int $columnCount = 12)
-    {
-        $this->columnCount = $columnCount;
-
-        if (self::$ffi === null) {
-            self::$ffi = FFI::cdef(
-                "char* inky_transform(const char* input);
-                 char* inky_transform_with_columns(const char* input, uint32_t column_count);
-                 void inky_free(char* ptr);",
-                self::findLibrary()
-            );
-        }
-    }
-
-    public function transform(string $html): string
-    {
-        $ptr = self::$ffi->inky_transform_with_columns($html, $this->columnCount);
-        $result = FFI::string($ptr);
-        self::$ffi->inky_free($ptr);
-        return $result;
-    }
-
-    public static function convert(string $html): string
-    {
-        return (new self())->transform($html);
-    }
-
-    private static function findLibrary(): string
-    {
-        $libDir = __DIR__ . '/../lib/';
-
-        if (PHP_OS_FAMILY === 'Darwin') {
-            return $libDir . 'libinky.dylib';
-        } elseif (PHP_OS_FAMILY === 'Windows') {
-            return $libDir . 'inky.dll';
-        }
-
-        return $libDir . 'libinky.so';
-    }
-}
-```
-
-### PHP Usage
-
-```php
-use Foundation\Inky\Inky;
-
-// Simple one-liner
-$html = Inky::convert('<row><columns>Hello</columns></row>');
-
-// With custom column count
-$inky = new Inky(columnCount: 16);
-$html = $inky->transform('<row><columns large="8">Content</columns></row>');
-```
-
-### Requirements
-
-- PHP 7.4+ (FFI extension is bundled with PHP, just needs `ffi.enable=true` in php.ini)
-- No additional PHP extensions or PECL installs required
-- Prebuilt binaries for linux-x64, darwin-x64, darwin-arm64, windows-x64 are shipped in the Composer package under `lib/`
-
----
-
-## Phase 5: Python Bindings (`bindings/python/`)
-
-### PyPI Package
-
-```toml
-# pyproject.toml
-[project]
-name = "inky-email"
+[package]
+name = "inky-cli"
 version = "2.0.0"
-description = "Inky HTML-to-email transpiler"
-requires-python = ">=3.8"
 
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.backends._legacy:_Backend"
+[[bin]]
+name = "inky"
+path = "src/main.rs"
+
+[dependencies]
+inky-core = { path = "../inky-core" }
+clap = { version = "4", features = ["derive"] }
+glob = "0.3"
+notify = "7"           # file watching
+colored = "2"          # terminal colors
 ```
 
-### Python Wrapper
-
-```python
-# bindings/python/src/inky/__init__.py
-
-import ctypes
-import platform
-import os
-from pathlib import Path
-
-_lib = None
-
-def _load_library():
-    global _lib
-    if _lib is not None:
-        return _lib
-
-    lib_dir = Path(__file__).parent / "lib"
-    system = platform.system()
-
-    if system == "Darwin":
-        path = lib_dir / "libinky.dylib"
-    elif system == "Windows":
-        path = lib_dir / "inky.dll"
-    else:
-        path = lib_dir / "libinky.so"
-
-    _lib = ctypes.CDLL(str(path))
-    _lib.inky_transform.argtypes = [ctypes.c_char_p]
-    _lib.inky_transform.restype = ctypes.c_void_p
-    _lib.inky_transform_with_columns.argtypes = [ctypes.c_char_p, ctypes.c_uint32]
-    _lib.inky_transform_with_columns.restype = ctypes.c_void_p
-    _lib.inky_free.argtypes = [ctypes.c_void_p]
-    _lib.inky_free.restype = None
-    return _lib
-
-
-def transform(html: str, column_count: int = 12) -> str:
-    """Transform Inky HTML to email-safe HTML."""
-    lib = _load_library()
-    ptr = lib.inky_transform_with_columns(html.encode("utf-8"), column_count)
-    result = ctypes.cast(ptr, ctypes.c_char_p).value.decode("utf-8")
-    lib.inky_free(ptr)
-    return result
-
-
-class Inky:
-    """Inky transpiler instance with configurable column count."""
-
-    def __init__(self, column_count: int = 12):
-        self.column_count = column_count
-
-    def transform(self, html: str) -> str:
-        return transform(html, self.column_count)
-```
-
-### Python Usage
-
-```python
-from inky import transform, Inky
-
-# Simple one-liner
-html = transform('<row><columns>Hello</columns></row>')
-
-# With custom column count
-inky = Inky(column_count=16)
-html = inky.transform('<row><columns large="8">Content</columns></row>')
-```
-
-### Requirements
-
-- Python 3.8+ (ctypes is in the standard library — no pip dependencies)
-- Prebuilt binaries shipped in the package under `lib/`
-
----
-
-## Phase 6: Ruby Bindings (`bindings/ruby/`)
-
-### Gemspec
-
-```ruby
-# inky.gemspec
-Gem::Specification.new do |s|
-  s.name        = "inky-email"
-  s.version     = "2.0.0"
-  s.summary     = "Inky HTML-to-email transpiler"
-  s.description = "Convert simple HTML into responsive email-ready HTML using Foundation for Emails"
-  s.authors     = ["Foundation"]
-  s.license     = "MIT"
-  s.files       = Dir["lib/**/*", "ext/**/*"]
-  s.require_paths = ["lib"]
-  s.required_ruby_version = ">= 2.7"
-end
-```
-
-### Ruby Wrapper
-
-```ruby
-# bindings/ruby/lib/inky.rb
-
-require "fiddle"
-require "fiddle/import"
-
-module Inky
-  module Native
-    extend Fiddle::Importer
-
-    lib_dir = File.expand_path("../../ext", __FILE__)
-    case RUBY_PLATFORM
-    when /darwin/
-      dlload File.join(lib_dir, "libinky.dylib")
-    when /mingw|mswin/
-      dlload File.join(lib_dir, "inky.dll")
-    else
-      dlload File.join(lib_dir, "libinky.so")
-    end
-
-    extern "char* inky_transform(const char*)"
-    extern "char* inky_transform_with_columns(const char*, unsigned int)"
-    extern "void inky_free(char*)"
-  end
-
-  def self.transform(html, column_count: 12)
-    ptr = Native.inky_transform_with_columns(html, column_count)
-    result = ptr.to_s
-    Native.inky_free(ptr)
-    result
-  end
-
-  class Transpiler
-    def initialize(column_count: 12)
-      @column_count = column_count
-    end
-
-    def transform(html)
-      Inky.transform(html, column_count: @column_count)
-    end
-
-    # Backwards compatibility with inky-rb
-    alias_method :release_the_kraken, :transform
-  end
-end
-```
-
-### Ruby Usage
-
-```ruby
-require "inky"
-
-# Simple one-liner
-html = Inky.transform('<row><columns>Hello</columns></row>')
-
-# With custom column count
-inky = Inky::Transpiler.new(column_count: 16)
-html = inky.transform('<row><columns large="8">Content</columns></row>')
-```
-
-### Requirements
-
-- Ruby 2.7+ (fiddle is in the standard library — no gem dependencies)
-- Prebuilt binaries shipped in the gem under `ext/`
-
----
-
-## Phase 7: Go Bindings (separate repo: `foundation/inky-go`)
-
-Go modules are imported by repo path, so this needs its own repository.
-
-### Module
-
-```go
-// go.mod
-module github.com/foundation/inky-go
-
-go 1.21
-```
-
-### Go Wrapper
-
-```go
-// inky.go
-package inky
-
-/*
-#cgo darwin,amd64  LDFLAGS: -L${SRCDIR}/lib/darwin_amd64 -linky
-#cgo darwin,arm64  LDFLAGS: -L${SRCDIR}/lib/darwin_arm64 -linky
-#cgo linux,amd64   LDFLAGS: -L${SRCDIR}/lib/linux_amd64 -linky
-#cgo windows,amd64 LDFLAGS: -L${SRCDIR}/lib/windows_amd64 -linky
-
-#include "inky.h"
-#include <stdlib.h>
-*/
-import "C"
-import "unsafe"
-
-// Transform converts Inky HTML to email-safe HTML.
-func Transform(html string) string {
-	return TransformWithColumns(html, 12)
-}
-
-// TransformWithColumns converts Inky HTML with a custom column count.
-func TransformWithColumns(html string, columnCount uint32) string {
-	cInput := C.CString(html)
-	defer C.free(unsafe.Pointer(cInput))
-
-	cResult := C.inky_transform_with_columns(cInput, C.uint(columnCount))
-	defer C.inky_free(cResult)
-
-	return C.GoString(cResult)
-}
-```
-
-### Go Usage
-
-```go
-package main
-
-import (
-    "fmt"
-    "github.com/foundation/inky-go"
-)
-
-func main() {
-    html := inky.Transform("<row><columns>Hello</columns></row>")
-    fmt.Println(html)
-}
-```
-
-### Requirements
-
-- Go 1.21+
-- cgo enabled (default on most platforms)
-- Prebuilt binaries shipped in the module under `lib/`
-
----
-
-## Phase 8: Shared Test Fixtures
-
-Port all 52 existing test cases into language-agnostic JSON fixtures. Every language binding runs these same fixtures to guarantee identical output.
-
-### Fixture Format
-
-```json
-// tests/fixtures/components.json
-{
-  "tests": [
-    {
-      "name": "creates a simple button",
-      "input": "<button href=\"http://get.foundation\">Button</button>",
-      "expected": "<table class=\"button\"><tbody><tr><td><table><tbody><tr><td><a href=\"http://get.foundation\">Button</a></td></tr></tbody></table></td></tr></tbody></table>"
-    },
-    {
-      "name": "creates a spacer with default size",
-      "input": "<spacer></spacer>",
-      "expected": "<table class=\"spacer\"><tbody><tr><td height=\"16\" style=\"font-size:16px;line-height:16px;\">&nbsp;</td></tr></tbody></table>"
-    }
-  ]
-}
-```
-
-### Test Runners
-
-Each binding loads the same JSON fixtures and asserts identical output:
-
-- **Rust:** `cargo test` — loads fixtures, runs through `inky_core::transform()`
-- **Node.js:** `npm test` — loads fixtures, runs through WASM binding
-- **PHP:** `phpunit` — loads fixtures, runs through FFI binding
-- **Python:** `pytest` — loads fixtures, runs through ctypes binding
-- **Ruby:** `rspec` — loads fixtures, runs through fiddle binding
-- **Go:** `go test` — loads fixtures, runs through cgo binding
-
----
-
-## Phase 9: CI/CD and Release Pipeline
-
-### GitHub Actions Workflow
-
-```yaml
-# .github/workflows/release.yml
-# Triggered on version tags (v2.0.0, etc.)
-
-jobs:
-  test:
-    # Run cargo test on all platforms
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-
-  build-wasm:
-    # wasm-pack build → upload artifact
-    # Publish to npm
-
-  build-native:
-    # Cross-compile shared libraries for all targets:
-    #   - x86_64-unknown-linux-gnu    → libinky.so
-    #   - aarch64-unknown-linux-gnu   → libinky.so
-    #   - x86_64-apple-darwin         → libinky.dylib
-    #   - aarch64-apple-darwin        → libinky.dylib
-    #   - x86_64-pc-windows-msvc      → inky.dll
-    # Package into GitHub release
-    # Publish to crates.io
-
-  test-bindings:
-    # For each language binding:
-    #   1. Copy prebuilt native library into binding's lib/ directory
-    #   2. Run language-specific test suite against shared JSON fixtures
-    #   3. Verify output matches Rust core exactly
-
-  publish:
-    # After all tests pass:
-    #   - npm: publish WASM-based Node.js package
-    #   - Packagist: publish PHP Composer package with native binaries
-    #   - PyPI: publish Python package with native binaries
-    #   - RubyGems: publish gem with native binaries
-    #   - crates.io: publish Rust crate
-    #   - Go: tag release in foundation/inky-go (binaries committed to repo)
-```
-
-### Versioning
-
-- All crates, npm package, and Composer package share the same version number
-- Start at **v2.0.0** to signal the rewrite (current JS version is 1.4.2)
-
----
-
-## Migration Path for Existing Users
-
-### npm (JS/Node.js)
-
-**Inky users:** The v2.0.0 npm package maintains backward compatibility:
-
-```javascript
-// This still works exactly as before
-const { Inky } = require('inky');
-const inky = new Inky();
-const html = inky.releaseTheKraken(input);
-
-// New simpler API also available
-const { transform } = require('inky');
-const html = transform(input);
-```
-
-**Foundation for Emails users:** The `inky` npm package now includes everything:
-
-```javascript
-// Before: two packages
-// npm install inky foundation-emails
-
-// After: one package
-// npm install inky
-// CSS available at: node_modules/inky/dist/inky.css
-// SCSS available at: node_modules/inky/scss/inky.scss
-```
-
-Breaking changes:
-- Gulp stream integration removed (Gulp usage has declined significantly)
-- Cheerio options no longer accepted (Rust uses its own HTML parser)
-- Minimum Node.js version: 16+ (for WASM support)
-- CSS files renamed from `foundation-emails.css` to `inky.css`
-- SCSS entry point renamed from `foundation-emails.scss` to `inky.scss`
-
-### PHP
-
-For users of `lorenzo/pinky` or `twigphp/inky-extra`:
-
-```php
-// Before (pinky)
-$html = Pinky\transformString($body)->saveHTML();
-
-// After (foundation/inky)
-$html = \Foundation\Inky\Inky::convert($body);
-```
-
-### Python
-
-```python
-# Before (no official package existed)
-# After
-from inky import transform
-html = transform('<row><columns>Hello</columns></row>')
-```
-
-### Ruby
-
-```ruby
-# Before (inky-rb)
-# require 'inky'
-# Inky::Core.new.release_the_kraken(html)
-
-# After
-require 'inky'
-html = Inky.transform('<row><columns>Hello</columns></row>')
-```
-
-### Go
-
-```go
-// New — no previous Go support existed
-import "github.com/foundation/inky-go"
-html := inky.Transform("<row><columns>Hello</columns></row>")
-```
-
-### Other Languages
-
-Any language with C FFI support can use the shared library directly without an official binding — the C API is just 3 functions (`inky_transform`, `inky_transform_with_columns`, `inky_free`).
+Subcommands:
+- `build` — transform files (default if input given)
+- `migrate` — convert v1 → v2
+- `validate` — check for issues
+- `watch` — watch and rebuild
 
 ---
 
 ## Implementation Order
 
-### Stage 1: Core (do this first — everything else depends on it)
+### Stage 1: Core Engine (current — in progress)
 
-| Step | Task | Scope |
-|------|------|-------|
-| 1 | Set up Cargo workspace with three crates (`inky-core`, `inky-wasm`, `inky-ffi`) | Scaffolding |
-| 2 | Implement `inky-core` with `scraper` crate | ~500-600 lines of Rust |
-| 3 | Port all 52 test cases to JSON fixtures | Test data extraction |
-| 4 | Write Rust tests against fixtures, achieve parity with JS | Testing |
+| Step | Task | Status |
+|------|------|--------|
+| 1 | Set up Cargo workspace (`inky-core`, `inky-wasm`, `inky-ffi`) | Done |
+| 2 | Implement legacy (v1) component transformations | Done |
+| 3 | Extract test cases to JSON fixtures | Done (31 tests) |
+| 4 | Pass all fixture tests | Done |
+| 5 | Add modern (v2) syntax support — new components and attributes | TODO |
+| 6 | Add `role="presentation"` to all layout table output | TODO |
+| 7 | Add auto-detection for template merge tags | TODO |
+| 8 | Add `<image>`, `<outlook>`, `<not-outlook>`, `<divider>` components | TODO |
 
-### Stage 2: Distribution targets (can be done in parallel)
+### Stage 2: CLI + Migration
 
-| Step | Task | Scope |
-|------|------|-------|
-| 5 | Build `inky-wasm` with wasm-bindgen | ~30 lines |
-| 6 | Build `inky-ffi` with cbindgen | ~40 lines |
+| Step | Task |
+|------|------|
+| 9 | Create `inky-cli` crate with `clap` |
+| 10 | Implement `build` command (file/directory/stdin) |
+| 11 | Implement `migrate` command (v1 → v2 syntax conversion) |
+| 12 | Implement `validate` command |
+| 13 | Implement `watch` command |
+| 14 | Write modern syntax fixture tests |
+| 15 | Write migration fixture tests |
 
-### Stage 3: Language bindings (can all be done in parallel)
+### Stage 3: Distribution
 
-| Step | Task | Scope |
-|------|------|-------|
-| 7 | Create Node.js wrapper package (WASM) | ~50 lines |
-| 8 | Create PHP Composer package (FFI) | ~60 lines |
-| 9 | Create Python PyPI package (ctypes) | ~40 lines |
-| 10 | Create Ruby gem (fiddle) | ~40 lines |
-| 11 | Create Go module in separate repo (cgo) | ~50 lines |
+| Step | Task |
+|------|------|
+| 16 | Build `inky-wasm` with wasm-bindgen |
+| 17 | Build `inky-ffi` with cbindgen |
+| 18 | Create Node.js wrapper (WASM) |
+| 19 | Create PHP Composer package (FFI) |
+| 20 | Create Python PyPI package (ctypes) |
+| 21 | Create Ruby gem (fiddle) |
+| 22 | Create Go module (cgo, separate repo) |
 
-### Stage 4: Consolidate styles
+### Stage 4: Styles + Templates
 
-| Step | Task | Scope |
-|------|------|-------|
-| 12 | Move SCSS from `foundation-emails` into `inky/scss/` | File migration |
-| 13 | Rename entry point from `foundation-emails.scss` to `inky.scss` | Rebrand |
-| 14 | Update SCSS variable prefixes if needed | Rebrand |
-| 15 | Build dist CSS with simple `sass` command (no gulp) | Build simplification |
-| 16 | Move starter templates into `inky/templates/` | File migration |
-| 17 | Write simple markdown docs (replace panini/supercollider) | Documentation |
+| Step | Task |
+|------|------|
+| 23 | Move SCSS from `foundation-emails` into `inky/scss/` |
+| 24 | Rename entry point to `inky.scss`, update variable prefixes |
+| 25 | Add dark mode utilities (`_dark-mode.scss`) |
+| 26 | Add styles for new components (image, divider) |
+| 27 | Build dist CSS with `sass` command (no gulp) |
+| 28 | Create starter templates using v2 syntax |
 
-### Stage 5: Ship it
+### Stage 5: Ship It
 
-| Step | Task | Scope |
-|------|------|-------|
-| 18 | Set up CI: test Rust + all bindings on all platforms | CI config |
-| 19 | Set up release pipeline: cross-compile + publish to all registries | CD config |
-| 20 | Write migration guide for each language | Documentation |
-| 21 | Publish v2.0.0 to npm, crates.io, Packagist, PyPI, RubyGems | Release |
-| 22 | Archive `foundation/inky-rb` with pointer to new gem | Cleanup |
-| 23 | Archive `foundation/foundation-emails` with pointer to `inky` | Cleanup |
-| 24 | Re-enable Dependabot security updates (disabled during 1.x→2.x transition) | Cleanup |
+| Step | Task |
+|------|------|
+| 29 | Set up CI: test Rust + all bindings on all platforms |
+| 30 | Set up release pipeline: cross-compile + publish everywhere |
+| 31 | Homebrew formula for `inky` CLI |
+| 32 | Write documentation and migration guide |
+| 33 | Publish v2.0.0 to npm, crates.io, Packagist, PyPI, RubyGems, Homebrew |
+| 34 | Archive `foundation/inky-rb` with pointer to new gem |
+| 35 | Archive `foundation/foundation-emails` with pointer to `inky` |
+| 36 | Re-enable Dependabot |
+
+### Future (v2.x / v3.0)
+
+| Feature | Description |
+|---------|-------------|
+| Hybrid output mode | `<div>` layout with Outlook table fallbacks |
+| CSS inlining | Built into `inky build --inline-css` |
+| Contrast checker | Validates color accessibility |
+| Template variables | Built-in `{{var}}` support with data files |
+| Live preview | `inky serve` with browser preview |
+
+
+### Good list of current Email frameworks
+
+https://www.emailonacid.com/blog/article/email-development/best-email-frameworks/

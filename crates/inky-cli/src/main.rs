@@ -1,0 +1,265 @@
+use clap::{Parser, Subcommand};
+use colored::Colorize;
+use inky_core::{Config, Inky};
+use std::fs;
+use std::io::{self, Read};
+use std::path::{Path, PathBuf};
+use std::process;
+
+#[derive(Parser)]
+#[command(name = "inky")]
+#[command(about = "Inky — transform email templates into email-safe HTML")]
+#[command(version)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Transform Inky HTML into email-safe table markup
+    Build {
+        /// Input file or directory (reads from stdin if omitted)
+        input: Option<PathBuf>,
+
+        /// Output file or directory (writes to stdout if omitted)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+
+        /// Number of columns in the grid (default: 12)
+        #[arg(long, default_value = "12")]
+        columns: u32,
+
+        /// Inline CSS from <style> blocks and <link> tags into style attributes
+        #[arg(long)]
+        inline_css: bool,
+    },
+
+    /// Validate Inky templates for common issues
+    Validate {
+        /// Input file or directory
+        input: PathBuf,
+    },
+}
+
+fn main() {
+    let cli = Cli::parse();
+
+    match cli.command {
+        Commands::Build {
+            input,
+            output,
+            columns,
+            inline_css,
+        } => cmd_build(input, output, columns, inline_css),
+        Commands::Validate { input } => cmd_validate(input),
+    }
+}
+
+fn cmd_build(input: Option<PathBuf>, output: Option<PathBuf>, columns: u32, inline_css: bool) {
+    let config = Config {
+        column_count: columns,
+        ..Config::default()
+    };
+    let inky = Inky::with_config(config);
+
+    match input {
+        Some(path) => {
+            if path.is_dir() {
+                build_directory(&inky, &path, output.as_deref(), inline_css);
+            } else {
+                let base = path.parent().map(Path::to_path_buf);
+                let html = read_file(&path);
+                let result = process_html(&inky, &html, inline_css, base.as_deref());
+                write_output(&result, output.as_deref());
+            }
+        }
+        None => {
+            // Read from stdin — use cwd as base for resolving CSS files
+            let mut html = String::new();
+            io::stdin()
+                .read_to_string(&mut html)
+                .unwrap_or_else(|e| {
+                    eprintln!("{} Failed to read stdin: {}", "error:".red().bold(), e);
+                    process::exit(1);
+                });
+            let cwd = std::env::current_dir().ok();
+            let result = process_html(&inky, &html, inline_css, cwd.as_deref());
+            write_output(&result, output.as_deref());
+        }
+    }
+}
+
+fn process_html(inky: &Inky, html: &str, inline_css: bool, base_path: Option<&Path>) -> String {
+    if inline_css {
+        inky.transform_and_inline(html, base_path)
+            .unwrap_or_else(|e| {
+                eprintln!("{} CSS inlining failed: {}", "error:".red().bold(), e);
+                process::exit(1);
+            })
+    } else {
+        inky.transform(html)
+    }
+}
+
+fn build_directory(inky: &Inky, input_dir: &std::path::Path, output_dir: Option<&std::path::Path>, inline_css: bool) {
+    let pattern = format!("{}/**/*.html", input_dir.display());
+    let files: Vec<PathBuf> = glob::glob(&pattern)
+        .unwrap_or_else(|e| {
+            eprintln!("{} Invalid glob pattern: {}", "error:".red().bold(), e);
+            process::exit(1);
+        })
+        .filter_map(|entry| entry.ok())
+        .collect();
+
+    if files.is_empty() {
+        eprintln!(
+            "{} No .html files found in {}",
+            "warning:".yellow().bold(),
+            input_dir.display()
+        );
+        return;
+    }
+
+    for file in &files {
+        let html = read_file(file);
+        let base = file.parent().map(Path::to_path_buf);
+        let result = process_html(inky, &html, inline_css, base.as_deref());
+
+        let out_path = match output_dir {
+            Some(dir) => {
+                let relative = file.strip_prefix(input_dir).unwrap();
+                let dest = dir.join(relative);
+                if let Some(parent) = dest.parent() {
+                    fs::create_dir_all(parent).unwrap_or_else(|e| {
+                        eprintln!(
+                            "{} Failed to create directory {}: {}",
+                            "error:".red().bold(),
+                            parent.display(),
+                            e
+                        );
+                        process::exit(1);
+                    });
+                }
+                Some(dest)
+            }
+            None => None,
+        };
+
+        match out_path {
+            Some(dest) => {
+                fs::write(&dest, &result).unwrap_or_else(|e| {
+                    eprintln!(
+                        "{} Failed to write {}: {}",
+                        "error:".red().bold(),
+                        dest.display(),
+                        e
+                    );
+                    process::exit(1);
+                });
+                eprintln!(
+                    "  {} {} → {}",
+                    "built".green().bold(),
+                    file.display(),
+                    dest.display()
+                );
+            }
+            None => {
+                println!("<!-- {} -->\n{}\n", file.display(), result);
+            }
+        }
+    }
+
+    eprintln!(
+        "\n{} Transformed {} file(s)",
+        "done".green().bold(),
+        files.len()
+    );
+}
+
+fn cmd_validate(input: PathBuf) {
+    // Placeholder — validation will be implemented in inky-core
+    if input.is_dir() {
+        let pattern = format!("{}/**/*.html", input.display());
+        let files: Vec<PathBuf> = glob::glob(&pattern)
+            .unwrap_or_else(|e| {
+                eprintln!("{} Invalid glob pattern: {}", "error:".red().bold(), e);
+                process::exit(1);
+            })
+            .filter_map(|entry| entry.ok())
+            .collect();
+
+        for file in &files {
+            validate_file(file);
+        }
+    } else {
+        validate_file(&input);
+    }
+}
+
+fn validate_file(path: &std::path::Path) {
+    let html = read_file(path);
+
+    let mut warnings = Vec::new();
+
+    // Basic validation checks (these will move into inky-core later)
+    if html.contains("<img") && !html.contains("alt=") {
+        warnings.push("Image(s) missing alt text".to_string());
+    }
+    if html.contains("<button") && !html.contains("href=") {
+        warnings.push("Button(s) missing href attribute".to_string());
+    }
+
+    if warnings.is_empty() {
+        eprintln!("  {} {}", "ok".green().bold(), path.display());
+    } else {
+        for w in &warnings {
+            eprintln!(
+                "  {} {} — {}",
+                "warn".yellow().bold(),
+                path.display(),
+                w
+            );
+        }
+    }
+}
+
+fn read_file(path: &std::path::Path) -> String {
+    fs::read_to_string(path).unwrap_or_else(|e| {
+        eprintln!(
+            "{} Failed to read {}: {}",
+            "error:".red().bold(),
+            path.display(),
+            e
+        );
+        process::exit(1);
+    })
+}
+
+fn write_output(content: &str, path: Option<&std::path::Path>) {
+    match path {
+        Some(p) => {
+            if let Some(parent) = p.parent() {
+                fs::create_dir_all(parent).unwrap_or_else(|e| {
+                    eprintln!(
+                        "{} Failed to create directory {}: {}",
+                        "error:".red().bold(),
+                        parent.display(),
+                        e
+                    );
+                    process::exit(1);
+                });
+            }
+            fs::write(p, content).unwrap_or_else(|e| {
+                eprintln!(
+                    "{} Failed to write {}: {}",
+                    "error:".red().bold(),
+                    p.display(),
+                    e
+                );
+                process::exit(1);
+            });
+        }
+        None => print!("{}", content),
+    }
+}

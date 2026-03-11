@@ -1,0 +1,13 @@
+[package]
+name = "inky-wasm"
+version = "2.0.0"
+edition = "2021"
+description = "WASM bindings for Inky"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+inky-core = { path = "../inky-core" }
+wasm-bindgen = "0.2"

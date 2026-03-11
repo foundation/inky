@@ -1,5 +1,23 @@
+# Rust
+/target
+**/*.rs.bk
+Cargo.lock
+
+# Node (for WASM/bindings)
 /node_modules
+
+# OS
 *.DS_Store
-test/fixtures/_build
 *.swp
+Thumbs.db
+
+# IDE
+/.idea
+/.vscode
+*.iml
+
+# Claude
 /.claude
+
+# Legacy
+test/fixtures/_build
