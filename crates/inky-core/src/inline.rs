@@ -31,7 +31,58 @@ pub fn inline_css(html: &str, base_path: Option<&std::path::Path>) -> Result<Str
         ..InlineOptions::default()
     };
     let inliner = CSSInliner::new(options);
-    inliner.inline(html).map_err(|e| e.to_string())
+    let result = inliner.inline(html).map_err(|e| e.to_string())?;
+
+    // Move remaining <style> blocks from <head> to end of <body>.
+    // Gmail clips emails at ~102KB — styles in <head> eat into that budget
+    // before any visible content. Moving them to the end ensures content
+    // is prioritized if the email gets clipped.
+    Ok(move_styles_to_body_end(&result))
+}
+
+/// Move `<style>` blocks from `<head>` to just before `</body>`.
+fn move_styles_to_body_end(html: &str) -> String {
+    use regex::Regex;
+
+    let style_re = Regex::new(r"(?si)<style[^>]*>.*?</style>").unwrap();
+
+    // Find <head>...</head> region
+    let head_start = match html.find("<head") {
+        Some(i) => i,
+        None => return html.to_string(),
+    };
+    let head_end = match html[head_start..].find("</head>") {
+        Some(i) => head_start + i + 7,
+        None => return html.to_string(),
+    };
+
+    let head_content = &html[head_start..head_end];
+
+    // Extract style blocks from head
+    let styles: Vec<String> = style_re
+        .find_iter(head_content)
+        .map(|m| m.as_str().to_string())
+        .collect();
+
+    if styles.is_empty() {
+        return html.to_string();
+    }
+
+    // Remove style blocks from head
+    let new_head = style_re.replace_all(head_content, "").to_string();
+
+    // Insert styles before </body>
+    let style_block = styles.join("\n");
+    let mut result = format!("{}{}{}", &html[..head_start], new_head, &html[head_end..]);
+
+    if let Some(body_end) = result.rfind("</body>") {
+        result.insert_str(body_end, &style_block);
+    } else {
+        // No </body> tag — append at the end
+        result.push_str(&style_block);
+    }
+
+    result
 }
 
 #[cfg(test)]
