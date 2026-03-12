@@ -1,10 +1,14 @@
 use clap::{Parser, Subcommand};
 use colored::Colorize;
+use inky_core::validate::{self, Severity};
 use inky_core::{Config, Inky};
+use std::ffi::OsStr;
 use std::fs;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::process;
+
+const INKY_EXTENSIONS: &[&str] = &["inky", "html"];
 
 #[derive(Parser)]
 #[command(name = "inky")]
@@ -178,7 +182,9 @@ fn build_directory(inky: &Inky, input_dir: &std::path::Path, output_dir: Option<
 }
 
 fn cmd_validate(input: PathBuf) {
-    // Placeholder — validation will be implemented in inky-core
+    let config = Config::default();
+    let mut has_errors = false;
+
     if input.is_dir() {
         let pattern = format!("{}/**/*.html", input.display());
         let files: Vec<PathBuf> = glob::glob(&pattern)
@@ -189,38 +195,81 @@ fn cmd_validate(input: PathBuf) {
             .filter_map(|entry| entry.ok())
             .collect();
 
-        for file in &files {
-            validate_file(file);
+        if files.is_empty() {
+            eprintln!(
+                "{} No .html files found in {}",
+                "warning:".yellow().bold(),
+                input.display()
+            );
+            return;
         }
+
+        for file in &files {
+            if validate_file(file, &config) {
+                has_errors = true;
+            }
+        }
+
+        let total = files.len();
+        eprintln!("\n  Validated {} file(s)", total);
     } else {
-        validate_file(&input);
+        has_errors = validate_file(&input, &config);
+    }
+
+    if has_errors {
+        process::exit(1);
     }
 }
 
-fn validate_file(path: &std::path::Path) {
+fn validate_file(path: &std::path::Path, config: &Config) -> bool {
     let html = read_file(path);
+    let diagnostics = validate::validate(&html, config);
 
-    let mut warnings = Vec::new();
-
-    // Basic validation checks (these will move into inky-core later)
-    if html.contains("<img") && !html.contains("alt=") {
-        warnings.push("Image(s) missing alt text".to_string());
-    }
-    if html.contains("<button") && !html.contains("href=") {
-        warnings.push("Button(s) missing href attribute".to_string());
-    }
-
-    if warnings.is_empty() {
+    if diagnostics.is_empty() {
         eprintln!("  {} {}", "ok".green().bold(), path.display());
-    } else {
-        for w in &warnings {
-            eprintln!(
-                "  {} {} — {}",
-                "warn".yellow().bold(),
-                path.display(),
-                w
-            );
+        return false;
+    }
+
+    for d in &diagnostics {
+        let label = match d.severity {
+            Severity::Warning => "warn".yellow().bold(),
+            Severity::Error => "error".red().bold(),
+        };
+        eprintln!("  {} {} [{}] {}", label, path.display(), d.rule, d.message);
+    }
+
+    diagnostics.iter().any(|d| d.severity == Severity::Error)
+}
+
+/// Check if a file has a supported Inky template extension.
+fn is_template_file(path: &Path) -> bool {
+    path.extension()
+        .and_then(OsStr::to_str)
+        .map(|ext| INKY_EXTENSIONS.contains(&ext))
+        .unwrap_or(false)
+}
+
+/// Find all template files (.inky and .html) in a directory.
+fn find_template_files(dir: &Path) -> Vec<PathBuf> {
+    let mut files = Vec::new();
+    for ext in INKY_EXTENSIONS {
+        let pattern = format!("{}/**/*.{}", dir.display(), ext);
+        if let Ok(paths) = glob::glob(&pattern) {
+            files.extend(paths.filter_map(|entry| entry.ok()));
         }
+    }
+    files.sort();
+    files
+}
+
+/// Convert an input path to an output path, changing .inky to .html.
+fn to_output_path(input: &Path, input_dir: &Path, output_dir: &Path) -> PathBuf {
+    let relative = input.strip_prefix(input_dir).unwrap();
+    let dest = output_dir.join(relative);
+    if dest.extension().and_then(OsStr::to_str) == Some("inky") {
+        dest.with_extension("html")
+    } else {
+        dest
     }
 }
 

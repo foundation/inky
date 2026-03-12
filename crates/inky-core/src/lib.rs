@@ -3,6 +3,7 @@ pub mod components;
 pub mod config;
 #[cfg(feature = "css-inlining")]
 pub mod inline;
+pub mod validate;
 
 use regex::Regex;
 use scraper::{Html, Selector};
