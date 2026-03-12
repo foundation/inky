@@ -75,7 +75,15 @@ fn cmd_build(input: Option<PathBuf>, output: Option<PathBuf>, columns: u32, inli
                 let base = path.parent().map(Path::to_path_buf);
                 let html = read_file(&path);
                 let result = process_html(&inky, &html, inline_css, base.as_deref());
-                write_output(&result, output.as_deref());
+                // If no output specified and input is .inky, write to .html
+                let out = output.clone().or_else(|| {
+                    if path.extension().and_then(OsStr::to_str) == Some("inky") {
+                        Some(path.with_extension("html"))
+                    } else {
+                        None
+                    }
+                });
+                write_output(&result, out.as_deref());
             }
         }
         None => {
@@ -106,19 +114,12 @@ fn process_html(inky: &Inky, html: &str, inline_css: bool, base_path: Option<&Pa
     }
 }
 
-fn build_directory(inky: &Inky, input_dir: &std::path::Path, output_dir: Option<&std::path::Path>, inline_css: bool) {
-    let pattern = format!("{}/**/*.html", input_dir.display());
-    let files: Vec<PathBuf> = glob::glob(&pattern)
-        .unwrap_or_else(|e| {
-            eprintln!("{} Invalid glob pattern: {}", "error:".red().bold(), e);
-            process::exit(1);
-        })
-        .filter_map(|entry| entry.ok())
-        .collect();
+fn build_directory(inky: &Inky, input_dir: &Path, output_dir: Option<&Path>, inline_css: bool) {
+    let files = find_template_files(input_dir);
 
     if files.is_empty() {
         eprintln!(
-            "{} No .html files found in {}",
+            "{} No .inky or .html files found in {}",
             "warning:".yellow().bold(),
             input_dir.display()
         );
@@ -132,8 +133,7 @@ fn build_directory(inky: &Inky, input_dir: &std::path::Path, output_dir: Option<
 
         let out_path = match output_dir {
             Some(dir) => {
-                let relative = file.strip_prefix(input_dir).unwrap();
-                let dest = dir.join(relative);
+                let dest = to_output_path(file, input_dir, dir);
                 if let Some(parent) = dest.parent() {
                     fs::create_dir_all(parent).unwrap_or_else(|e| {
                         eprintln!(
@@ -186,18 +186,11 @@ fn cmd_validate(input: PathBuf) {
     let mut has_errors = false;
 
     if input.is_dir() {
-        let pattern = format!("{}/**/*.html", input.display());
-        let files: Vec<PathBuf> = glob::glob(&pattern)
-            .unwrap_or_else(|e| {
-                eprintln!("{} Invalid glob pattern: {}", "error:".red().bold(), e);
-                process::exit(1);
-            })
-            .filter_map(|entry| entry.ok())
-            .collect();
+        let files = find_template_files(&input);
 
         if files.is_empty() {
             eprintln!(
-                "{} No .html files found in {}",
+                "{} No .inky or .html files found in {}",
                 "warning:".yellow().bold(),
                 input.display()
             );
@@ -239,14 +232,6 @@ fn validate_file(path: &std::path::Path, config: &Config) -> bool {
     }
 
     diagnostics.iter().any(|d| d.severity == Severity::Error)
-}
-
-/// Check if a file has a supported Inky template extension.
-fn is_template_file(path: &Path) -> bool {
-    path.extension()
-        .and_then(OsStr::to_str)
-        .map(|ext| INKY_EXTENSIONS.contains(&ext))
-        .unwrap_or(false)
 }
 
 /// Find all template files (.inky and .html) in a directory.

@@ -11,7 +11,7 @@ const { execSync } = require('child_process');
 
 const templatesDir = path.join(__dirname, 'templates');
 const expectedDir = path.join(templatesDir, 'expected');
-const files = fs.readdirSync(templatesDir).filter(f => f.endsWith('.html'));
+const files = fs.readdirSync(templatesDir).filter(f => f.endsWith('.inky'));
 
 let passed = 0;
 let failed = 0;
@@ -49,8 +49,9 @@ function normalize(html) {
 }
 
 for (const file of files) {
-  // Read pre-generated expected output
-  const expectedPath = path.join(expectedDir, file);
+  // Read pre-generated expected output (.inky → .html in expected dir)
+  const expectedFile = file.replace('.inky', '.html');
+  const expectedPath = path.join(expectedDir, expectedFile);
   if (!fs.existsSync(expectedPath)) {
     console.log(`  ? ${file} (no expected output)`);
     failed++;
@@ -62,7 +63,7 @@ for (const file of files) {
   let rustHtml;
   try {
     rustHtml = normalize(
-      execSync(`./target/release/inky build --no-inline-css "${path.join(templatesDir, file)}"`, {
+      execSync(`./target/release/inky build --no-inline-css -o /dev/stdout "${path.join(templatesDir, file)}"`, {
         encoding: 'utf8',
         stdio: ['pipe', 'pipe', 'pipe']
       })
@@ -89,7 +90,7 @@ if (diffs.length > 0) {
   fs.mkdirSync(diffDir, { recursive: true });
 
   for (const d of diffs.slice(0, 5)) {
-    const base = d.file.replace('.html', '');
+    const base = d.file.replace('.inky', '');
     fs.writeFileSync(`${diffDir}/${base}-expected.html`, d.expectedHtml);
     fs.writeFileSync(`${diffDir}/${base}-rust.html`, d.rustHtml);
     console.log(`  ${d.file}:`);
