@@ -92,7 +92,7 @@ $hr-align: center !default;
 $anchor-text-decoration: none !default;
 $anchor-color: $primary-color !default;
 $anchor-color-visited: $anchor-color !default;
-$anchor-color-hover: color.adjust($primary-color, $lightness: -10%, $space: hsl) !default;
+$anchor-color-hover: color.adjust($primary-color, $lightness: -10%) !default;
 $anchor-color-active: $anchor-color-hover !default;
 $font-scale: 1.2 !default;
 $stat-font-size: 40px !default;
@@ -130,12 +130,12 @@ $callout-background-fade: 85% !default;
 $callout-padding: 10px !default;
 $callout-padding-small: $callout-padding !default;
 $callout-margin-bottom: $global-margin !default;
-$callout-border: 1px solid color.adjust($callout-background, $lightness: -20%, $space: hsl) !default;
-$callout-border-primary: 1px solid color.adjust($primary-color, $lightness: -20%, $space: hsl) !default;
-$callout-border-secondary: 1px solid color.adjust($secondary-color, $lightness: -20%, $space: hsl) !default;
-$callout-border-success: 1px solid color.adjust($success-color, $lightness: -20%, $space: hsl) !default;
-$callout-border-warning: 1px solid color.adjust($warning-color, $lightness: -20%, $space: hsl) !default;
-$callout-border-alert: 1px solid color.adjust($alert-color, $lightness: -20%, $space: hsl) !default;
+$callout-border: 1px solid color.adjust($callout-background, $lightness: -20%) !default;
+$callout-border-primary: 1px solid color.adjust($primary-color, $lightness: -20%) !default;
+$callout-border-secondary: 1px solid color.adjust($secondary-color, $lightness: -20%) !default;
+$callout-border-success: 1px solid color.adjust($success-color, $lightness: -20%) !default;
+$callout-border-warning: 1px solid color.adjust($warning-color, $lightness: -20%) !default;
+$callout-border-alert: 1px solid color.adjust($alert-color, $lightness: -20%) !default;
 
 // 7. Menu
 // -------

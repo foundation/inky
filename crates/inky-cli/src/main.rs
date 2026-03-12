@@ -1,3 +1,5 @@
+mod scss;
+
 use clap::{Parser, Subcommand};
 use colored::Colorize;
 use inky_core::validate::{self, Severity};
@@ -38,6 +40,10 @@ enum Commands {
         #[arg(long)]
         no_inline_css: bool,
 
+        /// Skip injecting framework CSS (Inky styles are included by default)
+        #[arg(long)]
+        no_framework_css: bool,
+
         /// Exit with non-zero code if validation finds any warnings or errors
         #[arg(long)]
         strict: bool,
@@ -59,13 +65,21 @@ fn main() {
             output,
             columns,
             no_inline_css,
+            no_framework_css,
             strict,
-        } => cmd_build(input, output, columns, !no_inline_css, strict),
+        } => cmd_build(input, output, columns, !no_inline_css, !no_framework_css, strict),
         Commands::Validate { input } => cmd_validate(input),
     }
 }
 
-fn cmd_build(input: Option<PathBuf>, output: Option<PathBuf>, columns: u32, inline_css: bool, strict: bool) {
+fn cmd_build(
+    input: Option<PathBuf>,
+    output: Option<PathBuf>,
+    columns: u32,
+    inline_css: bool,
+    framework_css: bool,
+    strict: bool,
+) {
     let config = Config {
         column_count: columns,
         ..Config::default()
@@ -75,12 +89,12 @@ fn cmd_build(input: Option<PathBuf>, output: Option<PathBuf>, columns: u32, inli
     let has_warnings = match input {
         Some(path) => {
             if path.is_dir() {
-                build_directory(&inky, &path, output.as_deref(), inline_css, &config)
+                build_directory(&inky, &path, output.as_deref(), inline_css, framework_css, &config)
             } else {
                 let base = path.parent().map(Path::to_path_buf);
                 let html = read_file(&path);
                 let warnings = print_validation_warnings(&html, &config, &path);
-                let result = process_html(&inky, &html, inline_css, base.as_deref());
+                let result = process_template(&inky, &html, inline_css, framework_css, base.as_deref());
                 // If no output specified and input is .inky, write to .html
                 let out = output.clone().or_else(|| {
                     if path.extension().and_then(OsStr::to_str) == Some("inky") {
@@ -104,7 +118,7 @@ fn cmd_build(input: Option<PathBuf>, output: Option<PathBuf>, columns: u32, inli
                 });
             let warnings = print_validation_warnings(&html, &config, Path::new("stdin"));
             let cwd = std::env::current_dir().ok();
-            let result = process_html(&inky, &html, inline_css, cwd.as_deref());
+            let result = process_template(&inky, &html, inline_css, framework_css, cwd.as_deref());
             write_output(&result, output.as_deref());
             warnings
         }
@@ -128,19 +142,47 @@ fn print_validation_warnings(html: &str, config: &Config, path: &Path) -> bool {
     !diagnostics.is_empty()
 }
 
-fn process_html(inky: &Inky, html: &str, inline_css: bool, base_path: Option<&Path>) -> String {
+/// Full build pipeline: extract SCSS overrides → compile framework CSS → inject → transform → inline.
+fn process_template(
+    inky: &Inky,
+    html: &str,
+    inline_css: bool,
+    framework_css: bool,
+    base_path: Option<&Path>,
+) -> String {
+    let mut html = html.to_string();
+
+    if framework_css {
+        // Extract per-template SCSS variable overrides
+        let (cleaned, overrides) = scss::extract_scss_overrides(&html);
+        html = cleaned;
+
+        // Compile framework SCSS (with any overrides)
+        let css = scss::compile_framework_scss(&overrides).unwrap_or_else(|e| {
+            eprintln!("{} SCSS compilation failed: {}", "error:".red().bold(), e);
+            process::exit(1);
+        });
+
+        // Inject compiled CSS into the HTML
+        html = scss::inject_css_into_html(&html, &css);
+    } else {
+        // Strip any SCSS blocks even when framework CSS is disabled
+        let (cleaned, _) = scss::extract_scss_overrides(&html);
+        html = cleaned;
+    }
+
     if inline_css {
-        inky.transform_and_inline(html, base_path)
+        inky.transform_and_inline(&html, base_path)
             .unwrap_or_else(|e| {
                 eprintln!("{} CSS inlining failed: {}", "error:".red().bold(), e);
                 process::exit(1);
             })
     } else {
-        inky.transform(html)
+        inky.transform(&html)
     }
 }
 
-fn build_directory(inky: &Inky, input_dir: &Path, output_dir: Option<&Path>, inline_css: bool, config: &Config) -> bool {
+fn build_directory(inky: &Inky, input_dir: &Path, output_dir: Option<&Path>, inline_css: bool, framework_css: bool, config: &Config) -> bool {
     let files = find_template_files(input_dir);
     let mut has_warnings = false;
 
@@ -159,7 +201,7 @@ fn build_directory(inky: &Inky, input_dir: &Path, output_dir: Option<&Path>, inl
             has_warnings = true;
         }
         let base = file.parent().map(Path::to_path_buf);
-        let result = process_html(inky, &html, inline_css, base.as_deref());
+        let result = process_template(inky, &html, inline_css, framework_css, base.as_deref());
 
         let out_path = match output_dir {
             Some(dir) => {
@@ -301,6 +343,7 @@ fn read_file(path: &std::path::Path) -> String {
         process::exit(1);
     })
 }
+
 
 fn write_output(content: &str, path: Option<&std::path::Path>) {
     match path {

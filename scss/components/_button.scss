@@ -10,11 +10,11 @@
 ////
 
 // Hover color variables (derived from settings)
-$button-background-hover: color.adjust($button-background, $lightness: -10%, $space: hsl) !default;
-$button-secondary-background-hover: color.adjust($secondary-color, $lightness: +10%, $space: hsl) !default;
-$button-success-background-hover: color.adjust($success-color, $lightness: -10%, $space: hsl) !default;
-$button-alert-background-hover: color.adjust($alert-color, $lightness: -10%, $space: hsl) !default;
-$button-warning-background-hover: color.adjust($warning-color, $lightness: -10%, $space: hsl) !default;
+$button-background-hover: color.adjust($button-background, $lightness: -10%) !default;
+$button-secondary-background-hover: color.adjust($secondary-color, $lightness: +10%) !default;
+$button-success-background-hover: color.adjust($success-color, $lightness: -10%) !default;
+$button-alert-background-hover: color.adjust($alert-color, $lightness: -10%) !default;
+$button-warning-background-hover: color.adjust($warning-color, $lightness: -10%) !default;
 
 table.button {
   width: auto;
@@ -293,8 +293,8 @@ table.button.warning:hover {
       }
 
       &:hover {
-        border-color: color.adjust($color, $lightness: -10%, $space: hsl);
-        color: color.adjust($color, $lightness: -10%, $space: hsl);
+        border-color: color.adjust($color, $lightness: -10%);
+        color: color.adjust($color, $lightness: -10%);
       }
     }
   }

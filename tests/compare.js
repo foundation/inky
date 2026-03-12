@@ -63,7 +63,7 @@ for (const file of files) {
   let rustHtml;
   try {
     rustHtml = normalize(
-      execSync(`./target/release/inky build --no-inline-css -o /dev/stdout "${path.join(templatesDir, file)}"`, {
+      execSync(`./target/release/inky build --no-inline-css --no-framework-css -o /dev/stdout "${path.join(templatesDir, file)}"`, {
         encoding: 'utf8',
         stdio: ['pipe', 'pipe', 'pipe']
       })
