@@ -1,4 +1,7 @@
+mod init;
+mod migrate;
 mod scss;
+mod watch;
 
 use clap::{Parser, Subcommand};
 use colored::Colorize;
@@ -54,6 +57,48 @@ enum Commands {
         /// Input file or directory
         input: PathBuf,
     },
+
+    /// Migrate v1 Inky syntax to v2
+    Migrate {
+        /// Input file or directory
+        input: PathBuf,
+
+        /// Output file or directory (writes to stdout if omitted)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+
+        /// Rewrite files in-place
+        #[arg(long)]
+        in_place: bool,
+    },
+
+    /// Scaffold a new Inky email project
+    Init {
+        /// Project directory name (creates in current directory if omitted)
+        name: Option<String>,
+    },
+
+    /// Watch for changes and rebuild automatically
+    Watch {
+        /// Input directory to watch
+        input: PathBuf,
+
+        /// Output directory
+        #[arg(short, long)]
+        output: PathBuf,
+
+        /// Number of columns in the grid (default: 12)
+        #[arg(long, default_value = "12")]
+        columns: u32,
+
+        /// Skip CSS inlining
+        #[arg(long)]
+        no_inline_css: bool,
+
+        /// Skip injecting framework CSS
+        #[arg(long)]
+        no_framework_css: bool,
+    },
 }
 
 fn main() {
@@ -69,6 +114,15 @@ fn main() {
             strict,
         } => cmd_build(input, output, columns, !no_inline_css, !no_framework_css, strict),
         Commands::Validate { input } => cmd_validate(input),
+        Commands::Migrate { input, output, in_place } => migrate::cmd_migrate(input, output, in_place),
+        Commands::Init { name } => init::cmd_init(name),
+        Commands::Watch {
+            input,
+            output,
+            columns,
+            no_inline_css,
+            no_framework_css,
+        } => watch::cmd_watch(input, output, columns, !no_inline_css, !no_framework_css),
     }
 }
 
@@ -142,7 +196,7 @@ fn print_validation_warnings(html: &str, config: &Config, path: &Path) -> bool {
     !diagnostics.is_empty()
 }
 
-/// Full build pipeline: extract SCSS overrides → compile framework CSS → inject → transform → inline.
+/// Full build pipeline: resolve includes → extract SCSS overrides → compile framework CSS → inject → transform → inline.
 fn process_template(
     inky: &Inky,
     html: &str,
@@ -150,7 +204,15 @@ fn process_template(
     framework_css: bool,
     base_path: Option<&Path>,
 ) -> String {
-    let mut html = html.to_string();
+    // Resolve <include> tags before any other processing
+    let mut html = if let Some(base) = base_path {
+        inky_core::include::process_includes(html, base).unwrap_or_else(|e| {
+            eprintln!("{} {}", "error:".red().bold(), e);
+            process::exit(1);
+        })
+    } else {
+        html.to_string()
+    };
 
     if framework_css {
         // Extract per-template SCSS variable overrides
