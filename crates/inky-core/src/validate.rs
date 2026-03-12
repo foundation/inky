@@ -19,6 +19,16 @@ pub struct Diagnostic {
     pub message: String,
 }
 
+impl Diagnostic {
+    pub fn warning(rule: &'static str, message: impl Into<String>) -> Self {
+        Self { severity: Severity::Warning, rule, message: message.into() }
+    }
+
+    pub fn error(rule: &'static str, message: impl Into<String>) -> Self {
+        Self { severity: Severity::Error, rule, message: message.into() }
+    }
+}
+
 /// Run all validation checks: source-level on the input, output-level on the transformed result.
 pub fn validate(html: &str, config: &Config) -> Vec<Diagnostic> {
     let mut diags = validate_source(html, config);
@@ -55,47 +65,27 @@ fn check_v1_syntax(html: &str) -> Vec<Diagnostic> {
 
     // <columns> (plural) → should be <column> (singular)
     if Regex::new(r"<columns[\s>]").unwrap().is_match(html) {
-        diags.push(Diagnostic {
-            severity: Severity::Warning,
-            rule: "v1-syntax",
-            message: "<columns> is v1 syntax — use <column> instead, or run `inky migrate`".to_string(),
-        });
+        diags.push(Diagnostic::warning("v1-syntax", "<columns> is v1 syntax — use <column> instead, or run `inky migrate`"));
     }
 
     // <h-line> → should be <divider>
     if Regex::new(r"<h-line[\s>]").unwrap().is_match(html) {
-        diags.push(Diagnostic {
-            severity: Severity::Warning,
-            rule: "v1-syntax",
-            message: "<h-line> is v1 syntax — use <divider> instead, or run `inky migrate`".to_string(),
-        });
+        diags.push(Diagnostic::warning("v1-syntax", "<h-line> is v1 syntax — use <divider> instead, or run `inky migrate`"));
     }
 
     // large="..." on <column> → should be lg="..."
     if Regex::new(r#"<column[^>]+\blarge\s*="#).unwrap().is_match(html) {
-        diags.push(Diagnostic {
-            severity: Severity::Warning,
-            rule: "v1-syntax",
-            message: r#"large="..." is v1 syntax — use lg="..." instead, or run `inky migrate`"#.to_string(),
-        });
+        diags.push(Diagnostic::warning("v1-syntax", r#"large="..." is v1 syntax — use lg="..." instead, or run `inky migrate`"#));
     }
 
     // small="..." on <column> → should be sm="..."
     if Regex::new(r#"<column[^>]+\bsmall\s*="#).unwrap().is_match(html) {
-        diags.push(Diagnostic {
-            severity: Severity::Warning,
-            rule: "v1-syntax",
-            message: r#"small="..." is v1 syntax — use sm="..." instead, or run `inky migrate`"#.to_string(),
-        });
+        diags.push(Diagnostic::warning("v1-syntax", r#"small="..." is v1 syntax — use sm="..." instead, or run `inky migrate`"#));
     }
 
     // <spacer size="..."> → should be <spacer height="...">
     if Regex::new(r#"<spacer[^>]+\bsize\s*="#).unwrap().is_match(html) {
-        diags.push(Diagnostic {
-            severity: Severity::Warning,
-            rule: "v1-syntax",
-            message: r#"<spacer size="..."> is v1 syntax — use height="..." instead, or run `inky migrate`"#.to_string(),
-        });
+        diags.push(Diagnostic::warning("v1-syntax", r#"<spacer size="..."> is v1 syntax — use height="..." instead, or run `inky migrate`"#));
     }
 
     diags
@@ -108,11 +98,7 @@ fn check_missing_container(html: &str, config: &Config) -> Vec<Diagnostic> {
     let doc = Html::parse_fragment(html);
     if let Ok(sel) = Selector::parse(tag) {
         if doc.select(&sel).next().is_none() {
-            return vec![Diagnostic {
-                severity: Severity::Warning,
-                rule: "missing-container",
-                message: format!("No <{}> element found — email content won't be centered", tag),
-            }];
+            return vec![Diagnostic::warning("missing-container", format!("No <{}> element found — email content won't be centered", tag))];
         }
     }
     vec![]
@@ -131,15 +117,11 @@ fn check_button_no_href(html: &str, config: &Config) -> Vec<Diagnostic> {
                 } else {
                     text
                 };
-                diags.push(Diagnostic {
-                    severity: Severity::Error,
-                    rule: "button-no-href",
-                    message: format!(
-                        "Button #{} missing href attribute: \"{}\"",
-                        i + 1,
-                        snippet.trim()
-                    ),
-                });
+                diags.push(Diagnostic::error("button-no-href", format!(
+                    "Button #{} missing href attribute: \"{}\"",
+                    i + 1,
+                    snippet.trim()
+                )));
             }
         }
     }
@@ -156,14 +138,10 @@ fn check_missing_alt(html: &str) -> Vec<Diagnostic> {
         }
     }
     if count > 0 {
-        vec![Diagnostic {
-            severity: Severity::Warning,
-            rule: "missing-alt",
-            message: format!(
-                "{} image(s) missing alt text — hurts accessibility and shows broken icon when images are blocked",
-                count
-            ),
-        }]
+        vec![Diagnostic::warning("missing-alt", format!(
+            "{} image(s) missing alt text — hurts accessibility and shows broken icon when images are blocked",
+            count
+        ))]
     } else {
         vec![]
     }
@@ -176,11 +154,7 @@ fn check_missing_preheader(html: &str) -> Vec<Diagnostic> {
         || lower.contains("previewtext");
 
     if !has_preheader {
-        vec![Diagnostic {
-            severity: Severity::Warning,
-            rule: "missing-preheader",
-            message: "No preheader text found — inbox preview will show first visible content instead".to_string(),
-        }]
+        vec![Diagnostic::warning("missing-preheader", "No preheader text found — inbox preview will show first visible content instead")]
     } else {
         vec![]
     }
@@ -194,14 +168,10 @@ fn check_email_too_large(html: &str) -> Vec<Diagnostic> {
     let size = html.len();
     if size > SIZE_WARNING_BYTES {
         let kb = size / 1024;
-        vec![Diagnostic {
-            severity: Severity::Warning,
-            rule: "email-too-large",
-            message: format!(
-                "Email is {}KB — Gmail clips emails over 102KB. Consider reducing content",
-                kb
-            ),
-        }]
+        vec![Diagnostic::warning("email-too-large", format!(
+            "Email is {}KB — Gmail clips emails over 102KB. Consider reducing content",
+            kb
+        ))]
     } else {
         vec![]
     }
@@ -216,15 +186,11 @@ fn check_style_block_too_large(html: &str) -> Vec<Diagnostic> {
         let content = caps.get(1).unwrap().as_str();
         if content.len() > STYLE_BLOCK_LIMIT {
             let kb = content.len() / 1024;
-            diags.push(Diagnostic {
-                severity: Severity::Warning,
-                rule: "style-block-too-large",
-                message: format!(
-                    "Style block #{} is {}KB — Gmail strips entire <style> blocks over 8KB",
-                    i + 1,
-                    kb
-                ),
-            });
+            diags.push(Diagnostic::warning("style-block-too-large", format!(
+                "Style block #{} is {}KB — Gmail strips entire <style> blocks over 8KB",
+                i + 1,
+                kb
+            )));
         }
     }
     diags
@@ -246,14 +212,10 @@ fn check_img_no_width(html: &str) -> Vec<Diagnostic> {
         }
     }
     if count > 0 {
-        vec![Diagnostic {
-            severity: Severity::Warning,
-            rule: "img-no-width",
-            message: format!(
-                "{} image(s) missing width attribute — may break layout in Outlook",
-                count
-            ),
-        }]
+        vec![Diagnostic::warning("img-no-width", format!(
+            "{} image(s) missing width attribute — may break layout in Outlook",
+            count
+        ))]
     } else {
         vec![]
     }
@@ -265,14 +227,10 @@ fn check_deep_nesting(html: &str) -> Vec<Diagnostic> {
     let doc = Html::parse_fragment(html);
     let max_depth = find_max_table_depth(&doc.root_element(), 0);
     if max_depth > MAX_TABLE_DEPTH {
-        vec![Diagnostic {
-            severity: Severity::Warning,
-            rule: "deep-nesting",
-            message: format!(
-                "Tables nested {} levels deep — some email clients struggle beyond {} levels",
-                max_depth, MAX_TABLE_DEPTH
-            ),
-        }]
+        vec![Diagnostic::warning("deep-nesting", format!(
+            "Tables nested {} levels deep — some email clients struggle beyond {} levels",
+            max_depth, MAX_TABLE_DEPTH
+        ))]
     } else {
         vec![]
     }

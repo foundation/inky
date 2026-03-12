@@ -45,23 +45,7 @@ pub fn migrate_with_details(html: &str) -> String {
 #[wasm_bindgen]
 pub fn validate(html: &str) -> String {
     let config = Config::default();
-    let diagnostics = validate::validate(html, &config);
-    let items: Vec<String> = diagnostics
-        .iter()
-        .map(|d| {
-            let severity = match d.severity {
-                Severity::Warning => "warning",
-                Severity::Error => "error",
-            };
-            format!(
-                r#"{{"severity":"{}","rule":"{}","message":"{}"}}"#,
-                severity,
-                escape_json(d.rule),
-                escape_json(&d.message)
-            )
-        })
-        .collect();
-    format!("[{}]", items.join(","))
+    diagnostics_to_json(&validate::validate(html, &config))
 }
 
 /// Validate with a custom column count.
@@ -71,7 +55,10 @@ pub fn validate_with_config(html: &str, column_count: u32) -> String {
         column_count,
         ..Default::default()
     };
-    let diagnostics = validate::validate(html, &config);
+    diagnostics_to_json(&validate::validate(html, &config))
+}
+
+fn diagnostics_to_json(diagnostics: &[validate::Diagnostic]) -> String {
     let items: Vec<String> = diagnostics
         .iter()
         .map(|d| {
