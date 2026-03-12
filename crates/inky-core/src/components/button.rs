@@ -1,7 +1,7 @@
 use scraper::ElementRef;
 
-use crate::attrs::{get_attr, get_attrs, has_class};
-use super::helpers::{inner_html, build_classes};
+use crate::attrs::{get_attr, get_attrs, get_classes, has_class};
+use super::helpers::inner_html;
 
 pub fn make_button(element: &ElementRef) -> String {
     let attrs = get_attrs(element);
@@ -29,9 +29,19 @@ pub fn make_button(element: &ElementRef) -> String {
         expander = "";
     }
 
-    let classes = build_classes("button", element);
+    // Build classes: base "button" + element classes + v2 size/color attributes
+    let mut classes = vec!["button".to_string()];
+    classes.extend(get_classes(element));
+    if let Some(size) = get_attr(element, "size") {
+        classes.push(size);
+    }
+    if let Some(color) = get_attr(element, "color") {
+        classes.push(color);
+    }
+    let class_str = classes.join(" ");
+
     format!(
         r#"<table role="presentation" class="{}"><tbody><tr><td><table role="presentation"><tbody><tr><td>{}</td></tr></tbody></table></td>{}</tr></tbody></table>"#,
-        classes, inner, expander
+        class_str, inner, expander
     )
 }

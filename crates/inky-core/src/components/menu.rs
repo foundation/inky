@@ -1,15 +1,23 @@
 use scraper::ElementRef;
 
-use crate::attrs::{get_attr, get_attrs};
+use crate::attrs::{get_attr, get_attrs, get_classes};
 use super::helpers::{inner_html, build_classes};
 
 pub fn make_menu(element: &ElementRef) -> String {
     let attrs = get_attrs(element);
-    let classes = build_classes("menu", element);
     let inner = inner_html(element);
+
+    // Build classes: base "menu" + element classes + v2 direction attribute
+    let mut classes = vec!["menu".to_string()];
+    classes.extend(get_classes(element));
+    if let Some(direction) = get_attr(element, "direction") {
+        classes.push(direction);
+    }
+    let class_str = classes.join(" ");
+
     format!(
         r#"<table role="presentation"{} class="{}"><tbody><tr><td><table role="presentation"><tbody><tr>{}</tr></tbody></table></td></tr></tbody></table>"#,
-        attrs, classes, inner
+        attrs, class_str, inner
     )
 }
 

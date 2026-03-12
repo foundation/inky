@@ -198,12 +198,22 @@ fn migrate_button_classes(html: &str, changes: &mut Vec<MigrateChange>) -> Strin
                 parts.push(" ".to_string());
             }
 
+            // Append remaining attrs from after class (everything before the closing >)
+            let after_trimmed = after.trim();
+            if after_trimmed != ">" && after_trimmed != "/>" {
+                // Strip the closing > or /> to get remaining attrs
+                let remaining = after_trimmed.trim_end_matches('>').trim_end_matches('/').trim();
+                if !remaining.is_empty() {
+                    parts.push(remaining.to_string());
+                    parts.push(" ".to_string());
+                }
+            }
+
             // Build result, trimming trailing space before >
             let mut tag = parts.join("");
-            // Remove trailing whitespace before closing
             tag = tag.trim_end().to_string();
-            // Re-add the closing > or />
-            let closing = after.trim_start_matches(|c: char| c != '>' && c != '/');
+            // Re-add the closing >
+            let closing = if after.contains("/>") { "/>" } else { ">" };
             format!("{}{}", tag, closing)
         })
         .to_string();

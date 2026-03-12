@@ -1,0 +1,179 @@
+{
+  "tests": [
+    {
+      "name": "button: simple button",
+      "input": "<button href=\"http://example.com\">Click</button>",
+      "expected": "<table role=\"presentation\" class=\"button\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><td><a href=\"http://example.com\">Click</a></td></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "button: with target attribute",
+      "input": "<button href=\"http://example.com\" target=\"_blank\">Click</button>",
+      "expected": "<table role=\"presentation\" class=\"button\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><td><a href=\"http://example.com\" target=_blank>Click</a></td></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "button: with size attribute",
+      "input": "<button href=\"#\" size=\"small\">Click</button>",
+      "expected": "<table role=\"presentation\" class=\"button small\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><td><a href=\"#\">Click</a></td></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "button: with color attribute",
+      "input": "<button href=\"#\" color=\"alert\">Click</button>",
+      "expected": "<table role=\"presentation\" class=\"button alert\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><td><a href=\"#\">Click</a></td></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "button: with size and color attributes",
+      "input": "<button href=\"#\" size=\"large\" color=\"success\">Click</button>",
+      "expected": "<table role=\"presentation\" class=\"button large success\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><td><a href=\"#\">Click</a></td></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "button: expanded button",
+      "input": "<button href=\"#\" class=\"expand\">Click</button>",
+      "expected": "<table role=\"presentation\" class=\"button expand\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><td><center><a href=\"#\" align=\"center\" class=\"float-center\">Click</a></center></td></tr></tbody></table></td>\n<td class=\"expander\"></td></tr></tbody></table>"
+    },
+    {
+      "name": "button: with no href",
+      "input": "<button>Click</button>",
+      "expected": "<table role=\"presentation\" class=\"button\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><td>Click</td></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "divider: basic divider",
+      "input": "<divider></divider>",
+      "expected": "<table role=\"presentation\" class=\"divider\"><tbody><tr><th>&nbsp;</th></tr></tbody></table>"
+    },
+    {
+      "name": "divider: with classes",
+      "input": "<divider class=\"dotted\"></divider>",
+      "expected": "<table role=\"presentation\" class=\"divider dotted\"><tbody><tr><th>&nbsp;</th></tr></tbody></table>"
+    },
+    {
+      "name": "spacer: with height attribute (v2 syntax)",
+      "input": "<spacer height=\"20\"></spacer>",
+      "expected": "<table role=\"presentation\" class=\"spacer\"><tbody><tr><td height=\"20\" style=\"font-size:20px;line-height:20px;\">&nbsp;</td></tr></tbody></table>"
+    },
+    {
+      "name": "spacer: default height",
+      "input": "<spacer></spacer>",
+      "expected": "<table role=\"presentation\" class=\"spacer\"><tbody><tr><td height=\"16\" style=\"font-size:16px;line-height:16px;\">&nbsp;</td></tr></tbody></table>"
+    },
+    {
+      "name": "spacer: with sm attribute (v2 syntax)",
+      "input": "<spacer sm=\"10\"></spacer>",
+      "expected": "<table role=\"presentation\" class=\"spacer hide-for-large\"><tbody><tr><td height=\"10\" style=\"font-size:10px;line-height:10px;\">&nbsp;</td></tr></tbody></table>"
+    },
+    {
+      "name": "spacer: with lg attribute (v2 syntax)",
+      "input": "<spacer lg=\"20\"></spacer>",
+      "expected": "<table role=\"presentation\" class=\"spacer show-for-large\"><tbody><tr><td height=\"20\" style=\"font-size:20px;line-height:20px;\">&nbsp;</td></tr></tbody></table>"
+    },
+    {
+      "name": "spacer: with sm and lg attributes (v2 syntax)",
+      "input": "<spacer sm=\"10\" lg=\"20\"></spacer>",
+      "expected": "<table role=\"presentation\" class=\"spacer hide-for-large\"><tbody><tr><td height=\"10\" style=\"font-size:10px;line-height:10px;\">&nbsp;</td></tr></tbody></table><table role=\"presentation\" class=\"spacer show-for-large\"><tbody><tr><td height=\"20\" style=\"font-size:20px;line-height:20px;\">&nbsp;</td></tr></tbody></table>"
+    },
+    {
+      "name": "spacer: with class",
+      "input": "<spacer height=\"10\" class=\"bgcolor\"></spacer>",
+      "expected": "<table role=\"presentation\" class=\"spacer bgcolor\"><tbody><tr><td height=\"10\" style=\"font-size:10px;line-height:10px;\">&nbsp;</td></tr></tbody></table>"
+    },
+    {
+      "name": "callout: basic callout",
+      "input": "<callout>Important</callout>",
+      "expected": "<table role=\"presentation\" class=\"callout\"><tbody><tr><th class=\"callout-inner\">Important</th><th class=\"expander\"></th></tr></tbody></table>"
+    },
+    {
+      "name": "callout: with color attribute (v2 syntax)",
+      "input": "<callout color=\"primary\">Important</callout>",
+      "expected": "<table role=\"presentation\" class=\"callout\"><tbody><tr><th class=\"callout-inner primary\">Important</th><th class=\"expander\"></th></tr></tbody></table>"
+    },
+    {
+      "name": "callout: with class (still works)",
+      "input": "<callout class=\"secondary\">Important</callout>",
+      "expected": "<table role=\"presentation\" class=\"callout\"><tbody><tr><th class=\"callout-inner secondary\">Important</th><th class=\"expander\"></th></tr></tbody></table>"
+    },
+    {
+      "name": "menu: basic menu with items",
+      "input": "<menu><item href=\"#\">Link</item></menu>",
+      "expected": "<table role=\"presentation\" class=\"menu\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><th class=\"menu-item\"><a href=\"#\">Link</a></th></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "menu: with direction attribute (v2 syntax)",
+      "input": "<menu direction=\"vertical\"><item href=\"#\">Link</item></menu>",
+      "expected": "<table role=\"presentation\" class=\"menu vertical\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><th class=\"menu-item\"><a href=\"#\">Link</a></th></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "menu: item with target attribute",
+      "input": "<menu><item href=\"#\" target=\"_blank\">Link</item></menu>",
+      "expected": "<table role=\"presentation\" class=\"menu\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><th class=\"menu-item\"><a href=\"#\" target=_blank>Link</a></th></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "menu: multiple items",
+      "input": "<menu><item href=\"/a\">A</item><item href=\"/b\">B</item></menu>",
+      "expected": "<table role=\"presentation\" class=\"menu\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><th class=\"menu-item\"><a href=\"/a\">A</a></th><th class=\"menu-item\"><a href=\"/b\">B</a></th></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "wrapper: basic wrapper",
+      "input": "<wrapper>Content</wrapper>",
+      "expected": "<table role=\"presentation\" class=\"wrapper\" align=\"center\"><tbody><tr><td class=\"wrapper-inner\">Content</td></tr></tbody></table>"
+    },
+    {
+      "name": "wrapper: with classes",
+      "input": "<wrapper class=\"header\">Content</wrapper>",
+      "expected": "<table role=\"presentation\" class=\"wrapper header\" align=\"center\"><tbody><tr><td class=\"wrapper-inner\">Content</td></tr></tbody></table>"
+    },
+    {
+      "name": "outlook: wraps content in mso conditional",
+      "input": "<outlook><table><tr><td>Fallback</td></tr></table></outlook>",
+      "expected": "<!--[if mso]>\n<table><tbody><tr><td>Fallback</td></tr></tbody></table>\n<![endif]-->"
+    },
+    {
+      "name": "not-outlook: wraps content in not-mso conditional",
+      "input": "<not-outlook><div>Modern</div></not-outlook>",
+      "expected": "<!--[if !mso]><!-->\n<div>Modern</div>\n<!--<![endif]-->"
+    },
+    {
+      "name": "image: basic image",
+      "input": "<image src=\"hero.jpg\" alt=\"Hero\" width=\"600\">",
+      "expected": "<img src=\"hero.jpg\" alt=\"Hero\" width=\"600\" style=\"width: 600px; max-width: 100%;\">"
+    },
+    {
+      "name": "image: retina image (halves width)",
+      "input": "<image src=\"hero.jpg\" alt=\"Hero\" width=\"600\" retina>",
+      "expected": "<img src=\"hero.jpg\" alt=\"Hero\" width=\"300\" style=\"width: 300px; max-width: 100%;\">"
+    },
+    {
+      "name": "image: no width attribute",
+      "input": "<image src=\"hero.jpg\" alt=\"Hero\">",
+      "expected": "<img src=\"hero.jpg\" alt=\"Hero\" style=\"max-width: 100%;\">"
+    },
+    {
+      "name": "image: with class",
+      "input": "<image src=\"hero.jpg\" alt=\"Hero\" width=\"400\" class=\"float-center\">",
+      "expected": "<img src=\"hero.jpg\" alt=\"Hero\" width=\"400\" style=\"width: 400px; max-width: 100%;\" class=\"float-center\">"
+    },
+    {
+      "name": "raw: content passes through untouched",
+      "input": "before<raw><button>not transformed</button></raw>after",
+      "expected": "before<button>not transformed</button>after"
+    },
+    {
+      "name": "container: basic container",
+      "input": "<container>Content</container>",
+      "expected": "<table role=\"presentation\" align=\"center\" class=\"container\"><tbody><tr><td>Content</td></tr></tbody></table>"
+    },
+    {
+      "name": "row: basic row",
+      "input": "<row>Content</row>",
+      "expected": "<table role=\"presentation\" class=\"row\"><tbody><tr>Content</tr></tbody></table>"
+    },
+    {
+      "name": "block-grid: basic block grid",
+      "input": "<block-grid up=\"3\"><td>Item</td></block-grid>",
+      "expected": "<table role=\"presentation\" class=\"block-grid up-3\"><tbody><tr><td>Item</td></tr></tbody></table>"
+    },
+    {
+      "name": "block-grid: with classes",
+      "input": "<block-grid up=\"4\" class=\"show-for-large\"><td>Item</td></block-grid>",
+      "expected": "<table role=\"presentation\" class=\"block-grid up-4 show-for-large\"><tbody><tr><td>Item</td></tr></tbody></table>"
+    }
+  ]
+}

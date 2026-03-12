@@ -1,0 +1,69 @@
+{
+  "tests": [
+    {
+      "name": "column: single column with sm and lg (v2 syntax)",
+      "input": "<column lg=\"12\" sm=\"12\">One</column>",
+      "expected": "<th class=\"small-12 large-12 columns first last\"><table role=\"presentation\"><tbody><tr><th>One</th>\n<th class=\"expander\"></th></tr></tbody></table></th>"
+    },
+    {
+      "name": "column: two columns with sm and lg",
+      "input": "<column sm=\"12\" lg=\"6\">One</column><column sm=\"12\" lg=\"6\">Two</column>",
+      "expected": "<th class=\"small-12 large-6 columns first\"><table role=\"presentation\"><tbody><tr><th>One</th></tr></tbody></table></th><th class=\"small-12 large-6 columns last\"><table role=\"presentation\"><tbody><tr><th>Two</th></tr></tbody></table></th>"
+    },
+    {
+      "name": "column: three columns",
+      "input": "<column sm=\"12\" lg=\"4\">One</column><column sm=\"12\" lg=\"4\">Two</column><column sm=\"12\" lg=\"4\">Three</column>",
+      "expected": "<th class=\"small-12 large-4 columns first\"><table role=\"presentation\"><tbody><tr><th>One</th></tr></tbody></table></th><th class=\"small-12 large-4 columns\"><table role=\"presentation\"><tbody><tr><th>Two</th></tr></tbody></table></th><th class=\"small-12 large-4 columns last\"><table role=\"presentation\"><tbody><tr><th>Three</th></tr></tbody></table></th>"
+    },
+    {
+      "name": "column: defaults to full width when no attributes",
+      "input": "<column>Content</column>",
+      "expected": "<th class=\"small-12 large-12 columns first last\"><table role=\"presentation\"><tbody><tr><th>Content</th>\n<th class=\"expander\"></th></tr></tbody></table></th>"
+    },
+    {
+      "name": "column: with no-expander",
+      "input": "<column lg=\"12\" sm=\"12\" no-expander>One</column>",
+      "expected": "<th class=\"small-12 large-12 columns first last\"><table role=\"presentation\"><tbody><tr><th>One</th></tr></tbody></table></th>"
+    },
+    {
+      "name": "column: with no-expander=\"true\"",
+      "input": "<column lg=\"12\" sm=\"12\" no-expander=\"true\">One</column>",
+      "expected": "<th class=\"small-12 large-12 columns first last\"><table role=\"presentation\"><tbody><tr><th>One</th></tr></tbody></table></th>"
+    },
+    {
+      "name": "column: with no-expander=\"false\" (expander still shown)",
+      "input": "<column lg=\"12\" sm=\"12\" no-expander=\"false\">One</column>",
+      "expected": "<th class=\"small-12 large-12 columns first last\"><table role=\"presentation\"><tbody><tr><th>One</th>\n<th class=\"expander\"></th></tr></tbody></table></th>"
+    },
+    {
+      "name": "column: auto-assigns lg from sm",
+      "input": "<column sm=\"4\">One</column><column sm=\"8\">Two</column>",
+      "expected": "<th class=\"small-4 large-4 columns first\"><table role=\"presentation\"><tbody><tr><th>One</th></tr></tbody></table></th><th class=\"small-8 large-8 columns last\"><table role=\"presentation\"><tbody><tr><th>Two</th></tr></tbody></table></th>"
+    },
+    {
+      "name": "column: auto-assigns sm as full width if only lg defined",
+      "input": "<column lg=\"4\">One</column><column lg=\"8\">Two</column>",
+      "expected": "<th class=\"small-12 large-4 columns first\"><table role=\"presentation\"><tbody><tr><th>One</th></tr></tbody></table></th><th class=\"small-12 large-8 columns last\"><table role=\"presentation\"><tbody><tr><th>Two</th></tr></tbody></table></th>"
+    },
+    {
+      "name": "column: transfers extra classes",
+      "input": "<column class=\"hide-for-small\" lg=\"6\" sm=\"12\">Content</column>",
+      "expected": "<th class=\"hide-for-small small-12 large-6 columns first last\"><table role=\"presentation\"><tbody><tr><th>Content</th></tr></tbody></table></th>"
+    },
+    {
+      "name": "grid: row wrapping columns",
+      "input": "<row><column sm=\"12\" lg=\"6\">Left</column><column sm=\"12\" lg=\"6\">Right</column></row>",
+      "expected": "<table role=\"presentation\" class=\"row\"><tbody><tr><th class=\"small-12 large-6 columns first\"><table role=\"presentation\"><tbody><tr><th>Left</th></tr></tbody></table></th><th class=\"small-12 large-6 columns last\"><table role=\"presentation\"><tbody><tr><th>Right</th></tr></tbody></table></th></tr></tbody></table>"
+    },
+    {
+      "name": "grid: nested row inside column",
+      "input": "<row><column><row></row></column></row>",
+      "expected": "<table role=\"presentation\" class=\"row\"><tbody><tr><th class=\"small-12 large-12 columns first last\"><table role=\"presentation\"><tbody><tr><th><table role=\"presentation\" class=\"row\"><tbody><tr></tr></tbody></table></th></tr></tbody></table></th></tr></tbody></table>"
+    },
+    {
+      "name": "grid: full layout with container",
+      "input": "<container><row><column sm=\"12\" lg=\"6\">Left</column><column sm=\"12\" lg=\"6\">Right</column></row></container>",
+      "expected": "<table role=\"presentation\" align=\"center\" class=\"container\"><tbody><tr><td><table role=\"presentation\" class=\"row\"><tbody><tr><th class=\"small-12 large-6 columns first\"><table role=\"presentation\"><tbody><tr><th>Left</th></tr></tbody></table></th><th class=\"small-12 large-6 columns last\"><table role=\"presentation\"><tbody><tr><th>Right</th></tr></tbody></table></th></tr></tbody></table></td></tr></tbody></table>"
+    }
+  ]
+}

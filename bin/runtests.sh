@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 failed=0
 
 echo "=== Rust Unit & Fixture Tests ==="
-if cargo test -p inky-core 2>&1; then
+if cargo test --workspace 2>&1; then
   echo ""
 else
   failed=1

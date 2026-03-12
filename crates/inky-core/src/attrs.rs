@@ -4,7 +4,7 @@ use scraper::ElementRef;
 const IGNORED_ATTRIBUTES: &[&str] = &[
     "class", "id", "href", "size", "size-sm", "size-lg", "large", "no-expander", "small", "target",
     // v2 attribute names
-    "sm", "lg", "height", "up", "retina",
+    "sm", "lg", "height", "up", "retina", "color", "direction",
 ];
 
 /// Extract passthrough attributes from an element, excluding ignored ones.
