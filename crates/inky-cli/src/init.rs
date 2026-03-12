@@ -106,9 +106,10 @@ const LAYOUT_DEFAULT: &str = r#"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Tra
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta name="viewport" content="width=device-width">
-  <title></title>
+  <title>$title|$</title>
 </head>
 <body>
+  <span class="preheader">$preheader|$</span>
   <table class="body" data-made-with-inky>
     <tr>
       <td class="center" align="center" valign="top">
@@ -145,8 +146,7 @@ const PARTIAL_FOOTER: &str = r##"<wrapper class="footer">
 </wrapper>
 "##;
 
-const EMAIL_WELCOME: &str = r#"<layout src="../layouts/default.html">
-<span class="preheader">Thanks for signing up — here's how to get started.</span>
+const EMAIL_WELCOME: &str = r#"<layout src="../layouts/default.html" title="Welcome!" preheader="Thanks for signing up — here's how to get started.">
 <include src="../partials/header.inky">
 
 <container>

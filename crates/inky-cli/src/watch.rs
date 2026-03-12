@@ -342,8 +342,8 @@ fn find_template_files(dir: &Path) -> Vec<PathBuf> {
 /// Scan all templates in a directory for <include> and <layout> tags and return
 /// the unique canonicalized directories containing those referenced files.
 fn find_include_dirs(input_dir: &Path) -> Vec<PathBuf> {
-    let include_re = Regex::new(r#"<include\s+src\s*=\s*"([^"]+)"\s*/?\s*>"#).unwrap();
-    let layout_re = Regex::new(r#"<layout\s+src\s*=\s*"([^"]+)"\s*/?\s*>"#).unwrap();
+    let include_re = Regex::new(r#"<include\s+[^>]*?src\s*=\s*"([^"]+)"[^>]*/?\s*>"#).unwrap();
+    let layout_re = Regex::new(r#"<layout\s+[^>]*?src\s*=\s*"([^"]+)"[^>]*>"#).unwrap();
     let mut dirs = HashSet::new();
     let files = find_template_files(input_dir);
 

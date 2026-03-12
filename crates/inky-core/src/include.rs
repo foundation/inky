@@ -36,21 +36,67 @@ impl IncludeResolver for FileIncludeResolver {
 
 const MAX_INCLUDE_DEPTH: usize = 10;
 
+/// Parse attributes from a tag string like `src="foo" title="bar"`.
+/// Returns a Vec of (name, value) pairs.
+fn parse_attributes(attrs_str: &str) -> Vec<(String, String)> {
+    let attr_re = Regex::new(r#"(\w[\w-]*)\s*=\s*"([^"]*)""#).unwrap();
+    attr_re
+        .captures_iter(attrs_str)
+        .map(|cap| (cap[1].to_string(), cap[2].to_string()))
+        .collect()
+}
+
+/// Replace `$name$` and `$name|default$` variable placeholders in content with provided values.
+/// If a variable is not provided and has a default (e.g. `$title|Untitled$`), the default is used.
+/// If a variable is not provided and has no default (e.g. `$title$`), it is left as-is.
+fn replace_variables(content: &str, vars: &[(String, String)]) -> String {
+    let mut result = content.to_string();
+
+    // First, replace $name|default$ patterns where a value was provided
+    // Then replace simple $name$ patterns where a value was provided
+    for (name, value) in vars {
+        let default_re = Regex::new(&format!(r"\${}(?:\|[^$]*)?\$", regex::escape(name))).unwrap();
+        result = default_re.replace_all(&result, value.as_str()).to_string();
+    }
+
+    // Replace any remaining $name|default$ with their default values
+    let default_re = Regex::new(r"\$(\w[\w-]*)\|([^$]*)\$").unwrap();
+    result = default_re.replace_all(&result, "$2").to_string();
+
+    result
+}
+
 /// Process a layout declaration and inject content into the layout.
 ///
 /// If the template starts with `<layout src="...">`, the layout file is loaded and
 /// the template content replaces the `<yield>` tag in the layout. The `<layout>` tag
 /// is stripped from the content before injection.
 ///
+/// Additional attributes on the `<layout>` tag (besides `src`) are passed as variables
+/// and replace `$name$` placeholders in the layout file.
+///
 /// If no `<layout>` tag is found, the content is returned as-is.
 pub fn process_layout(html: &str, base_path: &Path) -> Result<String, String> {
-    let layout_re = Regex::new(r#"(?s)<layout\s+src\s*=\s*"([^"]+)"\s*/?\s*>(.*)"#).unwrap();
+    let layout_re = Regex::new(r#"(?s)<layout\s+((?:[^>]*?))\s*>(.*)"#).unwrap();
 
     if let Some(caps) = layout_re.captures(html) {
-        let layout_src = &caps[1];
+        let attrs_str = &caps[1];
         let content = caps[2].trim();
 
-        let layout_path = base_path.join(layout_src);
+        let attrs = parse_attributes(attrs_str);
+        let layout_src = attrs
+            .iter()
+            .find(|(name, _)| name == "src")
+            .map(|(_, v)| v.clone())
+            .ok_or_else(|| "Layout tag is missing src attribute".to_string())?;
+
+        // Collect variables (all attributes except src)
+        let vars: Vec<(String, String)> = attrs
+            .into_iter()
+            .filter(|(name, _)| name != "src")
+            .collect();
+
+        let layout_path = base_path.join(&layout_src);
         let layout_html = std::fs::read_to_string(&layout_path).map_err(|e| {
             format!(
                 "Failed to load layout '{}' (resolved to '{}'): {}",
@@ -59,6 +105,9 @@ pub fn process_layout(html: &str, base_path: &Path) -> Result<String, String> {
                 e
             )
         })?;
+
+        // Replace $name$ variables in the layout
+        let layout_html = replace_variables(&layout_html, &vars);
 
         // Replace <yield>, <yield/>, or <yield /> in the layout with the content
         let yield_re = Regex::new(r"<yield\s*/?\s*>").unwrap();
@@ -105,8 +154,8 @@ fn process_includes_recursive(
         ));
     }
 
-    // Match <include src="..."> and <include src="..." /> (with optional whitespace)
-    let re = Regex::new(r#"<include\s+src\s*=\s*"([^"]+)"\s*/?\s*>"#).unwrap();
+    // Match <include ...> and <include ... /> with any attributes
+    let re = Regex::new(r#"<include\s+((?:[^>]*?))\s*/?\s*>"#).unwrap();
 
     if !re.is_match(html) {
         return Ok(html.to_string());
@@ -117,12 +166,25 @@ fn process_includes_recursive(
     // Process one include at a time to handle nested includes correctly
     while let Some(caps) = re.captures(&result) {
         let full_match = caps.get(0).unwrap();
-        let src = &caps[1];
+        let attrs_str = &caps[1];
 
-        let content = resolver.resolve(src)?;
+        let attrs = parse_attributes(attrs_str);
+        let src = attrs
+            .iter()
+            .find(|(name, _)| name == "src")
+            .map(|(_, v)| v.clone())
+            .ok_or_else(|| "Include tag is missing src attribute".to_string())?;
+
+        let vars: Vec<(String, String)> = attrs
+            .into_iter()
+            .filter(|(name, _)| name != "src")
+            .collect();
+
+        let content = resolver.resolve(&src)?;
+        let content = replace_variables(&content, &vars);
 
         // For nested includes, resolve relative to the included file's directory
-        let included_path = Path::new(src);
+        let included_path = Path::new(&src);
         let nested_content = if let Some(parent) = included_path.parent() {
             if parent.as_os_str().is_empty() {
                 process_includes_recursive(&content, resolver, depth + 1)?
@@ -279,5 +341,117 @@ mod tests {
         let result = process_includes_with_resolver(html, &resolver);
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Maximum include depth"));
+    }
+
+    #[test]
+    fn test_include_with_variables() {
+        let mut files = HashMap::new();
+        files.insert(
+            "greeting.inky".to_string(),
+            "<h1>Hello, $name$!</h1><p>Your role: $role$</p>".to_string(),
+        );
+        let resolver = MapResolver { files };
+
+        let html = r#"<include src="greeting.inky" name="Alice" role="admin">"#;
+        let result = process_includes_with_resolver(html, &resolver).unwrap();
+        assert_eq!(result, "<h1>Hello, Alice!</h1><p>Your role: admin</p>");
+    }
+
+    #[test]
+    fn test_include_variables_unreplaced_stay() {
+        let mut files = HashMap::new();
+        files.insert(
+            "greeting.inky".to_string(),
+            "<h1>$name$</h1><p>$missing$</p>".to_string(),
+        );
+        let resolver = MapResolver { files };
+
+        let html = r#"<include src="greeting.inky" name="Bob">"#;
+        let result = process_includes_with_resolver(html, &resolver).unwrap();
+        assert_eq!(result, "<h1>Bob</h1><p>$missing$</p>");
+    }
+
+    #[test]
+    fn test_include_no_variables() {
+        let mut files = HashMap::new();
+        files.insert(
+            "plain.inky".to_string(),
+            "<p>No variables here</p>".to_string(),
+        );
+        let resolver = MapResolver { files };
+
+        let html = r#"<include src="plain.inky">"#;
+        let result = process_includes_with_resolver(html, &resolver).unwrap();
+        assert_eq!(result, "<p>No variables here</p>");
+    }
+
+    #[test]
+    fn test_variable_default_used_when_not_provided() {
+        let mut files = HashMap::new();
+        files.insert(
+            "page.inky".to_string(),
+            "<title>$title|Untitled$</title>".to_string(),
+        );
+        let resolver = MapResolver { files };
+
+        let html = r#"<include src="page.inky">"#;
+        let result = process_includes_with_resolver(html, &resolver).unwrap();
+        assert_eq!(result, "<title>Untitled</title>");
+    }
+
+    #[test]
+    fn test_variable_default_overridden_when_provided() {
+        let mut files = HashMap::new();
+        files.insert(
+            "page.inky".to_string(),
+            "<title>$title|Untitled$</title>".to_string(),
+        );
+        let resolver = MapResolver { files };
+
+        let html = r#"<include src="page.inky" title="Welcome!">"#;
+        let result = process_includes_with_resolver(html, &resolver).unwrap();
+        assert_eq!(result, "<title>Welcome!</title>");
+    }
+
+    #[test]
+    fn test_variable_empty_default() {
+        let mut files = HashMap::new();
+        files.insert(
+            "page.inky".to_string(),
+            "<span>$preheader|$</span>".to_string(),
+        );
+        let resolver = MapResolver { files };
+
+        let html = r#"<include src="page.inky">"#;
+        let result = process_includes_with_resolver(html, &resolver).unwrap();
+        assert_eq!(result, "<span></span>");
+    }
+
+    #[test]
+    fn test_variable_empty_default_overridden() {
+        let mut files = HashMap::new();
+        files.insert(
+            "page.inky".to_string(),
+            "<span>$preheader|$</span>".to_string(),
+        );
+        let resolver = MapResolver { files };
+
+        let html = r#"<include src="page.inky" preheader="Preview text">"#;
+        let result = process_includes_with_resolver(html, &resolver).unwrap();
+        assert_eq!(result, "<span>Preview text</span>");
+    }
+
+    #[test]
+    fn test_mixed_defaults_and_no_defaults() {
+        let mut files = HashMap::new();
+        files.insert(
+            "page.inky".to_string(),
+            "<title>$title|Default Title$</title><h1>$heading$</h1><p>$footer|© 2026$</p>".to_string(),
+        );
+        let resolver = MapResolver { files };
+
+        let html = r#"<include src="page.inky" heading="Hello">"#;
+        let result = process_includes_with_resolver(html, &resolver).unwrap();
+        assert_eq!(result, "<title>Default Title</title><h1>Hello</h1><p>© 2026</p>");
     }
 }
