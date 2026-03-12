@@ -144,7 +144,8 @@ const PARTIAL_FOOTER: &str = r##"<wrapper class="footer">
 </wrapper>
 "##;
 
-const EMAIL_WELCOME: &str = r#"<include src="../partials/header.inky">
+const EMAIL_WELCOME: &str = r#"<span class="preheader">Thanks for signing up — here's how to get started.</span>
+<include src="../partials/header.inky">
 
 <container>
   <row>

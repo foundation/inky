@@ -259,7 +259,7 @@ fn check_img_no_width(html: &str) -> Vec<Diagnostic> {
     }
 }
 
-const MAX_TABLE_DEPTH: usize = 4;
+const MAX_TABLE_DEPTH: usize = 5;
 
 fn check_deep_nesting(html: &str) -> Vec<Diagnostic> {
     let doc = Html::parse_fragment(html);
