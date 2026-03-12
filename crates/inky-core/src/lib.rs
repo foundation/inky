@@ -4,6 +4,7 @@ pub mod config;
 pub mod include;
 #[cfg(feature = "css-inlining")]
 pub mod inline;
+pub mod migrate;
 pub mod validate;
 
 use regex::Regex;
