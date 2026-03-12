@@ -10,7 +10,7 @@ use regex::Regex;
 use crate::scss;
 use inky_core::{Config, Inky};
 
-const INKY_EXTENSIONS: &[&str] = &["inky", "html", "scss"];
+const INKY_EXTENSIONS: &[&str] = &["inky", "html", "scss", "css"];
 
 pub fn cmd_watch(
     input: PathBuf,
@@ -341,22 +341,46 @@ fn find_template_files(dir: &Path) -> Vec<PathBuf> {
 
 /// Scan all templates in a directory for <include> and <layout> tags and return
 /// the unique canonicalized directories containing those referenced files.
+/// Scan all templates (and their referenced layouts) for include, layout, and link tags.
+/// Returns the unique canonicalized directories containing those referenced files.
 fn find_include_dirs(input_dir: &Path) -> Vec<PathBuf> {
     let include_re = Regex::new(r#"<include\s+[^>]*?src\s*=\s*"([^"]+)"[^>]*/?\s*>"#).unwrap();
     let layout_re = Regex::new(r#"<layout\s+[^>]*?src\s*=\s*"([^"]+)"[^>]*>"#).unwrap();
+    let link_re = Regex::new(r#"<link\s+[^>]*href\s*=\s*"([^"]+\.(?:scss|css))"[^>]*/?\s*>"#).unwrap();
     let mut dirs = HashSet::new();
+    let mut referenced_files: Vec<PathBuf> = Vec::new();
     let files = find_template_files(input_dir);
 
+    // Scan input templates for includes, layouts, and linked stylesheets
     for file in &files {
         if let Ok(content) = std::fs::read_to_string(file) {
             let base = file.parent().unwrap_or(input_dir);
-            for re in [&include_re, &layout_re] {
+            for re in [&include_re, &layout_re, &link_re] {
                 for cap in re.captures_iter(&content) {
                     let ref_path = base.join(&cap[1]);
                     if let Some(parent) = ref_path.parent() {
                         if let Ok(canonical) = std::fs::canonicalize(parent) {
                             dirs.insert(canonical);
                         }
+                    }
+                    // Track layout files so we can scan them for links too
+                    if re.as_str().contains("layout") {
+                        referenced_files.push(ref_path);
+                    }
+                }
+            }
+        }
+    }
+
+    // Scan referenced layout files for linked stylesheets
+    for layout_file in &referenced_files {
+        if let Ok(content) = std::fs::read_to_string(layout_file) {
+            let base = layout_file.parent().unwrap_or(input_dir);
+            for cap in link_re.captures_iter(&content) {
+                let ref_path = base.join(&cap[1]);
+                if let Some(parent) = ref_path.parent() {
+                    if let Ok(canonical) = std::fs::canonicalize(parent) {
+                        dirs.insert(canonical);
                     }
                 }
             }

@@ -1,3 +1,4 @@
+mod config;
 mod init;
 mod migrate;
 mod scss;
@@ -36,8 +37,8 @@ enum Commands {
         output: Option<PathBuf>,
 
         /// Number of columns in the grid (default: 12)
-        #[arg(long, default_value = "12")]
-        columns: u32,
+        #[arg(long)]
+        columns: Option<u32>,
 
         /// Skip CSS inlining (inlining is on by default)
         #[arg(long)]
@@ -81,15 +82,15 @@ enum Commands {
     /// Watch for changes and rebuild automatically
     Watch {
         /// Input directory to watch
-        input: PathBuf,
+        input: Option<PathBuf>,
 
         /// Output directory
         #[arg(short, long)]
-        output: PathBuf,
+        output: Option<PathBuf>,
 
         /// Number of columns in the grid (default: 12)
-        #[arg(long, default_value = "12")]
-        columns: u32,
+        #[arg(long)]
+        columns: Option<u32>,
 
         /// Skip CSS inlining
         #[arg(long)]
@@ -112,7 +113,10 @@ fn main() {
             no_inline_css,
             no_framework_css,
             strict,
-        } => cmd_build(input, output, columns, !no_inline_css, !no_framework_css, strict),
+        } => {
+            let (input, output, columns) = resolve_config(input, output, columns);
+            cmd_build(input, output, columns, !no_inline_css, !no_framework_css, strict)
+        }
         Commands::Validate { input } => cmd_validate(input),
         Commands::Migrate { input, output, in_place } => migrate::cmd_migrate(input, output, in_place),
         Commands::Init { name } => init::cmd_init(name),
@@ -122,8 +126,81 @@ fn main() {
             columns,
             no_inline_css,
             no_framework_css,
-        } => watch::cmd_watch(input, output, columns, !no_inline_css, !no_framework_css),
+        } => {
+            let (input, output, columns) = resolve_config(input, output, columns);
+            let input = input.unwrap_or_else(|| {
+                eprintln!("{} No input directory specified. Use `inky watch <dir>` or set \"src\" in inky.config.json", "error:".red().bold());
+                process::exit(1);
+            });
+            let output = output.unwrap_or_else(|| {
+                eprintln!("{} No output directory specified. Use `-o <dir>` or set \"dist\" in inky.config.json", "error:".red().bold());
+                process::exit(1);
+            });
+            watch::cmd_watch(input, output, columns, !no_inline_css, !no_framework_css)
+        }
     }
+}
+
+/// Find the project config by checking (in order):
+/// 1. The input path itself (if it's a directory with inky.config.json)
+/// 2. Searching upward from the input path
+/// 3. Searching upward from cwd
+fn find_project_config(input: Option<&Path>) -> Option<(config::ProjectConfig, PathBuf)> {
+    // If an input path was given, check it and its ancestors first
+    if let Some(path) = input {
+        let dir = if path.is_dir() { path.to_path_buf() } else { path.parent().unwrap_or(path).to_path_buf() };
+        if let Some(cfg) = config::load_config(&dir) {
+            return Some(cfg);
+        }
+    }
+
+    // Fall back to searching from cwd
+    let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    config::load_config(&cwd)
+}
+
+/// Resolve CLI arguments with fallbacks from inky.config.json.
+/// CLI flags take priority over config file values.
+///
+/// When the input points to a project directory (containing inky.config.json),
+/// the config's `src` and `dist` are resolved relative to that directory.
+fn resolve_config(
+    input: Option<PathBuf>,
+    output: Option<PathBuf>,
+    columns: Option<u32>,
+) -> (Option<PathBuf>, Option<PathBuf>, u32) {
+    let project_config = find_project_config(input.as_deref());
+
+    let (cfg_src, cfg_dist, cfg_columns) = match &project_config {
+        Some((cfg, base_dir)) => (
+            cfg.src.as_ref().map(|s| base_dir.join(s)),
+            cfg.dist.as_ref().map(|d| base_dir.join(d)),
+            cfg.columns,
+        ),
+        None => (None, None, None),
+    };
+
+    // If input points to a project root (has config), use config's src
+    // If input points to a specific file/dir, use it directly
+    let input = if input.is_some() && project_config.is_some() {
+        let path = input.as_ref().unwrap();
+        // Check if the input path is the project root (where config was found)
+        let (_, base_dir) = project_config.as_ref().unwrap();
+        if path == base_dir.as_path() {
+            // User passed the project root — use config's src
+            cfg_src
+        } else {
+            // User passed a specific path — use it directly
+            input
+        }
+    } else {
+        input.or(cfg_src)
+    };
+
+    let output = output.or(cfg_dist);
+    let columns = columns.or(cfg_columns).unwrap_or(12);
+
+    (input, output, columns)
 }
 
 fn cmd_build(

@@ -87,8 +87,8 @@ pub fn cmd_init(name: Option<String>) {
     if name.is_some() {
         eprintln!("    cd {}", display_root);
     }
-    eprintln!("    inky build src/emails -o dist");
-    eprintln!("    inky watch src/emails -o dist");
+    eprintln!("    inky build");
+    eprintln!("    inky watch");
     eprintln!();
 }
 
