@@ -152,6 +152,31 @@ inky build email.inky --no-inline-css
 
 The inliner resolves CSS file paths relative to the input file's directory.
 
+### Template Friendly
+
+Inky automatically detects and preserves template language syntax — no need to wrap expressions in `<raw>` tags. The following patterns pass through untouched:
+
+| Syntax | Languages |
+|--------|-----------|
+| `{{ variable }}` | Handlebars, Mustache, Jinja2, Twig, Blade |
+| `<%= expression %>` | ERB, EJS |
+| `<% code %>` | ERB, EJS, ASP |
+| `{% tag %}` | Jinja2, Twig, Nunjucks, Django |
+| `${expression}` | ES6 template literals |
+| `*\|MERGE_TAG\|*` | Mailchimp |
+| `%%variable%%` | Salesforce Marketing Cloud |
+
+```html
+<!-- These just work — no <raw> needed -->
+<button href="<%= url_for(@user) %>">Profile</button>
+<button href="{% url 'profile' %}">Profile</button>
+<row>
+  <column>Hello {{ user.name }}</column>
+</row>
+```
+
+The `<raw>` tag is still available for edge cases where auto-detection doesn't cover your syntax.
+
 ### Validation
 
 The `validate` command checks templates for common email issues:
