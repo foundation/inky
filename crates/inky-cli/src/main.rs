@@ -30,9 +30,9 @@ enum Commands {
         #[arg(long, default_value = "12")]
         columns: u32,
 
-        /// Inline CSS from <style> blocks and <link> tags into style attributes
+        /// Skip CSS inlining (inlining is on by default)
         #[arg(long)]
-        inline_css: bool,
+        no_inline_css: bool,
     },
 
     /// Validate Inky templates for common issues
@@ -50,8 +50,8 @@ fn main() {
             input,
             output,
             columns,
-            inline_css,
-        } => cmd_build(input, output, columns, inline_css),
+            no_inline_css,
+        } => cmd_build(input, output, columns, !no_inline_css),
         Commands::Validate { input } => cmd_validate(input),
     }
 }
