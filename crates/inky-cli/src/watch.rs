@@ -10,7 +10,7 @@ use regex::Regex;
 use crate::scss;
 use inky_core::{Config, Inky};
 
-const INKY_EXTENSIONS: &[&str] = &["inky", "html"];
+const INKY_EXTENSIONS: &[&str] = &["inky", "html", "scss"];
 
 pub fn cmd_watch(
     input: PathBuf,
@@ -302,7 +302,7 @@ fn process_template(
     };
 
     if framework_css {
-        let (cleaned, overrides) = scss::extract_scss_overrides(&html);
+        let (cleaned, overrides) = scss::extract_scss_overrides(&html, base_path);
         html = cleaned;
 
         let css = scss::compile_framework_scss(&overrides).unwrap_or_else(|e| {
@@ -312,7 +312,7 @@ fn process_template(
 
         html = scss::inject_css_into_html(&html, &css);
     } else {
-        let (cleaned, _) = scss::extract_scss_overrides(&html);
+        let (cleaned, _) = scss::extract_scss_overrides(&html, base_path);
         html = cleaned;
     }
 

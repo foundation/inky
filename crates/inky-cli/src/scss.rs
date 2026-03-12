@@ -165,21 +165,58 @@ impl grass::Fs for EmbeddedFs {
     }
 }
 
-/// Extract `<style type="text/scss">` blocks from HTML.
-/// Returns (html_with_scss_blocks_removed, vec_of_variable_overrides).
-pub fn extract_scss_overrides(html: &str) -> (String, Vec<(String, String)>) {
-    let re = Regex::new(r#"(?si)<style\s+type\s*=\s*["']text/scss["']\s*>(.*?)</style>"#).unwrap();
-    let mut overrides = Vec::new();
+/// Extract SCSS variable overrides from `<style type="text/scss">` blocks and
+/// `<link rel="stylesheet" href="*.scss">` tags.
+/// Returns (html_with_scss_elements_removed, vec_of_variable_overrides).
+pub fn extract_scss_overrides(html: &str, base_path: Option<&Path>) -> (String, Vec<(String, String)>) {
+    let html_comment_re = Regex::new(r"(?s)<!--.*?-->").unwrap();
+    let style_re = Regex::new(r#"(?si)<style\s+type\s*=\s*["']text/scss["']\s*>(.*?)</style>"#).unwrap();
+    let link_re = Regex::new(r#"<link\s+[^>]*href\s*=\s*["']([^"']+\.scss)["'][^>]*/?\s*>"#).unwrap();
+    let block_comment_re = Regex::new(r"(?s)/\*.*?\*/").unwrap();
+    let line_comment_re = Regex::new(r"//[^\n]*").unwrap();
     let var_re = Regex::new(r#"(\$[\w-]+)\s*:\s*([^;]+)\s*;"#).unwrap();
+    let mut overrides = Vec::new();
 
-    for cap in re.captures_iter(html) {
-        let block = &cap[1];
-        for var_cap in var_re.captures_iter(block) {
+    // Strip HTML comments so we don't extract from commented-out examples
+    let html_no_comments = html_comment_re.replace_all(html, "");
+
+    // Extract from inline <style type="text/scss"> blocks
+    for cap in style_re.captures_iter(&html_no_comments) {
+        let block = block_comment_re.replace_all(&cap[1], "");
+        let block = line_comment_re.replace_all(&block, "");
+        for var_cap in var_re.captures_iter(&block) {
             overrides.push((var_cap[1].to_string(), var_cap[2].trim().to_string()));
         }
     }
 
-    let cleaned = re.replace_all(html, "").to_string();
+    // Extract from linked .scss files
+    if let Some(base) = base_path {
+        for cap in link_re.captures_iter(&html_no_comments) {
+            let href = &cap[1];
+            let scss_path = base.join(href);
+            match std::fs::read_to_string(&scss_path) {
+                Ok(content) => {
+                    let content = block_comment_re.replace_all(&content, "");
+                    let content = line_comment_re.replace_all(&content, "");
+                    for var_cap in var_re.captures_iter(&content) {
+                        overrides.push((var_cap[1].to_string(), var_cap[2].trim().to_string()));
+                    }
+                }
+                Err(e) => {
+                    eprintln!(
+                        "  {} Failed to read SCSS file '{}' (resolved to '{}'): {}",
+                        "warning:".to_string(),
+                        href,
+                        scss_path.display(),
+                        e
+                    );
+                }
+            }
+        }
+    }
+
+    let cleaned = style_re.replace_all(html, "").to_string();
+    let cleaned = link_re.replace_all(&cleaned, "").to_string();
     (cleaned, overrides)
 }
 
@@ -261,7 +298,7 @@ $global-width: 640px;
 <body><p>Hello</p></body>
 </html>"#;
 
-        let (cleaned, overrides) = extract_scss_overrides(html);
+        let (cleaned, overrides) = extract_scss_overrides(html, None);
         assert_eq!(overrides.len(), 2);
         assert_eq!(overrides[0].0, "$primary-color");
         assert_eq!(overrides[0].1, "#ff0000");
@@ -274,7 +311,7 @@ $global-width: 640px;
     #[test]
     fn test_extract_no_scss_blocks() {
         let html = "<html><body><p>No scss here</p></body></html>";
-        let (cleaned, overrides) = extract_scss_overrides(html);
+        let (cleaned, overrides) = extract_scss_overrides(html, None);
         assert!(overrides.is_empty());
         assert_eq!(cleaned, html);
     }
@@ -292,5 +329,38 @@ $global-width: 640px;
         let result = inject_css_into_html(html, "p { color: blue; }");
         assert!(result.contains("<style type=\"text/css\">"));
         assert!(result.contains("p { color: blue; }"));
+    }
+
+    #[test]
+    fn test_extract_scss_from_linked_file() {
+        // Create a temp SCSS file
+        let dir = std::env::temp_dir().join("inky-test-scss");
+        std::fs::create_dir_all(&dir).unwrap();
+        let scss_file = dir.join("theme.scss");
+        std::fs::write(&scss_file, "$primary-color: #cc0000;\n$global-width: 700px;\n").unwrap();
+
+        let html = r#"<html><head><link rel="stylesheet" href="theme.scss"></head><body></body></html>"#;
+        let (cleaned, overrides) = extract_scss_overrides(html, Some(&dir));
+
+        assert_eq!(overrides.len(), 2);
+        assert_eq!(overrides[0].0, "$primary-color");
+        assert_eq!(overrides[0].1, "#cc0000");
+        assert_eq!(overrides[1].0, "$global-width");
+        assert_eq!(overrides[1].1, "700px");
+        assert!(!cleaned.contains("theme.scss"));
+
+        // Cleanup
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_extract_scss_comments_ignored() {
+        let html = r#"<style type="text/scss">
+/* $primary-color: #ff0000; */
+$global-width: 640px;
+</style>"#;
+        let (_, overrides) = extract_scss_overrides(html, None);
+        assert_eq!(overrides.len(), 1);
+        assert_eq!(overrides[0].0, "$global-width");
     }
 }

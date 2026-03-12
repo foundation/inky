@@ -31,6 +31,7 @@ pub fn cmd_init(name: Option<String>) {
     let dirs = [
         "src/layouts",
         "src/partials",
+        "src/styles",
         "src/emails",
         "dist",
     ];
@@ -52,6 +53,7 @@ pub fn cmd_init(name: Option<String>) {
     let files: Vec<(&str, &str)> = vec![
         ("inky.config.json", CONFIG_JSON),
         ("src/layouts/default.html", LAYOUT_DEFAULT),
+        ("src/styles/theme.scss", STYLES_THEME),
         ("src/partials/header.inky", PARTIAL_HEADER),
         ("src/partials/footer.inky", PARTIAL_FOOTER),
         ("src/emails/welcome.inky", EMAIL_WELCOME),
@@ -107,6 +109,16 @@ const LAYOUT_DEFAULT: &str = r#"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Tra
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta name="viewport" content="width=device-width">
   <title>$title|$</title>
+  <link rel="stylesheet" href="../styles/theme.scss">
+  <!-- You can also use inline SCSS overrides instead of a linked file:
+  <style type="text/scss">
+  $primary-color: #2199e8;
+  $global-font-family: Helvetica, Arial, sans-serif;
+  $global-width: 580px;
+  $body-background: #f3f3f3;
+  $container-background: #fefefe;
+  </style>
+  -->
 </head>
 <body>
   <span class="preheader">$preheader|$</span>
@@ -122,6 +134,17 @@ const LAYOUT_DEFAULT: &str = r#"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Tra
   </table>
 </body>
 </html>
+"#;
+
+const STYLES_THEME: &str = r#"// Inky Theme
+// Uncomment and edit variables to customize your email styles.
+// See the full list of variables in the Inky docs.
+
+// $primary-color: #2199e8;
+// $global-font-family: Helvetica, Arial, sans-serif;
+// $global-width: 580px;
+// $body-background: #f3f3f3;
+// $container-background: #fefefe;
 "#;
 
 const PARTIAL_HEADER: &str = r#"<wrapper class="header">

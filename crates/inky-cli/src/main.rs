@@ -220,7 +220,7 @@ fn process_template(
 
     if framework_css {
         // Extract per-template SCSS variable overrides
-        let (cleaned, overrides) = scss::extract_scss_overrides(&html);
+        let (cleaned, overrides) = scss::extract_scss_overrides(&html, base_path);
         html = cleaned;
 
         // Compile framework SCSS (with any overrides)
@@ -233,7 +233,7 @@ fn process_template(
         html = scss::inject_css_into_html(&html, &css);
     } else {
         // Strip any SCSS blocks even when framework CSS is disabled
-        let (cleaned, _) = scss::extract_scss_overrides(&html);
+        let (cleaned, _) = scss::extract_scss_overrides(&html, base_path);
         html = cleaned;
     }
 
