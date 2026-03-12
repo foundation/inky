@@ -192,9 +192,14 @@ Dark mode meta tag added when transforming a full HTML document:
 
 ---
 
-## Legacy Syntax (v1 Compatibility)
+## Legacy Syntax (v1 → v2 Migration)
 
-The parser auto-detects legacy syntax. If it encounters `<columns>` (plural) it uses v1 rules for that element. This means existing templates work without changes, but new code should use the modern syntax.
+The v2 parser is **strict v2 only** — it does not support v1 syntax. If the
+parser encounters v1 syntax (e.g. `<columns>` instead of `<column>`), it will
+output a helpful error message pointing the user to `inky migrate`.
+
+This keeps the parser simple, avoids ambiguity when old and new syntax mix,
+and encourages a clean migration. Users run `inky migrate` once and are done.
 
 ### Migration Tool
 
@@ -358,7 +363,19 @@ inky/
 │   │   └── index.js
 │   ├── php/                      # Composer: "foundation/inky"
 │   │   ├── composer.json
-│   │   └── src/Inky.php
+│   │   ├── src/
+│   │   │   ├── Inky.php          # Main API (auto-detects best driver)
+│   │   │   └── Driver/
+│   │   │       ├── DriverInterface.php
+│   │   │       ├── ExtensionDriver.php  # PECL C extension (production)
+│   │   │       └── FfiDriver.php        # FFI (dev / self-managed servers)
+│   │   ├── ext/                  # PHP C extension source
+│   │   │   ├── config.m4
+│   │   │   ├── inky.c
+│   │   │   └── php_inky.h
+│   │   ├── stubs/
+│   │   │   └── inky.h            # FFI header (copy from inky-ffi)
+│   │   └── preload.php           # opcache.preload script for FFI mode
 │   ├── python/                   # PyPI: "inky-email"
 │   │   ├── pyproject.toml
 │   │   └── src/inky/__init__.py
@@ -390,24 +407,22 @@ pub struct Inky {
 
 pub struct Config {
     pub column_count: u32,
-    pub syntax: SyntaxMode,
-}
-
-pub enum SyntaxMode {
-    Modern,     // v2 syntax (default)
-    Legacy,     // v1 syntax
-    Auto,       // auto-detect per element
 }
 
 impl Inky {
     pub fn new() -> Self;
     pub fn with_config(config: Config) -> Self;
 
-    /// Transform Inky HTML into email-safe table HTML.
-    pub fn transform(&self, html: &str) -> String;
+    /// Transform v2 Inky HTML into email-safe table HTML.
+    /// Returns an error if v1 syntax is detected (directs user to migrate()).
+    pub fn transform(&self, html: &str) -> Result<String, Vec<Warning>>;
 
     /// Migrate v1 syntax to v2 syntax (no table transformation).
+    /// This is a text-level conversion — it does not produce table output.
     pub fn migrate(&self, html: &str) -> String;
+
+    /// Transform and inline CSS in one step.
+    pub fn transform_and_inline(&self, html: &str, base_path: Option<&Path>) -> Result<String, String>;
 
     /// Validate a template and return warnings.
     pub fn validate(&self, html: &str) -> Vec<Warning>;
@@ -462,25 +477,31 @@ Subcommands:
 | Step | Task | Status |
 |------|------|--------|
 | 1 | Set up Cargo workspace (`inky-core`, `inky-wasm`, `inky-ffi`) | Done |
-| 2 | Implement legacy (v1) component transformations | Done |
+| 2 | Implement v1 component transformations (porting JS behavior) | Done |
 | 3 | Extract test cases to JSON fixtures | Done (31 tests) |
 | 4 | Pass all fixture tests | Done |
-| 5 | Add modern (v2) syntax support — new components and attributes | TODO |
-| 6 | Add `role="presentation"` to all layout table output | TODO |
-| 7 | Add auto-detection for template merge tags | TODO |
-| 8 | Add `<image>`, `<outlook>`, `<not-outlook>`, `<divider>` components | TODO |
+| 5 | Add CSS inlining support (`--inline-css`) | Done |
+| 6 | Copy foundation-emails visual test templates for comparison | Done |
+| 7 | Fix comparison failures (20/31 passing, 11 remaining edge cases) | Done (31/31) |
+| 8 | Convert parser from v1 syntax to strict v2 syntax | Done |
+| 9 | Add `role="presentation"` to all layout table output | Done |
+| 10 | Add auto-detection for template merge tags | Done |
+| 11 | Add `<image>`, `<outlook>`, `<not-outlook>`, `<divider>` components | Done |
 
 ### Stage 2: CLI + Migration
 
-| Step | Task |
-|------|------|
-| 9 | Create `inky-cli` crate with `clap` |
-| 10 | Implement `build` command (file/directory/stdin) |
-| 11 | Implement `migrate` command (v1 → v2 syntax conversion) |
-| 12 | Implement `validate` command |
-| 13 | Implement `watch` command |
-| 14 | Write modern syntax fixture tests |
-| 15 | Write migration fixture tests |
+| Step | Task | Status |
+|------|------|--------|
+| 12 | Create `inky-cli` crate with `clap` | Done |
+| 13 | Implement `build` command (file/directory/stdin) | Done |
+| 14 | Implement `migrate` command (v1 → v2 syntax conversion) | Done |
+| 15 | Implement `validate` command (basic placeholder done) | In Progress |
+| 16 | Add v1 syntax detection with helpful error messages | Done |
+| 17 | Implement `watch` command | Done |
+| 18 | Write v2 syntax fixture tests | TODO |
+| 19 | Write migration fixture tests | TODO |
+| 20 | Implement `init` command (project scaffolding) | Done |
+| 21 | Implement `<include>` tag support (template partials/layouts) | Done |
 
 ### Stage 3: Distribution
 
@@ -489,7 +510,7 @@ Subcommands:
 | 16 | Build `inky-wasm` with wasm-bindgen |
 | 17 | Build `inky-ffi` with cbindgen |
 | 18 | Create Node.js wrapper (WASM) |
-| 19 | Create PHP Composer package (FFI) |
+| 19 | Create PHP Composer package (C extension + FFI drivers) |
 | 20 | Create Python PyPI package (ctypes) |
 | 21 | Create Ruby gem (fiddle) |
 | 22 | Create Go module (cgo, separate repo) |
@@ -510,20 +531,187 @@ Subcommands:
 | Step | Task |
 |------|------|
 | 29 | Set up CI: test Rust + all bindings on all platforms |
-| 30 | Set up release pipeline: cross-compile + publish everywhere |
-| 31 | Homebrew formula for `inky` CLI |
-| 32 | Write documentation and migration guide |
-| 33 | Publish v2.0.0 to npm, crates.io, Packagist, PyPI, RubyGems, Homebrew |
-| 34 | Archive `foundation/inky-rb` with pointer to new gem |
-| 35 | Archive `foundation/foundation-emails` with pointer to `inky` |
-| 36 | Re-enable Dependabot |
+| 30 | Set up release pipeline with `cargo-dist` (cross-compile + GitHub Releases) |
+| 31 | Create `foundation/homebrew-inky` tap repo with formula |
+| 32 | Automate Homebrew formula updates on release (via `cargo-dist`) |
+| 33 | Write documentation and migration guide |
+| 34 | Publish v2.0.0 to npm, crates.io, Packagist, PyPI, RubyGems, Homebrew |
+| 35 | Archive `foundation/inky-rb` with pointer to new gem |
+| 36 | Archive `foundation/foundation-emails` with pointer to `inky` |
+| 37 | Submit formula to `homebrew-core` (once project is established) |
+| 38 | Re-enable Dependabot |
+
+---
+
+## PHP Bindings
+
+The PHP package supports two drivers. The `Inky` class auto-detects the best
+available driver and provides helpful errors when neither is available.
+
+### Driver Priority
+
+| Priority | Driver | Mechanism | Best For |
+|----------|--------|-----------|----------|
+| 1 | C Extension | PECL `ext-inky` | Shared hosting, production |
+| 2 | FFI | `ext-ffi` + `libinky.so` | Local dev, self-managed servers |
+
+### C Extension (Recommended for Production)
+
+A thin PHP C extension that links against `libinky` (the shared library from
+`inky-ffi`). Works on any PHP install without special `php.ini` settings.
+
+```bash
+# Install via PECL
+pecl install inky
+
+# Or compile from source
+cd bindings/php/ext
+phpize
+./configure
+make && make install
+```
+
+Add to `php.ini`:
+```ini
+extension=inky
+```
+
+### FFI Driver
+
+Loads `libinky.so` directly via PHP's built-in FFI extension. No compilation
+needed, but requires FFI to be enabled.
+
+**Option A: Enable globally** (local dev)
+```ini
+ffi.enable = true
+```
+
+**Option B: Preload mode** (production, more secure)
+```ini
+ffi.enable = preload
+opcache.preload = /path/to/vendor/inky/preload.php
+```
+
+Preload mode only allows FFI in the preload script (which runs once at PHP
+startup), not in arbitrary runtime code. Note: `opcache.preload` only works
+with PHP-FPM, and only one preload file is allowed per installation — if the
+app already has a preload script, add an `include` for Inky's preload inside it.
+
+**Important:** `ffi.enable` is a `PHP_INI_SYSTEM` directive — it cannot be
+changed at runtime with `ini_set()`. It must be set in `php.ini`, a vhost
+config, or via the `-d` CLI flag.
+
+### Auto-Detection and Error Messages
+
+```php
+use Inky\Inky;
+
+// Just works — picks the best available driver
+$html = Inky::transform('<button href="#">Click</button>');
+```
+
+The `Inky` class checks drivers in priority order and throws a clear exception
+if none are available:
+
+```
+Inky requires either the 'inky' PHP extension (recommended) or the 'ffi'
+extension with ffi.enable=true in php.ini. See https://inky.email/php for
+setup instructions.
+```
+
+### Why Not exec() / CLI Fallback?
+
+Most production PHP hosting blocks `exec()`, `shell_exec()`, `proc_open()`,
+and similar functions for security. This makes a CLI-based fallback unreliable
+for the PHP audience, which is why the C extension is the primary target.
+
+---
+
+## Homebrew Distribution
+
+### Phase 1: Custom Tap (launch)
+
+Create a `foundation/homebrew-inky` repo with a formula that downloads
+prebuilt binaries from GitHub Releases.
+
+```
+foundation/homebrew-inky/
+└── Formula/
+    └── inky.rb
+```
+
+Users install with:
+```bash
+brew tap foundation/inky
+brew install inky
+```
+
+### Phase 2: Homebrew Core (once established)
+
+Submit a PR to `homebrew/homebrew-core` so users can install with just:
+```bash
+brew install inky
+```
+
+Homebrew Core requires: tagged releases, notable project, builds from source.
+
+### Release Automation
+
+Use [`cargo-dist`](https://github.com/axodotdev/cargo-dist) to automate the
+full release pipeline:
+
+1. Cross-compile CLI binaries for all targets:
+   - `x86_64-apple-darwin` (macOS Intel)
+   - `aarch64-apple-darwin` (macOS Apple Silicon)
+   - `x86_64-unknown-linux-gnu` (Linux x86)
+   - `aarch64-unknown-linux-gnu` (Linux ARM)
+   - `x86_64-pc-windows-msvc` (Windows)
+2. Create GitHub Release with tarballs and SHA256 checksums
+3. Auto-update the Homebrew formula with new version and hashes
+4. Publish to `crates.io`
+
+This runs as a GitHub Action triggered by tagging a release (`v2.0.0`).
+
+### Formula Example
+
+```ruby
+class Inky < Formula
+  desc "Transform email templates into email-safe HTML"
+  homepage "https://github.com/foundation/inky"
+  version "2.0.0"
+
+  on_macos do
+    if Hardware::CPU.arm?
+      url "https://github.com/foundation/inky/releases/download/v2.0.0/inky-aarch64-apple-darwin.tar.gz"
+      sha256 "..."
+    else
+      url "https://github.com/foundation/inky/releases/download/v2.0.0/inky-x86_64-apple-darwin.tar.gz"
+      sha256 "..."
+    end
+  end
+
+  on_linux do
+    url "https://github.com/foundation/inky/releases/download/v2.0.0/inky-x86_64-unknown-linux-gnu.tar.gz"
+    sha256 "..."
+  end
+
+  def install
+    bin.install "inky"
+  end
+
+  test do
+    assert_match "Inky", shell_output("#{bin}/inky --version")
+  end
+end
+```
+
+---
 
 ### Future (v2.x / v3.0)
 
 | Feature | Description |
 |---------|-------------|
 | Hybrid output mode | `<div>` layout with Outlook table fallbacks |
-| CSS inlining | Built into `inky build --inline-css` |
 | Contrast checker | Validates color accessibility |
 | Template variables | Built-in `{{var}}` support with data files |
 | Live preview | `inky serve` with browser preview |
