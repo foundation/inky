@@ -1,32 +1,13 @@
 {
-  "name": "inky-email",
+  "name": "inky-wasm",
+  "description": "WASM bindings for Inky",
   "version": "2.0.0",
-  "description": "Transform email templates into email-safe HTML — powered by Rust via WASM",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "license": "MIT",
   "files": [
-    "index.js",
-    "index.d.ts",
     "inky_wasm_bg.wasm",
-    "inky_wasm_bg.wasm.d.ts",
     "inky_wasm.js",
     "inky_wasm.d.ts"
   ],
-  "scripts": {
-    "build": "wasm-pack build ../../crates/inky-wasm --target bundler --out-dir ../../bindings/node",
-    "build:node": "wasm-pack build ../../crates/inky-wasm --target nodejs --out-dir ../../bindings/node"
-  },
-  "keywords": [
-    "email",
-    "html",
-    "inky",
-    "foundation",
-    "responsive",
-    "wasm"
-  ],
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/foundation/inky"
-  }
+  "main": "inky_wasm.js",
+  "types": "inky_wasm.d.ts"
 }

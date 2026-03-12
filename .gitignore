@@ -8,6 +8,9 @@ Cargo.lock
 
 # Node (for WASM/bindings)
 /node_modules
+/bindings/node/inky_wasm*
+/bindings/node/inky_wasm_bg*
+/bindings/node/.gitignore
 
 # OS
 *.DS_Store
