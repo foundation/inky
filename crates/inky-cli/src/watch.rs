@@ -287,9 +287,13 @@ fn process_template(
     framework_css: bool,
     base_path: Option<&Path>,
 ) -> String {
-    // Resolve <include> tags before any other processing
+    // Resolve <layout> tag, then <include> tags before any other processing
     let mut html = if let Some(base) = base_path {
-        inky_core::include::process_includes(html, base).unwrap_or_else(|e| {
+        let with_layout = inky_core::include::process_layout(html, base).unwrap_or_else(|e| {
+            eprintln!("{} {}", "error:".red().bold(), e);
+            String::new()
+        });
+        inky_core::include::process_includes(&with_layout, base).unwrap_or_else(|e| {
             eprintln!("{} {}", "error:".red().bold(), e);
             String::new()
         })
@@ -335,21 +339,24 @@ fn find_template_files(dir: &Path) -> Vec<PathBuf> {
     files
 }
 
-/// Scan all templates in a directory for <include src="..."> tags and return
-/// the unique canonicalized directories containing those included files.
+/// Scan all templates in a directory for <include> and <layout> tags and return
+/// the unique canonicalized directories containing those referenced files.
 fn find_include_dirs(input_dir: &Path) -> Vec<PathBuf> {
-    let re = Regex::new(r#"<include\s+src\s*=\s*"([^"]+)"\s*/?\s*>"#).unwrap();
+    let include_re = Regex::new(r#"<include\s+src\s*=\s*"([^"]+)"\s*/?\s*>"#).unwrap();
+    let layout_re = Regex::new(r#"<layout\s+src\s*=\s*"([^"]+)"\s*/?\s*>"#).unwrap();
     let mut dirs = HashSet::new();
     let files = find_template_files(input_dir);
 
     for file in &files {
         if let Ok(content) = std::fs::read_to_string(file) {
             let base = file.parent().unwrap_or(input_dir);
-            for cap in re.captures_iter(&content) {
-                let include_path = base.join(&cap[1]);
-                if let Some(parent) = include_path.parent() {
-                    if let Ok(canonical) = std::fs::canonicalize(parent) {
-                        dirs.insert(canonical);
+            for re in [&include_re, &layout_re] {
+                for cap in re.captures_iter(&content) {
+                    let ref_path = base.join(&cap[1]);
+                    if let Some(parent) = ref_path.parent() {
+                        if let Ok(canonical) = std::fs::canonicalize(parent) {
+                            dirs.insert(canonical);
+                        }
                     }
                 }
             }

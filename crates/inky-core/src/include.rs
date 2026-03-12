@@ -36,6 +36,45 @@ impl IncludeResolver for FileIncludeResolver {
 
 const MAX_INCLUDE_DEPTH: usize = 10;
 
+/// Process a layout declaration and inject content into the layout.
+///
+/// If the template starts with `<layout src="...">`, the layout file is loaded and
+/// the template content replaces the `<yield>` tag in the layout. The `<layout>` tag
+/// is stripped from the content before injection.
+///
+/// If no `<layout>` tag is found, the content is returned as-is.
+pub fn process_layout(html: &str, base_path: &Path) -> Result<String, String> {
+    let layout_re = Regex::new(r#"(?s)<layout\s+src\s*=\s*"([^"]+)"\s*/?\s*>(.*)"#).unwrap();
+
+    if let Some(caps) = layout_re.captures(html) {
+        let layout_src = &caps[1];
+        let content = caps[2].trim();
+
+        let layout_path = base_path.join(layout_src);
+        let layout_html = std::fs::read_to_string(&layout_path).map_err(|e| {
+            format!(
+                "Failed to load layout '{}' (resolved to '{}'): {}",
+                layout_src,
+                layout_path.display(),
+                e
+            )
+        })?;
+
+        // Replace <yield>, <yield/>, or <yield /> in the layout with the content
+        let yield_re = Regex::new(r"<yield\s*/?\s*>").unwrap();
+        if !yield_re.is_match(&layout_html) {
+            return Err(format!(
+                "Layout '{}' does not contain a <yield> tag",
+                layout_src
+            ));
+        }
+
+        Ok(yield_re.replace(&layout_html, content).to_string())
+    } else {
+        Ok(html.to_string())
+    }
+}
+
 /// Process all `<include src="...">` and `<include src="..." />` tags in the HTML,
 /// replacing them with the content of the referenced files.
 ///
@@ -213,6 +252,13 @@ mod tests {
         let result = process_includes_with_resolver(html, &resolver);
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("nonexistent.inky"));
+    }
+
+    #[test]
+    fn test_layout_no_declaration() {
+        let html = "<p>No layout here</p>";
+        let result = process_layout(html, Path::new(".")).unwrap();
+        assert_eq!(result, html);
     }
 
     #[test]

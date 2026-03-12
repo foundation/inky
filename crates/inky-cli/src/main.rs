@@ -196,7 +196,7 @@ fn print_validation_warnings(html: &str, config: &Config, path: &Path) -> bool {
     !diagnostics.is_empty()
 }
 
-/// Full build pipeline: resolve includes → extract SCSS overrides → compile framework CSS → inject → transform → inline.
+/// Full build pipeline: layout → includes → extract SCSS overrides → compile framework CSS → inject → transform → inline.
 fn process_template(
     inky: &Inky,
     html: &str,
@@ -204,9 +204,13 @@ fn process_template(
     framework_css: bool,
     base_path: Option<&Path>,
 ) -> String {
-    // Resolve <include> tags before any other processing
+    // Resolve <layout> tag, then <include> tags before any other processing
     let mut html = if let Some(base) = base_path {
-        inky_core::include::process_includes(html, base).unwrap_or_else(|e| {
+        let with_layout = inky_core::include::process_layout(html, base).unwrap_or_else(|e| {
+            eprintln!("{} {}", "error:".red().bold(), e);
+            process::exit(1);
+        });
+        inky_core::include::process_includes(&with_layout, base).unwrap_or_else(|e| {
             eprintln!("{} {}", "error:".red().bold(), e);
             process::exit(1);
         })

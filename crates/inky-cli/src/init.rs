@@ -114,6 +114,7 @@ const LAYOUT_DEFAULT: &str = r#"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Tra
       <td class="center" align="center" valign="top">
         <center>
           <!-- email content goes here -->
+          <yield>
         </center>
       </td>
     </tr>
@@ -144,7 +145,8 @@ const PARTIAL_FOOTER: &str = r##"<wrapper class="footer">
 </wrapper>
 "##;
 
-const EMAIL_WELCOME: &str = r#"<span class="preheader">Thanks for signing up — here's how to get started.</span>
+const EMAIL_WELCOME: &str = r#"<layout src="../layouts/default.html">
+<span class="preheader">Thanks for signing up — here's how to get started.</span>
 <include src="../partials/header.inky">
 
 <container>
