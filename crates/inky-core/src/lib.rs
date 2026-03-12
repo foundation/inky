@@ -448,7 +448,7 @@ mod tests {
     fn test_transform_button() {
         let input = r#"<button href="http://example.com">Click</button>"#;
         let result = transform(input);
-        assert!(result.contains("table class=\"button\""));
+        assert!(result.contains("class=\"button\""));
         assert!(result.contains("http://example.com"));
         assert!(result.contains("Click"));
     }

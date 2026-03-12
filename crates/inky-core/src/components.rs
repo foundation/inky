@@ -55,7 +55,7 @@ fn build_classes(base: &str, element: &ElementRef) -> String {
 fn make_h_line(element: &ElementRef) -> String {
     let classes = build_classes("h-line", element);
     format!(
-        r#"<table class="{}"><tbody><tr><th>&nbsp;</th></tr></tbody></table>"#,
+        r#"<table role="presentation" class="{}"><tbody><tr><th>&nbsp;</th></tr></tbody></table>"#,
         classes
     )
 }
@@ -66,7 +66,7 @@ fn make_row(element: &ElementRef) -> String {
     let classes = build_classes("row", element);
     let inner = inner_html(element);
     format!(
-        r#"<table{} class="{}"><tbody><tr>{}</tr></tbody></table>"#,
+        r#"<table role="presentation"{} class="{}"><tbody><tr>{}</tr></tbody></table>"#,
         attrs, classes, inner
     )
 }
@@ -103,7 +103,7 @@ fn make_button(element: &ElementRef) -> String {
 
     let classes = build_classes("button", element);
     format!(
-        r#"<table class="{}"><tbody><tr><td><table><tbody><tr><td>{}</td></tr></tbody></table></td>{}</tr></tbody></table>"#,
+        r#"<table role="presentation" class="{}"><tbody><tr><td><table role="presentation"><tbody><tr><td>{}</td></tr></tbody></table></td>{}</tr></tbody></table>"#,
         classes, inner, expander
     )
 }
@@ -116,7 +116,7 @@ fn make_container(element: &ElementRef) -> String {
     // Only add align="center" if not already present from passthrough attrs
     let align = if attrs.contains("align=") { "" } else { " align=\"center\"" };
     format!(
-        r#"<table{}{} class="{}"><tbody><tr><td>{}</td></tr></tbody></table>"#,
+        r#"<table role="presentation"{}{} class="{}"><tbody><tr><td>{}</td></tr></tbody></table>"#,
         attrs, align, classes, inner
     )
 }
@@ -133,7 +133,7 @@ fn make_block_grid(element: &ElementRef) -> String {
     classes.extend(get_classes(element));
     let inner = inner_html(element);
     format!(
-        r#"<table class="{}"><tbody><tr>{}</tr></tbody></table>"#,
+        r#"<table role="presentation" class="{}"><tbody><tr>{}</tr></tbody></table>"#,
         classes.join(" "),
         inner
     )
@@ -145,7 +145,7 @@ fn make_menu(element: &ElementRef) -> String {
     let classes = build_classes("menu", element);
     let inner = inner_html(element);
     format!(
-        r#"<table{} class="{}"><tbody><tr><td><table><tbody><tr>{}</tr></tbody></table></td></tr></tbody></table>"#,
+        r#"<table role="presentation"{} class="{}"><tbody><tr><td><table role="presentation"><tbody><tr>{}</tr></tbody></table></td></tr></tbody></table>"#,
         attrs, classes, inner
     )
 }
@@ -233,7 +233,7 @@ fn make_callout(element: &ElementRef) -> String {
     let classes = build_classes("callout-inner", element);
     let inner = inner_html(element);
     format!(
-        r#"<table{} class="callout"><tbody><tr><th class="{}">{}</th><th class="expander"></th></tr></tbody></table>"#,
+        r#"<table role="presentation"{} class="callout"><tbody><tr><th class="{}">{}</th><th class="expander"></th></tr></tbody></table>"#,
         attrs, classes, inner
     )
 }
@@ -253,13 +253,13 @@ fn make_spacer(element: &ElementRef) -> String {
         let mut html = String::new();
         if let Some(size) = &size_sm {
             html.push_str(&format!(
-                r#"<table{} class="{} hide-for-large"><tbody><tr><td height="{}" style="font-size:{}px;line-height:{}px;">&nbsp;</td></tr></tbody></table>"#,
+                r#"<table role="presentation"{} class="{} hide-for-large"><tbody><tr><td height="{}" style="font-size:{}px;line-height:{}px;">&nbsp;</td></tr></tbody></table>"#,
                 attrs, class_str, size, size, size
             ));
         }
         if let Some(size) = &size_lg {
             html.push_str(&format!(
-                r#"<table{} class="{} show-for-large"><tbody><tr><td height="{}" style="font-size:{}px;line-height:{}px;">&nbsp;</td></tr></tbody></table>"#,
+                r#"<table role="presentation"{} class="{} show-for-large"><tbody><tr><td height="{}" style="font-size:{}px;line-height:{}px;">&nbsp;</td></tr></tbody></table>"#,
                 attrs, class_str, size, size, size
             ));
         }
@@ -267,7 +267,7 @@ fn make_spacer(element: &ElementRef) -> String {
     } else {
         let size = get_attr(element, "size").unwrap_or_else(|| "16".to_string());
         format!(
-            r#"<table{} class="{}"><tbody><tr><td height="{}" style="font-size:{}px;line-height:{}px;">&nbsp;</td></tr></tbody></table>"#,
+            r#"<table role="presentation"{} class="{}"><tbody><tr><td height="{}" style="font-size:{}px;line-height:{}px;">&nbsp;</td></tr></tbody></table>"#,
             attrs, class_str, size, size, size
         )
     }
@@ -324,7 +324,7 @@ pub fn transform_column_with_position(
     };
 
     format!(
-        r#"<th class="{}"{}><table><tbody><tr><th>{}</th>{}</tr></tbody></table></th>"#,
+        r#"<th class="{}"{}><table role="presentation"><tbody><tr><th>{}</th>{}</tr></tbody></table></th>"#,
         classes.join(" "),
         attrs_str,
         inner,
@@ -386,7 +386,7 @@ fn make_column(element: &ElementRef, config: &Config) -> String {
     };
 
     format!(
-        r#"<th class="{}"{}><table><tbody><tr><th>{}</th>{}</tr></tbody></table></th>"#,
+        r#"<th class="{}"{}><table role="presentation"><tbody><tr><th>{}</th>{}</tr></tbody></table></th>"#,
         classes.join(" "),
         attrs_str,
         inner,
@@ -458,7 +458,7 @@ fn make_wrapper(element: &ElementRef) -> String {
     let classes = build_classes("wrapper", element);
     let inner = inner_html(element);
     format!(
-        r#"<table{} class="{}" align="center"><tbody><tr><td class="wrapper-inner">{}</td></tr></tbody></table>"#,
+        r#"<table role="presentation"{} class="{}" align="center"><tbody><tr><td class="wrapper-inner">{}</td></tr></tbody></table>"#,
         attrs, classes, inner
     )
 }
