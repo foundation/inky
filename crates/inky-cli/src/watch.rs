@@ -1,9 +1,11 @@
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 use std::time::Duration;
 
 use colored::Colorize;
 use notify_debouncer_mini::{new_debouncer, DebouncedEventKind};
+use regex::Regex;
 
 use crate::scss;
 use inky_core::{Config, Inky};
@@ -25,6 +27,12 @@ pub fn cmd_watch(
         );
         std::process::exit(1);
     }
+
+    // Canonicalize input so it matches notify's absolute event paths
+    let input = std::fs::canonicalize(&input).unwrap_or(input);
+    // Ensure output dir exists, then canonicalize
+    std::fs::create_dir_all(&output).ok();
+    let output = std::fs::canonicalize(&output).unwrap_or(output);
 
     let config = Config {
         column_count: columns,
@@ -64,6 +72,25 @@ pub fn cmd_watch(
             std::process::exit(1);
         });
 
+    // Also watch directories containing included partials
+    let include_dirs = find_include_dirs(&input);
+    for dir in &include_dirs {
+        if dir != &input {
+            eprintln!("  {} {}", "watching".cyan().bold(), dir.display());
+            debouncer
+                .watcher()
+                .watch(dir, notify::RecursiveMode::Recursive)
+                .unwrap_or_else(|e| {
+                    eprintln!(
+                        "  {} Failed to watch include directory '{}': {}",
+                        "warning:".yellow().bold(),
+                        dir.display(),
+                        e
+                    );
+                });
+        }
+    }
+
     // Event loop
     loop {
         match rx.recv() {
@@ -75,21 +102,24 @@ pub fn cmd_watch(
                 for event in &events {
                     let path = &event.path;
 
-                    // Only care about template files
-                    if !is_template_file(path) {
+                    // Only care about template files, ignore output directory
+                    if !is_template_file(path) || path.starts_with(&output) {
                         continue;
                     }
 
                     match event.kind {
                         DebouncedEventKind::Any => {
-                            if path.exists() {
-                                // File modified or created
+                            if !path.exists() {
+                                // File deleted
+                                needs_full_rebuild = true;
+                            } else if !path.starts_with(&input) {
+                                // Changed file is outside input dir (i.e. an include/partial)
+                                needs_full_rebuild = true;
+                            } else {
+                                // File modified or created in input dir
                                 if !changed_files.contains(path) {
                                     changed_files.push(path.clone());
                                 }
-                            } else {
-                                // File deleted
-                                needs_full_rebuild = true;
                             }
                         }
                         _ => {
@@ -100,7 +130,7 @@ pub fn cmd_watch(
 
                 if needs_full_rebuild {
                     let timestamp = current_time();
-                    eprintln!("  [{}] file removed, rebuilding all...", timestamp);
+                    eprintln!("  [{}] include or file changed, rebuilding all...", timestamp);
                     do_full_build(&input, &output, &config, inline_css, framework_css);
                 } else {
                     for file in &changed_files {
@@ -303,6 +333,30 @@ fn find_template_files(dir: &Path) -> Vec<PathBuf> {
     }
     files.sort();
     files
+}
+
+/// Scan all templates in a directory for <include src="..."> tags and return
+/// the unique canonicalized directories containing those included files.
+fn find_include_dirs(input_dir: &Path) -> Vec<PathBuf> {
+    let re = Regex::new(r#"<include\s+src\s*=\s*"([^"]+)"\s*/?\s*>"#).unwrap();
+    let mut dirs = HashSet::new();
+    let files = find_template_files(input_dir);
+
+    for file in &files {
+        if let Ok(content) = std::fs::read_to_string(file) {
+            let base = file.parent().unwrap_or(input_dir);
+            for cap in re.captures_iter(&content) {
+                let include_path = base.join(&cap[1]);
+                if let Some(parent) = include_path.parent() {
+                    if let Ok(canonical) = std::fs::canonicalize(parent) {
+                        dirs.insert(canonical);
+                    }
+                }
+            }
+        }
+    }
+
+    dirs.into_iter().collect()
 }
 
 fn to_output_path(input: &Path, input_dir: &Path, output_dir: &Path) -> PathBuf {
