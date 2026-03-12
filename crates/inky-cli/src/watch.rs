@@ -7,7 +7,6 @@ use colored::Colorize;
 use notify_debouncer_mini::{new_debouncer, DebouncedEventKind};
 use regex::Regex;
 
-use crate::scss;
 use inky_core::{Config, Inky};
 
 const INKY_EXTENSIONS: &[&str] = &["inky", "html", "scss", "css"];
@@ -266,7 +265,7 @@ fn build_file(
         eprintln!("  {} {} [{}] {}", label, file.display(), d.rule, d.message);
     }
 
-    let result = process_template(inky, &html, inline_css, framework_css, file.parent());
+    let result = crate::build::process_template(inky, &html, inline_css, framework_css, file.parent(), crate::build::ErrorMode::Continue);
 
     let dest = to_output_path(file, input_dir, output_dir);
     if let Some(parent) = dest.parent() {
@@ -277,54 +276,6 @@ fn build_file(
         .map_err(|e| format!("Failed to write: {}", e))?;
 
     Ok(dest)
-}
-
-/// Full build pipeline: resolve includes → extract SCSS overrides → compile framework CSS → inject → transform → inline.
-fn process_template(
-    inky: &Inky,
-    html: &str,
-    inline_css: bool,
-    framework_css: bool,
-    base_path: Option<&Path>,
-) -> String {
-    // Resolve <layout> tag, then <include> tags before any other processing
-    let mut html = if let Some(base) = base_path {
-        let with_layout = inky_core::include::process_layout(html, base).unwrap_or_else(|e| {
-            eprintln!("{} {}", "error:".red().bold(), e);
-            String::new()
-        });
-        inky_core::include::process_includes(&with_layout, base).unwrap_or_else(|e| {
-            eprintln!("{} {}", "error:".red().bold(), e);
-            String::new()
-        })
-    } else {
-        html.to_string()
-    };
-
-    if framework_css {
-        let (cleaned, overrides) = scss::extract_scss_overrides(&html, base_path);
-        html = cleaned;
-
-        let css = scss::compile_framework_scss(&overrides).unwrap_or_else(|e| {
-            eprintln!("{} SCSS compilation failed: {}", "error:".red().bold(), e);
-            String::new()
-        });
-
-        html = scss::inject_css_into_html(&html, &css);
-    } else {
-        let (cleaned, _) = scss::extract_scss_overrides(&html, base_path);
-        html = cleaned;
-    }
-
-    if inline_css {
-        inky.transform_and_inline(&html, base_path)
-            .unwrap_or_else(|e| {
-                eprintln!("{} CSS inlining failed: {}", "error:".red().bold(), e);
-                html.clone()
-            })
-    } else {
-        inky.transform(&html)
-    }
 }
 
 fn find_template_files(dir: &Path) -> Vec<PathBuf> {

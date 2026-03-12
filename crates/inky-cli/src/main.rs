@@ -1,3 +1,4 @@
+mod build;
 mod config;
 mod init;
 mod migrate;
@@ -225,7 +226,7 @@ fn cmd_build(
                 let base = path.parent().map(Path::to_path_buf);
                 let html = read_file(&path);
                 let warnings = print_validation_warnings(&html, &config, &path);
-                let result = process_template(&inky, &html, inline_css, framework_css, base.as_deref());
+                let result = build::process_template(&inky, &html, inline_css, framework_css, base.as_deref(), build::ErrorMode::Exit);
                 // If no output specified and input is .inky, write to .html
                 let out = output.clone().or_else(|| {
                     if path.extension().and_then(OsStr::to_str) == Some("inky") {
@@ -249,7 +250,7 @@ fn cmd_build(
                 });
             let warnings = print_validation_warnings(&html, &config, Path::new("stdin"));
             let cwd = std::env::current_dir().ok();
-            let result = process_template(&inky, &html, inline_css, framework_css, cwd.as_deref());
+            let result = build::process_template(&inky, &html, inline_css, framework_css, cwd.as_deref(), build::ErrorMode::Exit);
             write_output(&result, output.as_deref());
             warnings
         }
@@ -273,58 +274,6 @@ fn print_validation_warnings(html: &str, config: &Config, path: &Path) -> bool {
     !diagnostics.is_empty()
 }
 
-/// Full build pipeline: layout → includes → extract SCSS overrides → compile framework CSS → inject → transform → inline.
-fn process_template(
-    inky: &Inky,
-    html: &str,
-    inline_css: bool,
-    framework_css: bool,
-    base_path: Option<&Path>,
-) -> String {
-    // Resolve <layout> tag, then <include> tags before any other processing
-    let mut html = if let Some(base) = base_path {
-        let with_layout = inky_core::include::process_layout(html, base).unwrap_or_else(|e| {
-            eprintln!("{} {}", "error:".red().bold(), e);
-            process::exit(1);
-        });
-        inky_core::include::process_includes(&with_layout, base).unwrap_or_else(|e| {
-            eprintln!("{} {}", "error:".red().bold(), e);
-            process::exit(1);
-        })
-    } else {
-        html.to_string()
-    };
-
-    if framework_css {
-        // Extract per-template SCSS variable overrides
-        let (cleaned, overrides) = scss::extract_scss_overrides(&html, base_path);
-        html = cleaned;
-
-        // Compile framework SCSS (with any overrides)
-        let css = scss::compile_framework_scss(&overrides).unwrap_or_else(|e| {
-            eprintln!("{} SCSS compilation failed: {}", "error:".red().bold(), e);
-            process::exit(1);
-        });
-
-        // Inject compiled CSS into the HTML
-        html = scss::inject_css_into_html(&html, &css);
-    } else {
-        // Strip any SCSS blocks even when framework CSS is disabled
-        let (cleaned, _) = scss::extract_scss_overrides(&html, base_path);
-        html = cleaned;
-    }
-
-    if inline_css {
-        inky.transform_and_inline(&html, base_path)
-            .unwrap_or_else(|e| {
-                eprintln!("{} CSS inlining failed: {}", "error:".red().bold(), e);
-                process::exit(1);
-            })
-    } else {
-        inky.transform(&html)
-    }
-}
-
 fn build_directory(inky: &Inky, input_dir: &Path, output_dir: Option<&Path>, inline_css: bool, framework_css: bool, config: &Config) -> bool {
     let files = find_template_files(input_dir);
     let mut has_warnings = false;
@@ -344,7 +293,7 @@ fn build_directory(inky: &Inky, input_dir: &Path, output_dir: Option<&Path>, inl
             has_warnings = true;
         }
         let base = file.parent().map(Path::to_path_buf);
-        let result = process_template(inky, &html, inline_css, framework_css, base.as_deref());
+        let result = build::process_template(inky, &html, inline_css, framework_css, base.as_deref(), build::ErrorMode::Exit);
 
         let out_path = match output_dir {
             Some(dir) => {
