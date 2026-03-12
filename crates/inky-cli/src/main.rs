@@ -37,6 +37,10 @@ enum Commands {
         /// Skip CSS inlining (inlining is on by default)
         #[arg(long)]
         no_inline_css: bool,
+
+        /// Exit with non-zero code if validation finds any warnings or errors
+        #[arg(long)]
+        strict: bool,
     },
 
     /// Validate Inky templates for common issues
@@ -55,25 +59,27 @@ fn main() {
             output,
             columns,
             no_inline_css,
-        } => cmd_build(input, output, columns, !no_inline_css),
+            strict,
+        } => cmd_build(input, output, columns, !no_inline_css, strict),
         Commands::Validate { input } => cmd_validate(input),
     }
 }
 
-fn cmd_build(input: Option<PathBuf>, output: Option<PathBuf>, columns: u32, inline_css: bool) {
+fn cmd_build(input: Option<PathBuf>, output: Option<PathBuf>, columns: u32, inline_css: bool, strict: bool) {
     let config = Config {
         column_count: columns,
         ..Config::default()
     };
-    let inky = Inky::with_config(config);
+    let inky = Inky::with_config(config.clone());
 
-    match input {
+    let has_warnings = match input {
         Some(path) => {
             if path.is_dir() {
-                build_directory(&inky, &path, output.as_deref(), inline_css);
+                build_directory(&inky, &path, output.as_deref(), inline_css, &config)
             } else {
                 let base = path.parent().map(Path::to_path_buf);
                 let html = read_file(&path);
+                let warnings = print_validation_warnings(&html, &config, &path);
                 let result = process_html(&inky, &html, inline_css, base.as_deref());
                 // If no output specified and input is .inky, write to .html
                 let out = output.clone().or_else(|| {
@@ -84,6 +90,7 @@ fn cmd_build(input: Option<PathBuf>, output: Option<PathBuf>, columns: u32, inli
                     }
                 });
                 write_output(&result, out.as_deref());
+                warnings
             }
         }
         None => {
@@ -95,11 +102,30 @@ fn cmd_build(input: Option<PathBuf>, output: Option<PathBuf>, columns: u32, inli
                     eprintln!("{} Failed to read stdin: {}", "error:".red().bold(), e);
                     process::exit(1);
                 });
+            let warnings = print_validation_warnings(&html, &config, Path::new("stdin"));
             let cwd = std::env::current_dir().ok();
             let result = process_html(&inky, &html, inline_css, cwd.as_deref());
             write_output(&result, output.as_deref());
+            warnings
         }
+    };
+
+    if strict && has_warnings {
+        process::exit(1);
     }
+}
+
+/// Run validation and print any warnings to stderr. Returns true if any diagnostics were found.
+fn print_validation_warnings(html: &str, config: &Config, path: &Path) -> bool {
+    let diagnostics = validate::validate(html, config);
+    for d in &diagnostics {
+        let label = match d.severity {
+            Severity::Warning => "warn".yellow().bold(),
+            Severity::Error => "error".red().bold(),
+        };
+        eprintln!("  {} {} [{}] {}", label, path.display(), d.rule, d.message);
+    }
+    !diagnostics.is_empty()
 }
 
 fn process_html(inky: &Inky, html: &str, inline_css: bool, base_path: Option<&Path>) -> String {
@@ -114,8 +140,9 @@ fn process_html(inky: &Inky, html: &str, inline_css: bool, base_path: Option<&Pa
     }
 }
 
-fn build_directory(inky: &Inky, input_dir: &Path, output_dir: Option<&Path>, inline_css: bool) {
+fn build_directory(inky: &Inky, input_dir: &Path, output_dir: Option<&Path>, inline_css: bool, config: &Config) -> bool {
     let files = find_template_files(input_dir);
+    let mut has_warnings = false;
 
     if files.is_empty() {
         eprintln!(
@@ -123,11 +150,14 @@ fn build_directory(inky: &Inky, input_dir: &Path, output_dir: Option<&Path>, inl
             "warning:".yellow().bold(),
             input_dir.display()
         );
-        return;
+        return false;
     }
 
     for file in &files {
         let html = read_file(file);
+        if print_validation_warnings(&html, config, file) {
+            has_warnings = true;
+        }
         let base = file.parent().map(Path::to_path_buf);
         let result = process_html(inky, &html, inline_css, base.as_deref());
 
@@ -179,6 +209,8 @@ fn build_directory(inky: &Inky, input_dir: &Path, output_dir: Option<&Path>, inl
         "done".green().bold(),
         files.len()
     );
+
+    has_warnings
 }
 
 fn cmd_validate(input: PathBuf) {
@@ -231,7 +263,7 @@ fn validate_file(path: &std::path::Path, config: &Config) -> bool {
         eprintln!("  {} {} [{}] {}", label, path.display(), d.rule, d.message);
     }
 
-    diagnostics.iter().any(|d| d.severity == Severity::Error)
+    true
 }
 
 /// Find all template files (.inky and .html) in a directory.

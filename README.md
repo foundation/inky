@@ -175,7 +175,7 @@ inky validate src/
 | `img-no-width` | warning | Images without `width` attribute (breaks Outlook layout) |
 | `deep-nesting` | warning | Tables nested > 4 levels (some email clients struggle) |
 
-Exits with code 1 if any errors are found. Warnings don't affect the exit code.
+Exits with code 1 if any warnings or errors are found — useful for CI pipelines.
 
 ## Components
 
