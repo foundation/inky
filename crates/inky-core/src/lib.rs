@@ -80,8 +80,8 @@ impl Inky {
 
             // Columns need special handling: process all sibling columns at once
             // because html5ever restructures <th> output into tables, breaking sibling detection
-            if tag_name == self.config.components.columns {
-                let replaced = transform_all_columns(&current, &self.config);
+            if tag_name == self.config.components.columns || tag_name == "columns" {
+                let replaced = transform_all_columns(&current, &self.config, &tag_name);
                 if replaced == current {
                     break;
                 }
@@ -150,8 +150,8 @@ impl Default for Inky {
 /// Transform all adjacent <columns> tags in a group, handling first/last/sibling-count correctly.
 /// This is needed because html5ever restructures <th> elements into table structures,
 /// breaking sibling detection when processing columns one at a time.
-fn transform_all_columns(html: &str, config: &Config) -> String {
-    let tag = &config.components.columns;
+fn transform_all_columns(html: &str, config: &Config, actual_tag: &str) -> String {
+    let tag = actual_tag;
     let escaped = regex::escape(tag);
 
     let open_re = Regex::new(&format!(r"<{}(?:\s[^>]*)?>", escaped)).unwrap();
@@ -568,16 +568,16 @@ mod tests {
     }
 
     #[test]
-    fn test_transform_h_line() {
-        let input = "<h-line></h-line>";
+    fn test_transform_divider() {
+        let input = "<divider></divider>";
         let result = transform(input);
-        assert!(result.contains("class=\"h-line\""));
+        assert!(result.contains("class=\"divider\""));
         assert!(result.contains("<tbody>"));
     }
 
     #[test]
     fn test_transform_spacer() {
-        let input = "<spacer size=\"10\"></spacer>";
+        let input = "<spacer height=\"10\"></spacer>";
         let result = transform(input);
         assert!(result.contains("height=\"10\""));
         assert!(result.contains("font-size:10px"));

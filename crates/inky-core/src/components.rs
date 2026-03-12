@@ -10,7 +10,8 @@ pub fn transform_component(element: &ElementRef, config: &Config) -> Option<Stri
 
     if tag == comps.h_line {
         Some(make_h_line(element))
-    } else if tag == comps.columns {
+    } else if tag == comps.columns || tag == "columns" {
+        // Accept both v2 "column" and v1 "columns"
         Some(make_column(element, config))
     } else if tag == comps.row {
         Some(make_row(element))
@@ -254,8 +255,9 @@ fn make_spacer(element: &ElementRef) -> String {
     classes.extend(element_classes);
     let class_str = classes.join(" ");
 
-    let size_sm = get_attr(element, "size-sm");
-    let size_lg = get_attr(element, "size-lg");
+    // Accept both v2 (height, sm, lg) and v1 (size, size-sm, size-lg) attribute names
+    let size_sm = get_attr(element, "sm").or_else(|| get_attr(element, "size-sm"));
+    let size_lg = get_attr(element, "lg").or_else(|| get_attr(element, "size-lg"));
 
     if size_sm.is_some() || size_lg.is_some() {
         let mut html = String::new();
@@ -273,7 +275,10 @@ fn make_spacer(element: &ElementRef) -> String {
         }
         html
     } else {
-        let size = get_attr(element, "size").unwrap_or_else(|| "16".to_string());
+        // Accept both v2 (height) and v1 (size) attribute names
+        let size = get_attr(element, "height")
+            .or_else(|| get_attr(element, "size"))
+            .unwrap_or_else(|| "16".to_string());
         format!(
             r#"<table role="presentation"{} class="{}"><tbody><tr><td height="{}" style="font-size:{}px;line-height:{}px;">&nbsp;</td></tr></tbody></table>"#,
             attrs, class_str, size, size, size
@@ -293,13 +298,16 @@ pub fn transform_column_with_position(
     let inner = inner_html(element);
     let mut classes = get_classes(element);
 
-    let small_size = get_attr(element, "small")
+    // Accept both v2 (sm/lg) and v1 (small/large) attribute names
+    let small_size = get_attr(element, "sm")
+        .or_else(|| get_attr(element, "small"))
         .and_then(|s| s.parse::<u32>().ok())
         .unwrap_or(config.column_count);
 
-    let large_size = get_attr(element, "large")
+    let large_size = get_attr(element, "lg")
+        .or_else(|| get_attr(element, "large"))
         .and_then(|s| s.parse::<u32>().ok())
-        .or_else(|| get_attr(element, "small").and_then(|s| s.parse::<u32>().ok()))
+        .or_else(|| get_attr(element, "sm").or_else(|| get_attr(element, "small")).and_then(|s| s.parse::<u32>().ok()))
         .unwrap_or(config.column_count / col_count);
 
     classes.push(format!("small-{}", small_size));
@@ -340,7 +348,7 @@ pub fn transform_column_with_position(
     )
 }
 
-// <columns> (single column, used as fallback)
+// <column> / <columns> (single column, used as fallback)
 fn make_column(element: &ElementRef, config: &Config) -> String {
     let attrs = get_attrs(element);
     let inner = inner_html(element);
@@ -349,14 +357,16 @@ fn make_column(element: &ElementRef, config: &Config) -> String {
     // Count sibling columns (add 1 for current)
     let col_count = count_sibling_columns(element, config) + 1;
 
-    // Determine small and large sizes
-    let small_size = get_attr(element, "small")
+    // Accept both v2 (sm/lg) and v1 (small/large) attribute names
+    let small_size = get_attr(element, "sm")
+        .or_else(|| get_attr(element, "small"))
         .and_then(|s| s.parse::<u32>().ok())
         .unwrap_or(config.column_count);
 
-    let large_size = get_attr(element, "large")
+    let large_size = get_attr(element, "lg")
+        .or_else(|| get_attr(element, "large"))
         .and_then(|s| s.parse::<u32>().ok())
-        .or_else(|| get_attr(element, "small").and_then(|s| s.parse::<u32>().ok()))
+        .or_else(|| get_attr(element, "sm").or_else(|| get_attr(element, "small")).and_then(|s| s.parse::<u32>().ok()))
         .unwrap_or(config.column_count / col_count);
 
     classes.push(format!("small-{}", small_size));
@@ -402,10 +412,12 @@ fn make_column(element: &ElementRef, config: &Config) -> String {
     )
 }
 
-/// Check if an element is a column — either a <columns> tag or a transformed <th> with "columns" class.
+/// Check if an element is a column — either a <column>/<columns> tag or a transformed <th> with "columns" class.
 fn is_column_element(el: &ElementRef, config: &Config) -> bool {
-    el.value().name() == config.components.columns
-        || (el.value().name() == "th" && has_class(el, "columns"))
+    let name = el.value().name();
+    name == config.components.columns
+        || name == "columns" // v1 compat
+        || (name == "th" && has_class(el, "columns"))
 }
 
 /// Count sibling elements that are columns (including already-transformed ones).

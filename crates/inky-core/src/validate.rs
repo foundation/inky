@@ -30,6 +30,7 @@ pub fn validate(html: &str, config: &Config) -> Vec<Diagnostic> {
 /// Validate an Inky source template (pre-transform).
 pub fn validate_source(html: &str, config: &Config) -> Vec<Diagnostic> {
     let mut diags = Vec::new();
+    diags.extend(check_v1_syntax(html));
     diags.extend(check_missing_container(html, config));
     diags.extend(check_button_no_href(html, config));
     diags.extend(check_missing_alt(html));
@@ -44,6 +45,59 @@ pub fn validate_output(html: &str) -> Vec<Diagnostic> {
     diags.extend(check_style_block_too_large(html));
     diags.extend(check_img_no_width(html));
     diags.extend(check_deep_nesting(html));
+    diags
+}
+
+// --- v1 syntax detection ---
+
+fn check_v1_syntax(html: &str) -> Vec<Diagnostic> {
+    let mut diags = Vec::new();
+
+    // <columns> (plural) → should be <column> (singular)
+    if Regex::new(r"<columns[\s>]").unwrap().is_match(html) {
+        diags.push(Diagnostic {
+            severity: Severity::Warning,
+            rule: "v1-syntax",
+            message: "<columns> is v1 syntax — use <column> instead, or run `inky migrate`".to_string(),
+        });
+    }
+
+    // <h-line> → should be <divider>
+    if Regex::new(r"<h-line[\s>]").unwrap().is_match(html) {
+        diags.push(Diagnostic {
+            severity: Severity::Warning,
+            rule: "v1-syntax",
+            message: "<h-line> is v1 syntax — use <divider> instead, or run `inky migrate`".to_string(),
+        });
+    }
+
+    // large="..." on <column> → should be lg="..."
+    if Regex::new(r#"<column[^>]+\blarge\s*="#).unwrap().is_match(html) {
+        diags.push(Diagnostic {
+            severity: Severity::Warning,
+            rule: "v1-syntax",
+            message: r#"large="..." is v1 syntax — use lg="..." instead, or run `inky migrate`"#.to_string(),
+        });
+    }
+
+    // small="..." on <column> → should be sm="..."
+    if Regex::new(r#"<column[^>]+\bsmall\s*="#).unwrap().is_match(html) {
+        diags.push(Diagnostic {
+            severity: Severity::Warning,
+            rule: "v1-syntax",
+            message: r#"small="..." is v1 syntax — use sm="..." instead, or run `inky migrate`"#.to_string(),
+        });
+    }
+
+    // <spacer size="..."> → should be <spacer height="...">
+    if Regex::new(r#"<spacer[^>]+\bsize\s*="#).unwrap().is_match(html) {
+        diags.push(Diagnostic {
+            severity: Severity::Warning,
+            rule: "v1-syntax",
+            message: r#"<spacer size="..."> is v1 syntax — use height="..." instead, or run `inky migrate`"#.to_string(),
+        });
+    }
+
     diags
 }
 

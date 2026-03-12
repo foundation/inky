@@ -1,4 +1,4 @@
-use inky_core::transform;
+use inky_core::{ComponentNames, Config, Inky};
 use serde::Deserialize;
 use std::fs;
 
@@ -41,8 +41,15 @@ fn run_fixtures(path: &str) {
 
     let mut failures = Vec::new();
 
+    // Use v1 config since fixtures use v1 syntax
+    let config = Config {
+        components: ComponentNames::v1(),
+        ..Config::default()
+    };
+    let inky = Inky::with_config(config);
+
     for test in &fixtures.tests {
-        let result = transform(&test.input);
+        let result = inky.transform(&test.input);
         let normalized_result = normalize_html(&result);
         let normalized_expected = normalize_html(&test.expected);
 
