@@ -9,7 +9,6 @@ use regex::Regex;
 
 use inky_core::{Config, Inky};
 
-const INKY_EXTENSIONS: &[&str] = &["inky", "html", "scss", "css"];
 
 pub fn cmd_watch(
     input: PathBuf,
@@ -151,7 +150,7 @@ pub fn cmd_watch(
 fn is_template_file(path: &Path) -> bool {
     path.extension()
         .and_then(|e| e.to_str())
-        .map(|ext| INKY_EXTENSIONS.contains(&ext))
+        .map(|ext| crate::util::WATCH_EXTENSIONS.contains(&ext))
         .unwrap_or(false)
 }
 
@@ -279,15 +278,7 @@ fn build_file(
 }
 
 fn find_template_files(dir: &Path) -> Vec<PathBuf> {
-    let mut files = Vec::new();
-    for ext in INKY_EXTENSIONS {
-        let pattern = format!("{}/**/*.{}", dir.display(), ext);
-        if let Ok(paths) = glob::glob(&pattern) {
-            files.extend(paths.filter_map(|entry| entry.ok()));
-        }
-    }
-    files.sort();
-    files
+    crate::util::find_files(dir, crate::util::TEMPLATE_EXTENSIONS)
 }
 
 /// Scan all templates in a directory for <include> and <layout> tags and return
@@ -342,11 +333,5 @@ fn find_include_dirs(input_dir: &Path) -> Vec<PathBuf> {
 }
 
 fn to_output_path(input: &Path, input_dir: &Path, output_dir: &Path) -> PathBuf {
-    let relative = input.strip_prefix(input_dir).unwrap_or(input);
-    let dest = output_dir.join(relative);
-    if dest.extension().and_then(|e| e.to_str()) == Some("inky") {
-        dest.with_extension("html")
-    } else {
-        dest
-    }
+    crate::util::to_output_path(input, input_dir, output_dir)
 }

@@ -3,6 +3,7 @@ mod config;
 mod init;
 mod migrate;
 mod scss;
+pub mod util;
 mod watch;
 
 use clap::{Parser, Subcommand};
@@ -15,7 +16,6 @@ use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::process;
 
-const INKY_EXTENSIONS: &[&str] = &["inky", "html"];
 
 #[derive(Parser)]
 #[command(name = "inky")]
@@ -400,28 +400,12 @@ fn validate_file(path: &std::path::Path, config: &Config) -> bool {
     true
 }
 
-/// Find all template files (.inky and .html) in a directory.
 fn find_template_files(dir: &Path) -> Vec<PathBuf> {
-    let mut files = Vec::new();
-    for ext in INKY_EXTENSIONS {
-        let pattern = format!("{}/**/*.{}", dir.display(), ext);
-        if let Ok(paths) = glob::glob(&pattern) {
-            files.extend(paths.filter_map(|entry| entry.ok()));
-        }
-    }
-    files.sort();
-    files
+    util::find_files(dir, util::TEMPLATE_EXTENSIONS)
 }
 
-/// Convert an input path to an output path, changing .inky to .html.
 fn to_output_path(input: &Path, input_dir: &Path, output_dir: &Path) -> PathBuf {
-    let relative = input.strip_prefix(input_dir).unwrap();
-    let dest = output_dir.join(relative);
-    if dest.extension().and_then(OsStr::to_str) == Some("inky") {
-        dest.with_extension("html")
-    } else {
-        dest
-    }
+    util::to_output_path(input, input_dir, output_dir)
 }
 
 fn read_file(path: &std::path::Path) -> String {

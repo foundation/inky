@@ -121,13 +121,5 @@ fn migrate_directory(input: &std::path::Path, output: Option<&std::path::Path>, 
 }
 
 fn find_template_files(dir: &std::path::Path) -> Vec<PathBuf> {
-    let mut files = Vec::new();
-    for ext in &["inky", "html"] {
-        let pattern = format!("{}/**/*.{}", dir.display(), ext);
-        if let Ok(paths) = glob::glob(&pattern) {
-            files.extend(paths.filter_map(|entry| entry.ok()));
-        }
-    }
-    files.sort();
-    files
+    crate::util::find_files(dir, crate::util::TEMPLATE_EXTENSIONS)
 }
