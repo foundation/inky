@@ -472,7 +472,7 @@ Subcommands:
 
 ## Implementation Order
 
-### Stage 1: Core Engine (current — in progress)
+### Stage 1: Core Engine — COMPLETE
 
 | Step | Task | Status |
 |------|------|--------|
@@ -488,58 +488,63 @@ Subcommands:
 | 10 | Add auto-detection for template merge tags | Done |
 | 11 | Add `<image>`, `<outlook>`, `<not-outlook>`, `<divider>` components | Done |
 
-### Stage 2: CLI + Migration
+### Stage 2: CLI + Migration — COMPLETE (except fixture tests)
 
 | Step | Task | Status |
 |------|------|--------|
 | 12 | Create `inky-cli` crate with `clap` | Done |
 | 13 | Implement `build` command (file/directory/stdin) | Done |
 | 14 | Implement `migrate` command (v1 → v2 syntax conversion) | Done |
-| 15 | Implement `validate` command (basic placeholder done) | In Progress |
+| 15 | Implement `validate` command (source + output checks, 16 tests) | Done |
 | 16 | Add v1 syntax detection with helpful error messages | Done |
-| 17 | Implement `watch` command | Done |
-| 18 | Write v2 syntax fixture tests | TODO |
-| 19 | Write migration fixture tests | TODO |
-| 20 | Implement `init` command (project scaffolding) | Done |
+| 17 | Implement `watch` command (with SCSS/layout/include change detection) | Done |
+| 18 | Write v2 syntax fixture tests | **TODO** |
+| 19 | Write migration fixture tests | **TODO** |
+| 20 | Implement `init` command (project scaffolding with themes) | Done |
 | 21 | Implement `<include>` tag support (template partials/layouts) | Done |
+| 22 | Implement `<layout>` + `<yield>` system | Done |
+| 23 | Add SCSS compilation and `<link>` support in CLI | Done |
+| 24 | Add `inky.config.json` auto-discovery | Done |
+| 25 | Blank line cleanup and DRY refactoring | Done |
+| 26 | Build WASM playground | Done |
 
-### Stage 3: Distribution
+### Stage 3: Distribution — UP NEXT
 
-| Step | Task |
-|------|------|
-| 16 | Build `inky-wasm` with wasm-bindgen |
-| 17 | Build `inky-ffi` with cbindgen |
-| 18 | Create Node.js wrapper (WASM) |
-| 19 | Create PHP Composer package (C extension + FFI drivers) |
-| 20 | Create Python PyPI package (ctypes) |
-| 21 | Create Ruby gem (fiddle) |
-| 22 | Create Go module (cgo, separate repo) |
+| Step | Task | Status |
+|------|------|--------|
+| 27 | Build `inky-wasm` with wasm-bindgen | Done |
+| 28 | Build `inky-ffi` with cbindgen | Done |
+| 29 | Create Node.js wrapper (WASM) | TODO |
+| 30 | Create PHP Composer package (C extension + FFI drivers) | TODO |
+| 31 | Create Python PyPI package (ctypes) | TODO |
+| 32 | Create Ruby gem (fiddle) | TODO |
+| 33 | Create Go module (cgo, separate repo) | TODO |
 
 ### Stage 4: Styles + Templates
 
-| Step | Task |
-|------|------|
-| 23 | Move SCSS from `foundation-emails` into `inky/scss/` |
-| 24 | Rename entry point to `inky.scss`, update variable prefixes |
-| 25 | Add dark mode utilities (`_dark-mode.scss`) |
-| 26 | Add styles for new components (image, divider) |
-| 27 | Build dist CSS with `sass` command (no gulp) |
-| 28 | Create starter templates using v2 syntax |
+| Step | Task | Status |
+|------|------|--------|
+| 34 | Move SCSS from `foundation-emails` into `inky/scss/` | Done |
+| 35 | Rename entry point to `inky.scss`, update variable prefixes | Done |
+| 36 | Add dark mode utilities (`_dark-mode.scss`) | TODO |
+| 37 | Add styles for new components (image, divider) | TODO |
+| 38 | Build dist CSS with `sass` command (no gulp) | TODO |
+| 39 | Create starter templates using v2 syntax | Partial (init scaffolds themes) |
 
 ### Stage 5: Ship It
 
-| Step | Task |
-|------|------|
-| 29 | Set up CI: test Rust + all bindings on all platforms |
-| 30 | Set up release pipeline with `cargo-dist` (cross-compile + GitHub Releases) |
-| 31 | Create `foundation/homebrew-inky` tap repo with formula |
-| 32 | Automate Homebrew formula updates on release (via `cargo-dist`) |
-| 33 | Write documentation and migration guide |
-| 34 | Publish v2.0.0 to npm, crates.io, Packagist, PyPI, RubyGems, Homebrew |
-| 35 | Archive `foundation/inky-rb` with pointer to new gem |
-| 36 | Archive `foundation/foundation-emails` with pointer to `inky` |
-| 37 | Submit formula to `homebrew-core` (once project is established) |
-| 38 | Re-enable Dependabot |
+| Step | Task | Status |
+|------|------|--------|
+| 40 | Set up CI: test Rust + all bindings on all platforms | TODO |
+| 41 | Set up release pipeline with `cargo-dist` (cross-compile + GitHub Releases) | TODO |
+| 42 | Create `foundation/homebrew-inky` tap repo with formula | TODO |
+| 43 | Automate Homebrew formula updates on release (via `cargo-dist`) | TODO |
+| 44 | Write documentation and migration guide | TODO |
+| 45 | Publish v2.0.0 to npm, crates.io, Packagist, PyPI, RubyGems, Homebrew | TODO |
+| 46 | Archive `foundation/inky-rb` with pointer to new gem | TODO |
+| 47 | Archive `foundation/foundation-emails` with pointer to `inky` | TODO |
+| 48 | Submit formula to `homebrew-core` (once project is established) | TODO |
+| 49 | Re-enable Dependabot | TODO |
 
 ---
 
