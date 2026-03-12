@@ -2,7 +2,6 @@
 # Run all Inky test suites.
 # Usage: bin/runtests.sh
 
-set -e
 cd "$(dirname "$0")/.."
 
 failed=0
@@ -15,7 +14,10 @@ else
 fi
 
 echo "=== Building Release CLI ==="
-cargo build -p inky-cli --release 2>&1
+if ! cargo build -p inky-cli --release 2>&1; then
+  echo "Build failed — skipping remaining tests"
+  exit 1
+fi
 echo ""
 
 echo "=== Template Comparison Tests ==="
