@@ -1,0 +1,80 @@
+// Foundation for Emails
+// get.foundation/ink/
+// Licensed under MIT Open Source
+@use '../settings' as *;
+
+////
+/// @group menu
+////
+
+table.menu {
+  width: $global-width;
+
+  td.menu-item,
+  th.menu-item {
+    padding-top: $menu-item-padding;
+    padding-right: $menu-item-gutter;
+    padding-bottom: $menu-item-padding;
+    padding-left: $menu-item-padding;
+
+    a {
+      color: $menu-item-color;
+    }
+  }
+}
+
+// Doesn't work on the pesky ESPs like outlook 2000
+table.menu.vertical {
+  td.menu-item,
+  th.menu-item {
+    padding-top: $menu-item-padding;
+    padding-right: 0;
+    padding-bottom: $menu-item-padding;
+    padding-left: $menu-item-padding;
+    display: block;
+
+    a {
+      width: 100%;
+    }
+  }
+
+  // Nested lists need some more padding to the left
+  td.menu-item,
+  th.menu-item {
+    table.menu.vertical {
+      td.menu-item,
+      th.menu-item {
+        padding-left: $menu-item-padding;
+      }
+    }
+  }
+}
+
+table.menu.text-center a {
+  text-align: center;
+}
+
+//Centers the menus!
+.menu[align="center"] {
+  width: auto;
+}
+
+.menu[align="center"] tr {
+  text-align: center;
+}
+
+// Remove outside padding so that the menu aligns with other elements on the page
+.menu:not(.float-center) {
+    .menu-item:first-child{padding-left:0!important;}
+    .menu-item:last-child{padding-right:0!important;}
+}
+.menu.vertical .menu-item {
+    padding-left:0!important;
+    padding-right:0!important;
+}
+@media only screen and (max-width: #{$global-breakpoint}) {
+    .menu.small-vertical .menu-item {
+        padding-left:0!important;
+        padding-right:0!important;
+    }
+}

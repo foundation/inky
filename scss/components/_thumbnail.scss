@@ -1,0 +1,26 @@
+// Foundation for Emails
+// get.foundation/ink/
+// Licensed under MIT Open Source
+@use '../settings' as *;
+
+////
+/// @group thumbnail
+////
+
+/// Adds thumbnail styles to an element.
+.thumbnail {
+  border: $thumbnail-border;
+  box-shadow: $thumbnail-shadow;
+  display: inline-block;
+  line-height: 0;
+  max-width: 100%;
+  transition: $thumbnail-transition;
+  border-radius: $thumbnail-radius;
+  margin-bottom: $thumbnail-margin-bottom;
+
+  &:hover,
+  &:focus {
+    box-shadow: $thumbnail-shadow-hover;
+  }
+}
+

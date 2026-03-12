@@ -1,0 +1,26 @@
+// Foundation for Emails
+// get.foundation/ink/
+// Licensed under MIT Open Source
+@use "sass:math";
+@use '../settings' as *;
+
+////
+/// @group block-grid
+////
+
+.block-grid {
+  width: 100%;
+  max-width: $global-width;
+
+  td {
+    display: inline-block;
+    padding: math.div($block-grid-gutter, 2);
+  }
+}
+
+// Sizing classes
+@for $i from 2 through $block-grid-max {
+  .up-#{$i} td {
+    width: math.floor(math.div($global-width - $i * $block-grid-gutter, $i)) !important;
+  }
+}

@@ -1,0 +1,281 @@
+// Foundation for Emails
+// get.foundation/ink/
+// Licensed under MIT Open Source
+@use "sass:math";
+@use "sass:color";
+@use '../settings' as *;
+
+////
+/// @group typography
+////
+
+// Font scale (not in settings, used for text size utilities)
+$font-scale: 1.2 !default;
+
+/// Create a divider/horizontal rule.
+/// @param {String} $align  - Left, center, or right
+/// @param {String} $width  - Width of divider
+/// @param {String} $border - Shorthand border style for divider
+/// @param {String} $margin - Margin above and below divider
+@mixin h-line($align: $hr-align, $width: $hr-width, $border: $hr-border, $margin: $hr-margin) {
+  @at-root {
+    td.columns & table,
+    td.column  & table,
+    th.columns & table,
+    th.column  & table {
+      width: auto;
+    }
+  }
+
+  th {
+    padding-bottom: $margin;
+    @if $align == 'left' {
+      text-align: left;
+    } @else if $align == 'right' {
+      text-align: right;
+    } @else {
+      text-align: center;
+    }
+  }
+
+    table {
+      display: inline-block;
+      margin: 0;
+      Margin: 0;
+    }
+
+      th {
+        width: $width;
+        height: 0;
+        padding-top: $margin;
+        clear: both;
+        border-top: 0;
+        border-right: 0;
+        border-bottom: $border;
+        border-left: 0;
+        font-size: 0;
+        line-height: 0;
+      }
+}
+
+body,
+table.body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+td,
+th {
+  color: $global-font-color;
+  font-family: $body-font-family;
+  font-weight: $global-font-weight;
+  padding: 0;
+  margin: 0;
+  Margin: 0;
+  text-align: left;
+  line-height: $global-line-height;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: $header-color;
+  word-wrap: normal;
+  font-family: $header-font-family;
+  font-weight: $header-font-weight;
+  margin-bottom: $header-margin-bottom;
+  Margin-bottom: $header-margin-bottom;
+}
+
+h1 {
+  font-size: $h1-font-size;
+}
+
+h2 {
+  font-size: $h2-font-size;
+}
+
+h3 {
+  font-size: $h3-font-size;
+}
+
+h4 {
+  font-size: $h4-font-size;
+}
+
+h5 {
+  font-size: $h5-font-size;
+}
+
+h6 {
+  font-size: $h6-font-size;
+}
+
+body,
+table.body,
+p,
+td,
+th {
+  font-size: $global-font-size;
+  line-height: $body-line-height;
+}
+
+p {
+  margin-bottom: $paragraph-margin-bottom;
+  Margin-bottom: $paragraph-margin-bottom;
+
+  &.lead {
+    font-size: $lead-font-size;
+    line-height: $lead-line-height;
+  }
+
+  &.subheader {
+    margin-top: $subheader-margin-top;
+    margin-bottom: $subheader-margin-bottom;
+    Margin-top: $subheader-margin-top;
+    Margin-bottom: $subheader-margin-bottom;
+    font-weight: $subheader-font-weight;
+    line-height: $subheader-lineheight;
+    color: $subheader-color;
+  }
+
+  a { // To fix Outlook margin issue #421
+    margin: default;
+    Margin: default;
+  }
+}
+
+.text-xs {
+  font-size: math.div($global-font-size, $font-scale * $font-scale);
+}
+
+.text-sm {
+  font-size: math.div($global-font-size, $font-scale);
+}
+
+.text-lg {
+  font-size: $global-font-size * $font-scale;
+}
+
+.text-xl {
+  font-size: $global-font-size * ($font-scale * $font-scale);
+}
+
+.text-xxl {
+  font-size: $global-font-size * ($font-scale * $font-scale * $font-scale);
+}
+
+small,
+.small {
+  font-size: $small-font-size;
+  color: $small-font-color;
+}
+
+a {
+  color: $anchor-color;
+  text-decoration: $anchor-text-decoration;
+  font-family: $body-font-family;
+  font-weight: $global-font-weight;
+  padding: 0;
+  text-align: left;
+  line-height: $global-line-height;
+
+  &:hover {
+    color: $anchor-color-hover;
+  }
+
+  &:active {
+    color: $anchor-color-active;
+  }
+
+  &:visited {
+    color: $anchor-color-visited;
+  }
+}
+
+h1 a,
+h1 a:visited,
+h2 a,
+h2 a:visited,
+h3 a,
+h3 a:visited,
+h4 a,
+h4 a:visited,
+h5 a,
+h5 a:visited,
+h6 a,
+h6 a:visited {
+  color: $anchor-color;
+}
+
+pre {
+  background: $light-gray;
+  margin: 30px 0;
+  Margin: 30px 0;
+
+  code {
+    color: $medium-gray;
+
+    span.callout {
+      color: $dark-gray;
+      font-weight: bold;
+    }
+
+    span.callout-strong {
+      color: $pre-color;
+      font-weight: bold;
+    }
+  }
+}
+
+// Horizontal rule
+table.hr,
+table.h-line {
+  @include h-line($hr-align, $hr-width, $hr-border, $hr-margin);
+}
+
+// Use to style a large number to display a statistic
+.stat {
+  font-size: $stat-font-size;
+  line-height: 1;
+
+  p + & {
+    margin-top: -16px;
+    Margin-top: -16px;
+  }
+}
+
+// preheader styles
+span.preheader {
+  display: none !important;
+  visibility: hidden;
+  mso-hide: all !important;
+  font-size: 1px;
+  color: $body-background; // needs to match background color of it's container
+  line-height: 1px;
+  max-height: 0px;
+  max-width: 0px;
+  opacity: 0;
+  overflow: hidden;
+}
+
+// Removing the iOS colors put in for telephone and addresses
+@if $remove-ios-blue {
+  // Wrapping in a media only screen to have inline-css respect the styling
+  @media only screen {
+    a[x-apple-data-detectors] {
+      color: inherit !important;
+      text-decoration: none !important;
+      font-size: inherit !important;
+      font-family: inherit !important;
+      font-weight: inherit !important;
+      line-height: inherit !important;
+    }
+  }
+}

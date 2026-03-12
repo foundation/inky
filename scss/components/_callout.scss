@@ -1,0 +1,61 @@
+// Foundation for Emails
+// get.foundation/ink/
+// Licensed under MIT Open Source
+@use "sass:color";
+@use '../settings' as *;
+
+////
+/// @group callout
+////
+
+// Computed background colors (derived from settings)
+$callout-background-primary: color.scale($primary-color, $lightness: $callout-background-fade) !default;
+$callout-background-secondary: color.scale($secondary-color, $lightness: $callout-background-fade) !default;
+$callout-background-success: color.scale($success-color, $lightness: $callout-background-fade) !default;
+$callout-background-warning: color.scale($warning-color, $lightness: $callout-background-fade) !default;
+$callout-background-alert: color.scale($alert-color, $lightness: $callout-background-fade) !default;
+
+table.callout {
+  margin-bottom: $callout-margin-bottom;
+  Margin-bottom: $callout-margin-bottom;
+}
+
+th.callout-inner {
+  width: 100%;
+  border: $callout-border;
+  padding-top: $callout-padding;
+  padding-right: $callout-padding;
+  padding-bottom: $callout-padding;
+  padding-left: $callout-padding;
+  background: $callout-background;
+
+  &.primary {
+    background: $callout-background-primary;
+    border: $callout-border-primary;
+    color: $black;
+  }
+
+  &.secondary {
+    background: $callout-background-secondary;
+    border: $callout-border-secondary;
+    color: $black;
+  }
+
+  &.success {
+    background: $callout-background-success;
+    border: $callout-border-success;
+    color: $black;
+  }
+
+  &.warning {
+    background: $callout-background-warning;
+    border: $callout-border-warning;
+    color: $black;
+  }
+
+  &.alert {
+    background: $callout-background-alert;
+    border: $callout-border-alert;
+    color: $black;
+  }
+}
