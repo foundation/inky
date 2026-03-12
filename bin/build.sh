@@ -20,8 +20,8 @@ fi
 echo ""
 echo "=== Compiling SCSS ==="
 mkdir -p build
-if sass scss/foundation-emails.scss build/foundation-emails.css 2>&1; then
-  echo "  -> build/foundation-emails.css"
+if sass scss/inky.scss build/inky.css 2>&1; then
+  echo "  -> build/inky.css"
 else
   echo "SCSS build failed"
   failed=1
