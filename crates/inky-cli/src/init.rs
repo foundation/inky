@@ -125,9 +125,9 @@ const LAYOUT_DEFAULT: &str = r#"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Tra
 const PARTIAL_HEADER: &str = r#"<wrapper class="header">
   <container>
     <row>
-      <columns small="12" large="12">
+      <column sm="12" lg="12">
         <img src="https://placehold.co/200x50?text=Logo" alt="Logo">
-      </columns>
+      </column>
     </row>
   </container>
 </wrapper>
@@ -136,9 +136,9 @@ const PARTIAL_HEADER: &str = r#"<wrapper class="header">
 const PARTIAL_FOOTER: &str = r##"<wrapper class="footer">
   <container>
     <row>
-      <columns small="12" large="12">
+      <column sm="12" lg="12">
         <p class="text-center"><small>You're receiving this because you signed up. <a href="#">Unsubscribe</a></small></p>
-      </columns>
+      </column>
     </row>
   </container>
 </wrapper>
@@ -148,17 +148,17 @@ const EMAIL_WELCOME: &str = r#"<include src="../partials/header.inky">
 
 <container>
   <row>
-    <columns small="12" large="12">
+    <column sm="12" lg="12">
       <h1>Welcome!</h1>
       <p>Thanks for signing up. We're excited to have you on board.</p>
       <button href="https://example.com">Get Started</button>
-    </columns>
+    </column>
   </row>
   <row>
-    <columns small="12" large="12">
-      <spacer size="16"></spacer>
+    <column sm="12" lg="12">
+      <spacer height="16"></spacer>
       <p>If you have any questions, just reply to this email — we'd love to help.</p>
-    </columns>
+    </column>
   </row>
 </container>
 
