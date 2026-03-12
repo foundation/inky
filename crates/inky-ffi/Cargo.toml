@@ -10,7 +10,7 @@ crate-type = ["cdylib", "staticlib"]
 name = "inky"
 
 [dependencies]
-inky-core = { path = "../inky-core" }
+inky-core = { path = "../inky-core", features = ["css-inlining"] }
 
 [build-dependencies]
 cbindgen = "0.27"
