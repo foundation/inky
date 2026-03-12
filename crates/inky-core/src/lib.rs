@@ -31,8 +31,11 @@ impl Inky {
 
     /// Transform Inky HTML into email-safe table HTML.
     pub fn transform(&self, html: &str) -> String {
-        // Step 0: Pre-process <image> tags (html5ever converts <image> to <img>)
-        let html = preprocess_image_tags(html);
+        // Step 0a: Protect template merge tags from html5ever mangling
+        let (merge_tags, html) = protect_merge_tags(html);
+
+        // Step 0b: Pre-process <image> tags (html5ever converts <image> to <img>)
+        let html = preprocess_image_tags(&html);
 
         // Step 1: Extract <raw> blocks and replace with placeholders
         let (raws, working_html) = extract_raws(&html);
@@ -112,7 +115,10 @@ impl Inky {
         current = current.replace(" data-parsed=\"\"", "");
 
         // Step 6: Re-inject raw blocks
-        re_inject_raws(&current, &raws)
+        let current = re_inject_raws(&current, &raws);
+
+        // Step 7: Restore protected merge tags
+        restore_merge_tags(&current, &merge_tags)
     }
 
     /// Transform Inky HTML and then inline CSS.
@@ -448,6 +454,36 @@ fn preprocess_image_tags(html: &str) -> String {
     }).to_string()
 }
 
+/// Protect template merge tags that look like HTML (ERB/EJS/ASP tags) from html5ever.
+/// Tags like `<%= expr %>`, `<% code %>`, and `{% tag %}` get HTML-encoded by the parser.
+/// We replace them with placeholders and restore after transformation.
+fn protect_merge_tags(html: &str) -> (Vec<String>, String) {
+    // Match ERB/EJS/ASP-style tags: <%= ... %>, <% ... %>, <%- ... %>, <%# ... %>
+    // Also match Jinja2/Twig/Nunjucks tags: {% ... %}, {%- ... %}
+    let re = Regex::new(r"(<%[=#-]?.*?%>|\{%-?.*?-?%\})").unwrap();
+    let mut tags = Vec::new();
+    let mut result = html.to_string();
+
+    while let Some(m) = re.find(&result) {
+        let tag = m.as_str().to_string();
+        let placeholder = format!("###MERGE{}###", tags.len());
+        result = format!("{}{}{}", &result[..m.start()], placeholder, &result[m.end()..]);
+        tags.push(tag);
+    }
+
+    (tags, result)
+}
+
+/// Restore protected merge tags from placeholders.
+fn restore_merge_tags(html: &str, tags: &[String]) -> String {
+    let mut result = html.to_string();
+    for (i, tag) in tags.iter().enumerate() {
+        let placeholder = format!("###MERGE{}###", i);
+        result = result.replace(&placeholder, tag);
+    }
+    result
+}
+
 /// Extract `<raw>` blocks from HTML, replacing them with placeholders.
 fn extract_raws(html: &str) -> (Vec<String>, String) {
     let re = Regex::new(r"(?s)(?:\n *)?< *raw *>(.*?)</ *raw *>(?: *\n)?").unwrap();
@@ -553,5 +589,19 @@ mod tests {
         let result = transform(input);
         assert!(result.contains("<button>not transformed</button>"));
         assert!(!result.contains("###RAW"));
+    }
+
+    #[test]
+    fn test_merge_tags_erb() {
+        let input = "<button href=\"<%= url %>\">Click</button>";
+        let result = transform(input);
+        assert!(result.contains("<%= url %>"));
+    }
+
+    #[test]
+    fn test_merge_tags_jinja() {
+        let input = "<button href=\"{% url 'home' %}\">Click</button>";
+        let result = transform(input);
+        assert!(result.contains("{% url 'home' %}"));
     }
 }
