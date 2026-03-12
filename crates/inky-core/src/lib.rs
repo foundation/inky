@@ -1,6 +1,7 @@
 pub mod attrs;
 pub mod components;
 pub mod config;
+pub mod include;
 #[cfg(feature = "css-inlining")]
 pub mod inline;
 pub mod validate;
@@ -138,6 +139,28 @@ impl Inky {
     ) -> Result<String, String> {
         let transformed = self.transform(html);
         inline::inline_css(&transformed, base_path)
+    }
+
+    /// Pre-process includes, then transform.
+    pub fn transform_with_includes(
+        &self,
+        html: &str,
+        base_path: &std::path::Path,
+    ) -> Result<String, String> {
+        let resolved = include::process_includes(html, base_path)?;
+        Ok(self.transform(&resolved))
+    }
+
+    /// Pre-process includes, transform, then inline CSS.
+    #[cfg(feature = "css-inlining")]
+    pub fn transform_and_inline_with_includes(
+        &self,
+        html: &str,
+        include_base: &std::path::Path,
+        css_base: Option<&std::path::Path>,
+    ) -> Result<String, String> {
+        let resolved = include::process_includes(html, include_base)?;
+        self.transform_and_inline(&resolved, css_base)
     }
 }
 
