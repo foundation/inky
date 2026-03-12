@@ -31,8 +31,11 @@ impl Inky {
 
     /// Transform Inky HTML into email-safe table HTML.
     pub fn transform(&self, html: &str) -> String {
+        // Step 0: Pre-process <image> tags (html5ever converts <image> to <img>)
+        let html = preprocess_image_tags(html);
+
         // Step 1: Extract <raw> blocks and replace with placeholders
-        let (raws, working_html) = extract_raws(html);
+        let (raws, working_html) = extract_raws(&html);
 
         // Step 1b: Preserve <td> content inside <block-grid> from html5ever stripping
         let working_html = preserve_block_grid_tds(&working_html, &self.config.components.block_grid);
@@ -385,6 +388,64 @@ fn preserve_block_grid_tds(html: &str, block_grid_tag: &str) -> String {
 /// Restore <td> tags that were protected from html5ever stripping.
 fn restore_block_grid_tds(html: &str) -> String {
     html.replace("###BGTD###", "<td>").replace("###/BGTD###", "</td>")
+}
+
+/// Pre-process `<image>` tags into their final HTML output.
+/// html5ever converts `<image>` to `<img>` per the HTML5 spec,
+/// so we handle this before parsing.
+fn preprocess_image_tags(html: &str) -> String {
+    let re = Regex::new(r#"(?i)<image\s+([^>]*?)(/?\s*)>"#).unwrap();
+    let attr_re = Regex::new(r#"(\w[\w-]*)(?:\s*=\s*"([^"]*)"|\s*=\s*'([^']*)'|\s*=\s*(\S+))?"#).unwrap();
+
+    re.replace_all(html, |caps: &regex::Captures| {
+        let attrs_str = &caps[1];
+        let mut src = String::new();
+        let mut alt = String::new();
+        let mut width: Option<String> = None;
+        let mut retina = false;
+        let mut classes = Vec::new();
+
+        for attr_cap in attr_re.captures_iter(attrs_str) {
+            let name = &attr_cap[1];
+            let value = attr_cap.get(2)
+                .or(attr_cap.get(3))
+                .or(attr_cap.get(4))
+                .map(|m| m.as_str().to_string());
+
+            match name.to_lowercase().as_str() {
+                "src" => src = value.unwrap_or_default(),
+                "alt" => alt = value.unwrap_or_default(),
+                "width" => width = value,
+                "retina" => retina = true,
+                "class" => if let Some(v) = value { classes.push(v); },
+                _ => {}
+            }
+        }
+
+        // For retina, display at half the source width
+        let display_width = if retina {
+            width.as_ref()
+                .and_then(|w| w.parse::<u32>().ok())
+                .map(|w| (w / 2).to_string())
+        } else {
+            width.clone()
+        };
+
+        let mut parts = Vec::new();
+        parts.push(format!(r#"src="{}""#, src));
+        parts.push(format!(r#"alt="{}""#, alt));
+        if let Some(w) = &display_width {
+            parts.push(format!(r#"width="{}""#, w));
+            parts.push(format!(r#"style="width: {}px; max-width: 100%;""#, w));
+        } else {
+            parts.push(r#"style="max-width: 100%;""#.to_string());
+        }
+        if !classes.is_empty() {
+            parts.push(format!(r#"class="{}""#, classes.join(" ")));
+        }
+
+        format!("<img {}>", parts.join(" "))
+    }).to_string()
 }
 
 /// Extract `<raw>` blocks from HTML, replacing them with placeholders.

@@ -21,6 +21,10 @@ pub struct ComponentNames {
     pub spacer: String,
     pub wrapper: String,
     pub h_line: String,
+    pub divider: String,
+    pub image: String,
+    pub outlook: String,
+    pub not_outlook: String,
 }
 
 impl Default for Config {
@@ -48,27 +52,36 @@ impl Default for ComponentNames {
             spacer: "spacer".into(),
             wrapper: "wrapper".into(),
             h_line: "h-line".into(),
+            divider: "divider".into(),
+            image: "image".into(),
+            outlook: "outlook".into(),
+            not_outlook: "not-outlook".into(),
         }
     }
 }
 
 impl ComponentNames {
-    /// Returns all component tag names as a slice.
+    /// Returns all component tag names that the parser should match.
     pub fn all_tags(&self) -> Vec<&str> {
         vec![
-            &self.button,
-            &self.row,
-            &self.columns,
-            &self.container,
-            &self.callout,
-            &self.inky,
-            &self.block_grid,
-            &self.menu,
-            &self.menu_item,
-            &self.center,
-            &self.spacer,
-            &self.wrapper,
-            &self.h_line,
+            &self.button as &str,
+            &self.row as &str,
+            &self.columns as &str,
+            &self.container as &str,
+            &self.callout as &str,
+            &self.inky as &str,
+            &self.block_grid as &str,
+            &self.menu as &str,
+            &self.menu_item as &str,
+            &self.center as &str,
+            &self.spacer as &str,
+            &self.wrapper as &str,
+            &self.h_line as &str,
+            &self.divider as &str,
+            // Note: image is NOT in all_tags — it's pre-processed before parsing
+            // because html5ever converts <image> to <img>
+            &self.outlook as &str,
+            &self.not_outlook as &str,
         ]
     }
 }

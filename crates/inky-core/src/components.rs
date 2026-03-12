@@ -34,6 +34,14 @@ pub fn transform_component(element: &ElementRef, config: &Config) -> Option<Stri
         Some(make_spacer(element))
     } else if tag == comps.wrapper {
         Some(make_wrapper(element))
+    } else if tag == comps.divider {
+        Some(make_divider(element))
+    // Note: <image> is handled as a pre-processing step in lib.rs
+    // because html5ever converts <image> to <img> per the HTML5 spec
+    } else if tag == comps.outlook {
+        Some(make_outlook(element))
+    } else if tag == comps.not_outlook {
+        Some(make_not_outlook(element))
     } else {
         None
     }
@@ -461,4 +469,25 @@ fn make_wrapper(element: &ElementRef) -> String {
         r#"<table role="presentation"{} class="{}" align="center"><tbody><tr><td class="wrapper-inner">{}</td></tr></tbody></table>"#,
         attrs, classes, inner
     )
+}
+
+// <divider> — renamed from <h-line>, same output with updated class name
+fn make_divider(element: &ElementRef) -> String {
+    let classes = build_classes("divider", element);
+    format!(
+        r#"<table role="presentation" class="{}"><tbody><tr><th>&nbsp;</th></tr></tbody></table>"#,
+        classes
+    )
+}
+
+// <outlook> — wraps content in Outlook conditional comment
+fn make_outlook(element: &ElementRef) -> String {
+    let inner = inner_html(element);
+    format!("<!--[if mso]>\n{}\n<![endif]-->", inner)
+}
+
+// <not-outlook> — wraps content in not-Outlook conditional comment
+fn make_not_outlook(element: &ElementRef) -> String {
+    let inner = inner_html(element);
+    format!("<!--[if !mso]><!-->\n{}\n<!--<![endif]-->", inner)
 }
