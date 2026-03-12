@@ -33,6 +33,9 @@ impl Inky {
         // Step 1: Extract <raw> blocks and replace with placeholders
         let (raws, working_html) = extract_raws(html);
 
+        // Step 1b: Preserve <td> content inside <block-grid> from html5ever stripping
+        let working_html = preserve_block_grid_tds(&working_html, &self.config.components.block_grid);
+
         // Step 2: Iteratively transform custom components
         let mut current = working_html;
 
@@ -95,10 +98,16 @@ impl Inky {
             current = replaced;
         }
 
-        // Step 3: Remove data-parsed attributes
+        // Step 3: Add float-center to .menu-item elements inside <center> tags
+        current = add_float_center_to_centered_menu_items(&current);
+
+        // Step 4: Restore protected block-grid <td> tags
+        current = restore_block_grid_tds(&current);
+
+        // Step 5: Remove data-parsed attributes
         current = current.replace(" data-parsed=\"\"", "");
 
-        // Step 4: Re-inject raw blocks
+        // Step 6: Re-inject raw blocks
         re_inject_raws(&current, &raws)
     }
 
@@ -135,34 +144,96 @@ fn transform_all_columns(html: &str, config: &Config) -> String {
     let tag = &config.components.columns;
     let escaped = regex::escape(tag);
 
-    // Pattern to match a single <columns>...</columns> tag
-    let col_pattern = format!(r"(?s)<{e}(?:\s[^>]*)?>.*?</{e}>", e = escaped);
-    let col_re = Regex::new(&col_pattern).unwrap();
+    let open_re = Regex::new(&format!(r"<{}(?:\s[^>]*)?>", escaped)).unwrap();
+    let close_re = Regex::new(&format!(r"</{}>", escaped)).unwrap();
 
-    // Pattern to match a group of adjacent columns (with optional whitespace between)
-    let group_pattern = format!(
-        r"(?s)(?:<{e}(?:\s[^>]*)?>.*?</{e}>\s*)+",
-        e = escaped
-    );
-    let group_re = Regex::new(&group_pattern).unwrap();
-
-    let group_match = match group_re.find(html) {
+    // Find the first top-level <columns> opening tag
+    let first_open = match open_re.find(html) {
         Some(m) => m,
         None => return html.to_string(),
     };
 
-    let group_html = group_match.as_str();
+    // Find all top-level column spans (with depth tracking for nested columns)
+    let mut columns: Vec<(usize, usize)> = Vec::new(); // (start, end) of each column
+    let mut search_start = first_open.start();
 
-    // Find individual columns within the group
-    let individual_matches: Vec<regex::Match> = col_re.find_iter(group_html).collect();
-    let col_count = individual_matches.len() as u32;
+    loop {
+        // Find the next opening tag from search_start
+        let open_match = match open_re.find(&html[search_start..]) {
+            Some(m) => m,
+            None => break,
+        };
+
+        let col_start = search_start + open_match.start();
+        let mut pos = search_start + open_match.end();
+        let mut depth = 1;
+
+        // Track depth to find the matching close tag
+        loop {
+            let next_open = open_re.find(&html[pos..]).map(|m| (pos + m.start(), pos + m.end()));
+            let next_close = close_re.find(&html[pos..]).map(|m| (pos + m.start(), pos + m.end()));
+
+            match (next_open, next_close) {
+                (Some((os, oe)), Some((cs, ce))) => {
+                    if cs < os {
+                        depth -= 1;
+                        if depth == 0 {
+                            columns.push((col_start, ce));
+                            search_start = ce;
+                            break;
+                        }
+                        pos = ce;
+                    } else {
+                        depth += 1;
+                        pos = oe;
+                    }
+                }
+                (None, Some((_cs, ce))) => {
+                    depth -= 1;
+                    if depth == 0 {
+                        columns.push((col_start, ce));
+                        search_start = ce;
+                        break;
+                    }
+                    pos = ce;
+                }
+                _ => {
+                    // No matching close tag
+                    search_start = pos;
+                    break;
+                }
+            }
+        }
+
+        // Check if the next non-whitespace content after this column is another <columns>
+        let after = &html[search_start..];
+        let trimmed = after.trim_start();
+        if !trimmed.starts_with(&format!("<{}", tag)) {
+            break; // No more adjacent columns
+        }
+    }
+
+    if columns.is_empty() {
+        return html.to_string();
+    }
+
+    let col_count = columns.len() as u32;
+    let group_start = columns[0].0;
+    let group_end = columns[columns.len() - 1].1;
 
     // Transform each column with position info
-    let mut transformed_parts = Vec::new();
-    for (i, m) in individual_matches.iter().enumerate() {
-        let col_html = m.as_str();
+    let mut result = String::new();
+    let mut prev_end = group_start;
+
+    for (i, &(start, end)) in columns.iter().enumerate() {
+        // Preserve whitespace between columns
+        if start > prev_end {
+            result.push_str(&html[prev_end..start]);
+        }
+
+        let col_html = &html[start..end];
         let is_first = i == 0;
-        let is_last = i == individual_matches.len() - 1;
+        let is_last = i == columns.len() - 1;
 
         let doc = Html::parse_fragment(col_html);
         let sel = Selector::parse(tag).unwrap();
@@ -170,31 +241,19 @@ fn transform_all_columns(html: &str, config: &Config) -> String {
             let transformed = components::transform_column_with_position(
                 &element, config, col_count, is_first, is_last,
             );
-            transformed_parts.push(transformed);
+            result.push_str(&transformed);
         } else {
-            transformed_parts.push(col_html.to_string());
+            result.push_str(col_html);
         }
-    }
 
-    // Reconstruct: replace columns but preserve whitespace between them
-    let mut result = String::new();
-    let mut pos = 0;
-    for (i, m) in individual_matches.iter().enumerate() {
-        if m.start() > pos {
-            result.push_str(&group_html[pos..m.start()]);
-        }
-        result.push_str(&transformed_parts[i]);
-        pos = m.end();
-    }
-    if pos < group_html.len() {
-        result.push_str(&group_html[pos..]);
+        prev_end = end;
     }
 
     format!(
         "{}{}{}",
-        &html[..group_match.start()],
+        &html[..group_start],
         result,
-        &html[group_match.end()..]
+        &html[group_end..]
     )
 }
 
@@ -280,6 +339,51 @@ fn replace_first_tag(html: &str, tag_name: &str, replacement: &str) -> String {
     }
 
     html.to_string()
+}
+
+/// Add float-center class to .menu-item elements inside <center> tags.
+/// This matches the JS behavior: element.find('item, .menu-item').addClass('float-center')
+/// We do this as a post-processing step because <center> is transformed before <item>,
+/// so at center-transform time, the menu items haven't been converted to .menu-item yet.
+fn add_float_center_to_centered_menu_items(html: &str) -> String {
+    let center_re = Regex::new(r"(?s)<center[^>]*>(.*?)</center>").unwrap();
+    let menu_item_re = Regex::new(r#"(<th\s[^>]*class=")menu-item(")"#).unwrap();
+
+    center_re.replace_all(html, |caps: &regex::Captures| {
+        let inner = &caps[1];
+        let updated = menu_item_re.replace_all(inner, |mcaps: &regex::Captures| {
+            format!("{}menu-item float-center{}", &mcaps[1], &mcaps[2])
+        });
+        format!("<center{}>{}</center>",
+            // Preserve any attributes on the center tag
+            &caps[0][7..caps[0].find('>').unwrap()],
+            updated
+        )
+    }).to_string()
+}
+
+/// Preserve <td> content inside <block-grid> tags from being stripped by html5ever.
+/// html5ever removes <td> elements that appear outside a <table> context.
+/// We wrap the inner content in a placeholder that html5ever won't touch,
+/// then unwrap it after the block-grid is transformed into a proper table.
+fn preserve_block_grid_tds(html: &str, block_grid_tag: &str) -> String {
+    let escaped = regex::escape(block_grid_tag);
+    let re = Regex::new(&format!(r"(?s)(<{e}(?:\s[^>]*)?>)(.*?)(</{e}>)", e = escaped)).unwrap();
+    re.replace_all(html, |caps: &regex::Captures| {
+        let open = &caps[1];
+        let inner = &caps[2];
+        let close = &caps[3];
+        // Wrap each <td>...</td> in a raw placeholder to protect from html5ever
+        let protected = inner
+            .replace("<td>", "###BGTD###")
+            .replace("</td>", "###/BGTD###");
+        format!("{}{}{}", open, protected, close)
+    }).to_string()
+}
+
+/// Restore <td> tags that were protected from html5ever stripping.
+fn restore_block_grid_tds(html: &str) -> String {
+    html.replace("###BGTD###", "<td>").replace("###/BGTD###", "</td>")
 }
 
 /// Extract `<raw>` blocks from HTML, replacing them with placeholders.

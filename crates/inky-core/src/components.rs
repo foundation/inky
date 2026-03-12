@@ -82,12 +82,14 @@ fn make_button(element: &ElementRef) -> String {
         None => String::new(),
     };
 
-    // Wrap content in <a> if href is present
+    // Wrap content in <a> if href is present and non-empty
     if let Some(href) = get_attr(element, "href") {
-        inner = format!(
-            r#"<a{} href="{}"{}>{}</a>"#,
-            attrs, href, target, inner
-        );
+        if !href.is_empty() {
+            inner = format!(
+                r#"<a{} href="{}"{}>{}</a>"#,
+                attrs, href, target, inner
+            );
+        }
     }
 
     // Expanded buttons get a <center> tag and expander
@@ -111,9 +113,11 @@ fn make_container(element: &ElementRef) -> String {
     let attrs = get_attrs(element);
     let classes = build_classes("container", element);
     let inner = inner_html(element);
+    // Only add align="center" if not already present from passthrough attrs
+    let align = if attrs.contains("align=") { "" } else { " align=\"center\"" };
     format!(
-        r#"<table{} align="center" class="{}"><tbody><tr><td>{}</td></tr></tbody></table>"#,
-        attrs, classes, inner
+        r#"<table{}{} class="{}"><tbody><tr><td>{}</td></tr></tbody></table>"#,
+        attrs, align, classes, inner
     )
 }
 
@@ -209,10 +213,8 @@ fn make_center(element: &ElementRef) -> String {
                 html.push('"');
             }
             html.push('>');
-            html.push_str(&child_el.inner_html());
 
-            // Also add float-center to item/.menu-item children
-            // This is handled by a post-processing step in the main loop
+            html.push_str(&child_el.inner_html());
 
             html.push_str(&format!("</{}>", tag_name));
         } else if let Some(text) = child.value().as_text() {
@@ -223,6 +225,7 @@ fn make_center(element: &ElementRef) -> String {
     html.push_str("</center>");
     html
 }
+
 
 // <callout>
 fn make_callout(element: &ElementRef) -> String {
@@ -309,7 +312,7 @@ pub fn transform_column_with_position(
         && (no_expander.is_none() || no_expander.as_deref() == Some("false"));
 
     let expander = if needs_expander {
-        "<th class=\"expander\"></th>"
+        "\n<th class=\"expander\"></th>"
     } else {
         ""
     };
@@ -370,7 +373,7 @@ fn make_column(element: &ElementRef, config: &Config) -> String {
         && (no_expander.is_none() || no_expander.as_deref() == Some("false"));
 
     let expander = if needs_expander {
-        "<th class=\"expander\"></th>"
+        "\n<th class=\"expander\"></th>"
     } else {
         ""
     };
