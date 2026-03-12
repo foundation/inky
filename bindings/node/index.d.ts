@@ -22,6 +22,9 @@ export interface MigrateResult {
 /** Transform Inky HTML into email-safe table markup. */
 export function transform(html: string, options?: TransformOptions): string;
 
+/** Transform Inky HTML and inline CSS from <style> blocks. */
+export function transformInline(html: string): string;
+
 /** Migrate v1 Inky syntax to v2. */
 export function migrate(html: string): string;
 

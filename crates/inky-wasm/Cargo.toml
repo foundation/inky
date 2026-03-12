@@ -9,5 +9,5 @@ license = "MIT"
 crate-type = ["cdylib"]
 
 [dependencies]
-inky-core = { path = "../inky-core" }
+inky-core = { path = "../inky-core", features = ["css-inlining"] }
 wasm-bindgen = "0.2"

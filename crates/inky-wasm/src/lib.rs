@@ -18,6 +18,16 @@ pub fn transform_with_config(html: &str, column_count: u32) -> String {
     Inky::with_config(config).transform(html)
 }
 
+/// Transform Inky HTML and inline CSS from `<style>` blocks.
+/// Falls back to plain transform if inlining fails.
+#[wasm_bindgen]
+pub fn transform_inline(html: &str) -> String {
+    match Inky::new().transform_and_inline(html, None) {
+        Ok(r) => r,
+        Err(_) => Inky::new().transform(html),
+    }
+}
+
 /// Migrate v1 Inky syntax to v2.
 /// Returns the migrated HTML string.
 #[wasm_bindgen]

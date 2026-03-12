@@ -31,6 +31,15 @@ function transform(html, options = {}) {
 }
 
 /**
+ * Transform Inky HTML and inline CSS from <style> blocks.
+ * @param {string} html - Inky template HTML with <style> blocks
+ * @returns {string} Transformed HTML with CSS inlined
+ */
+function transformInline(html) {
+  return wasm.transform_inline(html);
+}
+
+/**
  * Migrate v1 Inky syntax to v2.
  * @param {string} html - v1 Inky template HTML
  * @returns {string} Migrated v2 HTML
@@ -71,4 +80,4 @@ function version() {
   return wasm.version();
 }
 
-module.exports = { transform, migrate, migrateWithDetails, validate, version };
+module.exports = { transform, transformInline, migrate, migrateWithDetails, validate, version };

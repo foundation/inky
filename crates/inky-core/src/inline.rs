@@ -1,4 +1,6 @@
-use css_inline::{CSSInliner, InlineOptions, Url};
+use css_inline::{CSSInliner, InlineOptions};
+#[cfg(not(target_arch = "wasm32"))]
+use css_inline::Url;
 
 /// Inline CSS into element `style=""` attributes.
 ///
@@ -10,6 +12,7 @@ use css_inline::{CSSInliner, InlineOptions, Url};
 /// `<link>` tags. If `None`, link tags with relative paths won't resolve.
 pub fn inline_css(html: &str, base_path: Option<&std::path::Path>) -> Result<String, String> {
     let base_url = match base_path {
+        #[cfg(not(target_arch = "wasm32"))]
         Some(path) => {
             let abs = if path.is_absolute() {
                 path.to_path_buf()
@@ -20,6 +23,8 @@ pub fn inline_css(html: &str, base_path: Option<&std::path::Path>) -> Result<Str
             };
             Url::from_directory_path(abs).ok()
         }
+        #[cfg(target_arch = "wasm32")]
+        Some(_) => None,
         None => None,
     };
 
