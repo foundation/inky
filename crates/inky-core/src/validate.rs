@@ -412,7 +412,7 @@ mod tests {
 
     #[test]
     fn test_deep_nesting() {
-        let html = "<table><tr><td><table><tr><td><table><tr><td><table><tr><td><table><tr><td>deep</td></tr></table></td></tr></table></td></tr></table></td></tr></table></td></tr></table>";
+        let html = "<table><tr><td><table><tr><td><table><tr><td><table><tr><td><table><tr><td><table><tr><td>deep</td></tr></table></td></tr></table></td></tr></table></td></tr></table></td></tr></table></td></tr></table>";
         let diags = validate_output(html);
         assert!(diags.iter().any(|d| d.rule == "deep-nesting"));
     }
