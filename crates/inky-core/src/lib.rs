@@ -194,13 +194,7 @@ fn transform_all_columns(html: &str, config: &Config, actual_tag: &str) -> Strin
     let mut columns: Vec<(usize, usize)> = Vec::new(); // (start, end) of each column
     let mut search_start = first_open.start();
 
-    loop {
-        // Find the next opening tag from search_start
-        let open_match = match open_re.find(&html[search_start..]) {
-            Some(m) => m,
-            None => break,
-        };
-
+    while let Some(open_match) = open_re.find(&html[search_start..]) {
         let col_start = search_start + open_match.start();
         let mut pos = search_start + open_match.end();
         let mut depth = 1;

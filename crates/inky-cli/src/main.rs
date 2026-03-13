@@ -197,10 +197,7 @@ fn resolve_config(
 
     // If input points to a project root (has config), use config's src
     // If input points to a specific file/dir, use it directly
-    let input = if input.is_some() && project_config.is_some() {
-        let path = input.as_ref().unwrap();
-        // Check if the input path is the project root (where config was found)
-        let (_, base_dir) = project_config.as_ref().unwrap();
+    let input = if let (Some(ref path), Some((_, ref base_dir))) = (&input, &project_config) {
         if path == base_dir.as_path() {
             // User passed the project root — use config's src
             cfg_src

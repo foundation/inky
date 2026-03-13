@@ -234,7 +234,7 @@ fn check_hero_no_background(html: &str, config: &Config) -> Vec<Diagnostic> {
     let mut diags = Vec::new();
     if let Ok(sel) = Selector::parse(tag) {
         for (i, el) in doc.select(&sel).enumerate() {
-            if el.value().attr("background").map_or(true, |v| v.is_empty()) {
+            if el.value().attr("background").is_none_or(|v| v.is_empty()) {
                 diags.push(Diagnostic::warning("hero-no-background", format!(
                     "<hero> #{} missing background attribute — section will have no background image",
                     i + 1
@@ -251,7 +251,7 @@ fn check_social_link_no_platform(html: &str, config: &Config) -> Vec<Diagnostic>
     let mut diags = Vec::new();
     if let Ok(sel) = Selector::parse(tag) {
         for (i, el) in doc.select(&sel).enumerate() {
-            if el.value().attr("platform").map_or(true, |v| v.is_empty()) {
+            if el.value().attr("platform").is_none_or(|v| v.is_empty()) {
                 diags.push(Diagnostic::warning("social-link-no-platform", format!(
                     "<social-link> #{} missing platform attribute — no icon or color will be applied",
                     i + 1

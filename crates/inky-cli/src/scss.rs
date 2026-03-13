@@ -214,8 +214,7 @@ pub fn extract_scss_overrides(
                 }
                 Err(e) => {
                     eprintln!(
-                        "  {} Failed to read SCSS file '{}' (resolved to '{}'): {}",
-                        "warning:".to_string(),
+                        "  warning: Failed to read SCSS file '{}' (resolved to '{}'): {}",
                         href,
                         scss_path.display(),
                         e

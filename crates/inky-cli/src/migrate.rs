@@ -104,7 +104,7 @@ fn migrate_directory(input: &std::path::Path, output: Option<&std::path::Path>, 
                 file.display(),
                 e
             );
-            return String::new();
+            String::new()
         });
 
         if html.is_empty() {
