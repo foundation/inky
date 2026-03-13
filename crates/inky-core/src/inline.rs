@@ -109,9 +109,7 @@ mod tests {
     fn test_inline_basic() {
         let html = r#"<html><head><style>.red { color: red; }</style></head><body><p class="red">Hello</p></body></html>"#;
         let result = inline_css(html, None).unwrap();
-        assert!(
-            result.contains("style=\"color: red;\"") || result.contains("style=\"color:red\"")
-        );
+        assert!(result.contains("style=\"color: red;\"") || result.contains("style=\"color:red\""));
         assert!(result.contains("Hello"));
     }
 
