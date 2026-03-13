@@ -51,6 +51,9 @@ pub fn process_template(
         });
 
         html = scss::inject_css_into_html(&html, &css);
+
+        // Inject color-scheme meta tags for dark mode support
+        html = inject_color_scheme_meta(&html);
     } else {
         let (cleaned, _) = scss::extract_scss_overrides(&html, base_path);
         html = cleaned;
@@ -70,6 +73,36 @@ pub fn process_template(
     };
 
     collapse_blank_lines(&result)
+}
+
+/// Inject `<meta name="color-scheme">` and `<meta name="supported-color-schemes">`
+/// into `<head>` if dark mode styles are present and the meta tags aren't already there.
+fn inject_color_scheme_meta(html: &str) -> String {
+    // Only inject if dark mode styles exist in the output
+    if !html.contains("prefers-color-scheme") {
+        return html.to_string();
+    }
+
+    // Don't inject if the user already has them
+    if html.contains("color-scheme") {
+        return html.to_string();
+    }
+
+    let meta_tags = r#"<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">"#;
+
+    // Insert after opening <head> tag
+    let head_re = Regex::new(r"(?i)<head[^>]*>").unwrap();
+    if let Some(m) = head_re.find(html) {
+        let mut result = String::with_capacity(html.len() + meta_tags.len() + 2);
+        result.push_str(&html[..m.end()]);
+        result.push('\n');
+        result.push_str(meta_tags);
+        result.push_str(&html[m.end()..]);
+        return result;
+    }
+
+    html.to_string()
 }
 
 /// Remove consecutive blank lines, preserving content inside <pre> blocks.
