@@ -44,8 +44,7 @@ fn resolve_link_tags(html: &str, base_path: Option<&std::path::Path>) -> String 
         None => return html.to_string(),
     };
 
-    let link_re =
-        Regex::new(r#"(?i)<link\s+[^>]*rel\s*=\s*["']stylesheet["'][^>]*>"#).unwrap();
+    let link_re = Regex::new(r#"(?i)<link\s+[^>]*rel\s*=\s*["']stylesheet["'][^>]*>"#).unwrap();
     let href_re = Regex::new(r#"href\s*=\s*["']([^"']+)["']"#).unwrap();
 
     link_re
@@ -120,9 +119,7 @@ mod tests {
     fn test_inline_basic() {
         let html = r#"<html><head><style>.red { color: red; }</style></head><body><p class="red">Hello</p></body></html>"#;
         let result = inline_css(html, None).unwrap();
-        assert!(
-            result.contains("style=\"color: red;\"") || result.contains("style=\"color:red\"")
-        );
+        assert!(result.contains("style=\"color: red;\"") || result.contains("style=\"color:red\""));
         assert!(result.contains("Hello"));
     }
 
