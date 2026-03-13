@@ -19,19 +19,22 @@ pub fn inline_css(html: &str, base_path: Option<&std::path::Path>) -> Result<Str
             } else {
                 std::env::current_dir().unwrap_or_default().join(path)
             };
-            // canonicalize resolves symlinks and normalizes the path.
-            // On Windows this may add a \\?\ UNC prefix which we need to strip
-            // because Url::from_directory_path doesn't handle it.
-            let canonical = abs.canonicalize().unwrap_or(abs);
+            // On Windows, Url::from_directory_path can fail with canonicalized
+            // paths (\\?\ UNC prefix). Build the file:/// URL manually instead.
             #[cfg(target_os = "windows")]
             {
-                let s = canonical.to_string_lossy();
-                let cleaned = s.strip_prefix(r"\\?\").unwrap_or(&s);
-                Url::from_directory_path(cleaned).ok()
+                let s = abs.to_string_lossy().replace('\\', "/");
+                let s = s.strip_prefix("//\\?/").unwrap_or(&s);
+                let url_str = if s.starts_with('/') {
+                    format!("file://{}/", s)
+                } else {
+                    format!("file:///{}/", s)
+                };
+                Url::parse(&url_str).ok()
             }
             #[cfg(not(target_os = "windows"))]
             {
-                Url::from_directory_path(&canonical).ok()
+                Url::from_directory_path(&abs).ok()
             }
         }
         #[cfg(target_arch = "wasm32")]
