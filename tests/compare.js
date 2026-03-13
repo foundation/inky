@@ -20,8 +20,9 @@ let diffs = [];
 // Normalize HTML for comparison
 function normalize(html) {
   let s = html;
-  // Strip role="presentation" (v2 addition not in v1 expected output)
+  // Strip v2 additions not in v1 expected output
   s = s.replace(/ role="presentation"/g, '');
+  s = s.replace(/ aria-hidden="true"/g, '');
   // Collapse all whitespace to single spaces
   s = s.replace(/\s+/g, ' ');
   // Remove closing tags for void elements (html5ever adds these)
