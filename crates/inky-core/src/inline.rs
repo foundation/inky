@@ -19,7 +19,20 @@ pub fn inline_css(html: &str, base_path: Option<&std::path::Path>) -> Result<Str
             } else {
                 std::env::current_dir().unwrap_or_default().join(path)
             };
-            Url::from_directory_path(abs).ok()
+            // canonicalize resolves symlinks and normalizes the path.
+            // On Windows this may add a \\?\ UNC prefix which we need to strip
+            // because Url::from_directory_path doesn't handle it.
+            let canonical = abs.canonicalize().unwrap_or(abs);
+            #[cfg(target_os = "windows")]
+            {
+                let s = canonical.to_string_lossy();
+                let cleaned = s.strip_prefix(r"\\?\").unwrap_or(&s);
+                Url::from_directory_path(cleaned).ok()
+            }
+            #[cfg(not(target_os = "windows"))]
+            {
+                Url::from_directory_path(&canonical).ok()
+            }
         }
         #[cfg(target_arch = "wasm32")]
         Some(_) => None,
@@ -96,7 +109,9 @@ mod tests {
     fn test_inline_basic() {
         let html = r#"<html><head><style>.red { color: red; }</style></head><body><p class="red">Hello</p></body></html>"#;
         let result = inline_css(html, None).unwrap();
-        assert!(result.contains("style=\"color: red;\"") || result.contains("style=\"color:red\""));
+        assert!(
+            result.contains("style=\"color: red;\"") || result.contains("style=\"color:red\"")
+        );
         assert!(result.contains("Hello"));
     }
 
