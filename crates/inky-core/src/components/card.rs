@@ -1,7 +1,7 @@
 use scraper::ElementRef;
 
-use crate::attrs::{get_attr, get_attrs, get_classes};
 use super::helpers::inner_html;
+use crate::attrs::{get_attr, get_attrs, get_classes};
 
 /// `<card image="photo.jpg" title="Card Title" href="...">Card body text</card>`
 ///

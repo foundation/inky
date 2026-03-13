@@ -27,10 +27,7 @@ pub fn make_video(element: &ElementRef) -> String {
         r#"<video data-parsed width="{}" autoplay muted loop playsinline poster="{}" style="max-width: 100%; display: block;">"#,
         width, poster
     ));
-    html.push_str(&format!(
-        r#"<source src="{}" type="video/mp4">"#,
-        src
-    ));
+    html.push_str(&format!(r#"<source src="{}" type="video/mp4">"#, src));
 
     // Fallback image for clients that don't support <video>
     html.push_str(&format!(

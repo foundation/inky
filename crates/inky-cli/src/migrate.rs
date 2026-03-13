@@ -15,26 +15,45 @@ pub fn cmd_migrate(input: PathBuf, output: Option<PathBuf>, in_place: bool) {
 
 fn migrate_file(input: &std::path::Path, output: Option<&std::path::Path>, in_place: bool) {
     let html = fs::read_to_string(input).unwrap_or_else(|e| {
-        eprintln!("{} Failed to read {}: {}", "error:".red().bold(), input.display(), e);
+        eprintln!(
+            "{} Failed to read {}: {}",
+            "error:".red().bold(),
+            input.display(),
+            e
+        );
         process::exit(1);
     });
 
     let result = migrate::migrate(&html);
 
     if result.changes.is_empty() {
-        eprintln!("  {} {} (no changes needed)", "ok".green().bold(), input.display());
+        eprintln!(
+            "  {} {} (no changes needed)",
+            "ok".green().bold(),
+            input.display()
+        );
         return;
     }
 
     // Report changes
     for change in &result.changes {
-        eprintln!("  {} {} {}", "migrated".cyan().bold(), input.display(), change.description);
+        eprintln!(
+            "  {} {} {}",
+            "migrated".cyan().bold(),
+            input.display(),
+            change.description
+        );
     }
 
     // Write output
     if in_place {
         fs::write(input, &result.html).unwrap_or_else(|e| {
-            eprintln!("{} Failed to write {}: {}", "error:".red().bold(), input.display(), e);
+            eprintln!(
+                "{} Failed to write {}: {}",
+                "error:".red().bold(),
+                input.display(),
+                e
+            );
             process::exit(1);
         });
         eprintln!("  {} {}", "wrote".green().bold(), input.display());
@@ -43,10 +62,20 @@ fn migrate_file(input: &std::path::Path, output: Option<&std::path::Path>, in_pl
             fs::create_dir_all(parent).ok();
         }
         fs::write(out, &result.html).unwrap_or_else(|e| {
-            eprintln!("{} Failed to write {}: {}", "error:".red().bold(), out.display(), e);
+            eprintln!(
+                "{} Failed to write {}: {}",
+                "error:".red().bold(),
+                out.display(),
+                e
+            );
             process::exit(1);
         });
-        eprintln!("  {} {} → {}", "wrote".green().bold(), input.display(), out.display());
+        eprintln!(
+            "  {} {} → {}",
+            "wrote".green().bold(),
+            input.display(),
+            out.display()
+        );
     } else {
         // stdout
         print!("{}", result.html);
@@ -69,7 +98,12 @@ fn migrate_directory(input: &std::path::Path, output: Option<&std::path::Path>, 
 
     for file in &files {
         let html = fs::read_to_string(file).unwrap_or_else(|e| {
-            eprintln!("{} Failed to read {}: {}", "error:".red().bold(), file.display(), e);
+            eprintln!(
+                "{} Failed to read {}: {}",
+                "error:".red().bold(),
+                file.display(),
+                e
+            );
             return String::new();
         });
 
@@ -86,12 +120,22 @@ fn migrate_directory(input: &std::path::Path, output: Option<&std::path::Path>, 
         total_changes += result.changes.len();
 
         for change in &result.changes {
-            eprintln!("  {} {} {}", "migrated".cyan().bold(), file.display(), change.description);
+            eprintln!(
+                "  {} {} {}",
+                "migrated".cyan().bold(),
+                file.display(),
+                change.description
+            );
         }
 
         if in_place {
             fs::write(file, &result.html).unwrap_or_else(|e| {
-                eprintln!("{} Failed to write {}: {}", "error:".red().bold(), file.display(), e);
+                eprintln!(
+                    "{} Failed to write {}: {}",
+                    "error:".red().bold(),
+                    file.display(),
+                    e
+                );
             });
         } else if let Some(out_dir) = output {
             let relative = file.strip_prefix(input).unwrap_or(file);
@@ -100,7 +144,12 @@ fn migrate_directory(input: &std::path::Path, output: Option<&std::path::Path>, 
                 fs::create_dir_all(parent).ok();
             }
             fs::write(&dest, &result.html).unwrap_or_else(|e| {
-                eprintln!("{} Failed to write {}: {}", "error:".red().bold(), dest.display(), e);
+                eprintln!(
+                    "{} Failed to write {}: {}",
+                    "error:".red().bold(),
+                    dest.display(),
+                    e
+                );
             });
         } else {
             // stdout — separate files with a comment
@@ -116,7 +165,10 @@ fn migrate_directory(input: &std::path::Path, output: Option<&std::path::Path>, 
             files.len()
         );
     } else {
-        eprintln!("\n  {} All files already use v2 syntax", "done".green().bold());
+        eprintln!(
+            "\n  {} All files already use v2 syntax",
+            "done".green().bold()
+        );
     }
 }
 

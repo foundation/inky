@@ -21,11 +21,19 @@ pub struct Diagnostic {
 
 impl Diagnostic {
     pub fn warning(rule: &'static str, message: impl Into<String>) -> Self {
-        Self { severity: Severity::Warning, rule, message: message.into() }
+        Self {
+            severity: Severity::Warning,
+            rule,
+            message: message.into(),
+        }
     }
 
     pub fn error(rule: &'static str, message: impl Into<String>) -> Self {
-        Self { severity: Severity::Error, rule, message: message.into() }
+        Self {
+            severity: Severity::Error,
+            rule,
+            message: message.into(),
+        }
     }
 }
 
@@ -69,27 +77,51 @@ fn check_v1_syntax(html: &str) -> Vec<Diagnostic> {
 
     // <columns> (plural) → should be <column> (singular)
     if Regex::new(r"<columns[\s>]").unwrap().is_match(html) {
-        diags.push(Diagnostic::warning("v1-syntax", "<columns> is v1 syntax — use <column> instead, or run `inky migrate`"));
+        diags.push(Diagnostic::warning(
+            "v1-syntax",
+            "<columns> is v1 syntax — use <column> instead, or run `inky migrate`",
+        ));
     }
 
     // <h-line> → should be <divider>
     if Regex::new(r"<h-line[\s>]").unwrap().is_match(html) {
-        diags.push(Diagnostic::warning("v1-syntax", "<h-line> is v1 syntax — use <divider> instead, or run `inky migrate`"));
+        diags.push(Diagnostic::warning(
+            "v1-syntax",
+            "<h-line> is v1 syntax — use <divider> instead, or run `inky migrate`",
+        ));
     }
 
     // large="..." on <column> → should be lg="..."
-    if Regex::new(r#"<column[^>]+\blarge\s*="#).unwrap().is_match(html) {
-        diags.push(Diagnostic::warning("v1-syntax", r#"large="..." is v1 syntax — use lg="..." instead, or run `inky migrate`"#));
+    if Regex::new(r#"<column[^>]+\blarge\s*="#)
+        .unwrap()
+        .is_match(html)
+    {
+        diags.push(Diagnostic::warning(
+            "v1-syntax",
+            r#"large="..." is v1 syntax — use lg="..." instead, or run `inky migrate`"#,
+        ));
     }
 
     // small="..." on <column> → should be sm="..."
-    if Regex::new(r#"<column[^>]+\bsmall\s*="#).unwrap().is_match(html) {
-        diags.push(Diagnostic::warning("v1-syntax", r#"small="..." is v1 syntax — use sm="..." instead, or run `inky migrate`"#));
+    if Regex::new(r#"<column[^>]+\bsmall\s*="#)
+        .unwrap()
+        .is_match(html)
+    {
+        diags.push(Diagnostic::warning(
+            "v1-syntax",
+            r#"small="..." is v1 syntax — use sm="..." instead, or run `inky migrate`"#,
+        ));
     }
 
     // <spacer size="..."> → should be <spacer height="...">
-    if Regex::new(r#"<spacer[^>]+\bsize\s*="#).unwrap().is_match(html) {
-        diags.push(Diagnostic::warning("v1-syntax", r#"<spacer size="..."> is v1 syntax — use height="..." instead, or run `inky migrate`"#));
+    if Regex::new(r#"<spacer[^>]+\bsize\s*="#)
+        .unwrap()
+        .is_match(html)
+    {
+        diags.push(Diagnostic::warning(
+            "v1-syntax",
+            r#"<spacer size="..."> is v1 syntax — use height="..." instead, or run `inky migrate`"#,
+        ));
     }
 
     diags
@@ -102,7 +134,13 @@ fn check_missing_container(html: &str, config: &Config) -> Vec<Diagnostic> {
     let doc = Html::parse_fragment(html);
     if let Ok(sel) = Selector::parse(tag) {
         if doc.select(&sel).next().is_none() {
-            return vec![Diagnostic::warning("missing-container", format!("No <{}> element found — email content won't be centered", tag))];
+            return vec![Diagnostic::warning(
+                "missing-container",
+                format!(
+                    "No <{}> element found — email content won't be centered",
+                    tag
+                ),
+            )];
         }
     }
     vec![]
@@ -121,11 +159,14 @@ fn check_button_no_href(html: &str, config: &Config) -> Vec<Diagnostic> {
                 } else {
                     text
                 };
-                diags.push(Diagnostic::error("button-no-href", format!(
-                    "Button #{} missing href attribute: \"{}\"",
-                    i + 1,
-                    snippet.trim()
-                )));
+                diags.push(Diagnostic::error(
+                    "button-no-href",
+                    format!(
+                        "Button #{} missing href attribute: \"{}\"",
+                        i + 1,
+                        snippet.trim()
+                    ),
+                ));
             }
         }
     }
@@ -158,7 +199,10 @@ fn check_missing_preheader(html: &str) -> Vec<Diagnostic> {
         || lower.contains("previewtext");
 
     if !has_preheader {
-        vec![Diagnostic::warning("missing-preheader", "No preheader text found — inbox preview will show first visible content instead")]
+        vec![Diagnostic::warning(
+            "missing-preheader",
+            "No preheader text found — inbox preview will show first visible content instead",
+        )]
     } else {
         vec![]
     }
@@ -171,10 +215,13 @@ fn check_video_no_src(html: &str, config: &Config) -> Vec<Diagnostic> {
     if let Ok(sel) = Selector::parse(tag) {
         for (i, el) in doc.select(&sel).enumerate() {
             if el.value().attr("src").is_none() {
-                diags.push(Diagnostic::error("video-no-src", format!(
-                    "<video> #{} missing src attribute — no video source to play",
-                    i + 1
-                )));
+                diags.push(Diagnostic::error(
+                    "video-no-src",
+                    format!(
+                        "<video> #{} missing src attribute — no video source to play",
+                        i + 1
+                    ),
+                ));
             }
         }
     }
@@ -218,9 +265,7 @@ fn check_social_link_no_platform(html: &str, config: &Config) -> Vec<Diagnostic>
 fn check_generic_link_text(html: &str) -> Vec<Diagnostic> {
     let doc = Html::parse_fragment(html);
     let sel = Selector::parse("a").unwrap();
-    let generic_phrases = [
-        "click here", "learn more", "read more", "here", "link",
-    ];
+    let generic_phrases = ["click here", "learn more", "read more", "here", "link"];
     let mut count = 0;
     for el in doc.select(&sel) {
         let text: String = el.text().collect();
@@ -247,10 +292,13 @@ fn check_email_too_large(html: &str) -> Vec<Diagnostic> {
     let size = html.len();
     if size > SIZE_WARNING_BYTES {
         let kb = size / 1024;
-        vec![Diagnostic::warning("email-too-large", format!(
-            "Email is {}KB — Gmail clips emails over 102KB. Consider reducing content",
-            kb
-        ))]
+        vec![Diagnostic::warning(
+            "email-too-large",
+            format!(
+                "Email is {}KB — Gmail clips emails over 102KB. Consider reducing content",
+                kb
+            ),
+        )]
     } else {
         vec![]
     }
@@ -265,11 +313,14 @@ fn check_style_block_too_large(html: &str) -> Vec<Diagnostic> {
         let content = caps.get(1).unwrap().as_str();
         if content.len() > STYLE_BLOCK_LIMIT {
             let kb = content.len() / 1024;
-            diags.push(Diagnostic::warning("style-block-too-large", format!(
-                "Style block #{} is {}KB — Gmail strips entire <style> blocks over 8KB",
-                i + 1,
-                kb
-            )));
+            diags.push(Diagnostic::warning(
+                "style-block-too-large",
+                format!(
+                    "Style block #{} is {}KB — Gmail strips entire <style> blocks over 8KB",
+                    i + 1,
+                    kb
+                ),
+            ));
         }
     }
     diags
@@ -291,10 +342,13 @@ fn check_img_no_width(html: &str) -> Vec<Diagnostic> {
         }
     }
     if count > 0 {
-        vec![Diagnostic::warning("img-no-width", format!(
-            "{} image(s) missing width attribute — may break layout in Outlook",
-            count
-        ))]
+        vec![Diagnostic::warning(
+            "img-no-width",
+            format!(
+                "{} image(s) missing width attribute — may break layout in Outlook",
+                count
+            ),
+        )]
     } else {
         vec![]
     }
@@ -306,10 +360,13 @@ fn check_deep_nesting(html: &str) -> Vec<Diagnostic> {
     let doc = Html::parse_fragment(html);
     let max_depth = find_max_table_depth(&doc.root_element(), 0);
     if max_depth > MAX_TABLE_DEPTH {
-        vec![Diagnostic::warning("deep-nesting", format!(
-            "Tables nested {} levels deep — some email clients struggle beyond {} levels",
-            max_depth, MAX_TABLE_DEPTH
-        ))]
+        vec![Diagnostic::warning(
+            "deep-nesting",
+            format!(
+                "Tables nested {} levels deep — some email clients struggle beyond {} levels",
+                max_depth, MAX_TABLE_DEPTH
+            ),
+        )]
     } else {
         vec![]
     }
@@ -484,7 +541,8 @@ mod tests {
 
     #[test]
     fn test_social_link_with_platform() {
-        let html = "<container><social-link platform=\"facebook\" href=\"#\">FB</social-link></container>";
+        let html =
+            "<container><social-link platform=\"facebook\" href=\"#\">FB</social-link></container>";
         let diags = validate_source(html, &default_config());
         assert!(!diags.iter().any(|d| d.rule == "social-link-no-platform"));
     }
@@ -505,7 +563,8 @@ mod tests {
 
     #[test]
     fn test_descriptive_link_text() {
-        let html = "<container><a href=\"https://example.com\">View your order details</a></container>";
+        let html =
+            "<container><a href=\"https://example.com\">View your order details</a></container>";
         let diags = validate_source(html, &default_config());
         assert!(!diags.iter().any(|d| d.rule == "generic-link-text"));
     }

@@ -1,7 +1,7 @@
 use scraper::ElementRef;
 
-use crate::attrs::{get_attr, get_attrs, get_classes, has_class};
 use super::helpers::inner_html;
+use crate::attrs::{get_attr, get_attrs, get_classes, has_class};
 
 pub fn make_button(element: &ElementRef) -> String {
     let attrs = get_attrs(element);
@@ -14,10 +14,7 @@ pub fn make_button(element: &ElementRef) -> String {
 
     if let Some(href) = get_attr(element, "href") {
         if !href.is_empty() {
-            inner = format!(
-                r#"<a{} href="{}"{}>{}</a>"#,
-                attrs, href, target, inner
-            );
+            inner = format!(r#"<a{} href="{}"{}>{}</a>"#, attrs, href, target, inner);
         }
     }
 

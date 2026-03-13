@@ -1,8 +1,8 @@
 use scraper::ElementRef;
 
+use super::helpers::inner_html;
 use crate::attrs::{get_attr, get_attrs, get_classes, has_class};
 use crate::config::Config;
-use super::helpers::inner_html;
 
 /// Transform a column with explicit position info (used for batch column processing).
 pub fn transform_column_with_position(
@@ -24,7 +24,11 @@ pub fn transform_column_with_position(
     let large_size = get_attr(element, "lg")
         .or_else(|| get_attr(element, "large"))
         .and_then(|s| s.parse::<u32>().ok())
-        .or_else(|| get_attr(element, "sm").or_else(|| get_attr(element, "small")).and_then(|s| s.parse::<u32>().ok()))
+        .or_else(|| {
+            get_attr(element, "sm")
+                .or_else(|| get_attr(element, "small"))
+                .and_then(|s| s.parse::<u32>().ok())
+        })
         .unwrap_or(config.column_count / col_count);
 
     classes.push(format!("small-{}", small_size));
@@ -81,7 +85,11 @@ pub fn make_column(element: &ElementRef, config: &Config) -> String {
     let large_size = get_attr(element, "lg")
         .or_else(|| get_attr(element, "large"))
         .and_then(|s| s.parse::<u32>().ok())
-        .or_else(|| get_attr(element, "sm").or_else(|| get_attr(element, "small")).and_then(|s| s.parse::<u32>().ok()))
+        .or_else(|| {
+            get_attr(element, "sm")
+                .or_else(|| get_attr(element, "small"))
+                .and_then(|s| s.parse::<u32>().ok())
+        })
         .unwrap_or(config.column_count / col_count);
 
     classes.push(format!("small-{}", small_size));

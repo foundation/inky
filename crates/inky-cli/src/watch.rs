@@ -9,7 +9,6 @@ use regex::Regex;
 
 use inky_core::{Config, Inky};
 
-
 pub fn cmd_watch(
     input: PathBuf,
     output: PathBuf,
@@ -53,7 +52,11 @@ pub fn cmd_watch(
     let (tx, rx) = mpsc::channel();
 
     let mut debouncer = new_debouncer(Duration::from_millis(300), tx).unwrap_or_else(|e| {
-        eprintln!("{} Failed to create file watcher: {}", "error:".red().bold(), e);
+        eprintln!(
+            "{} Failed to create file watcher: {}",
+            "error:".red().bold(),
+            e
+        );
         std::process::exit(1);
     });
 
@@ -128,11 +131,21 @@ pub fn cmd_watch(
 
                 if needs_full_rebuild {
                     let timestamp = current_time();
-                    eprintln!("  [{}] include or file changed, rebuilding all...", timestamp);
+                    eprintln!(
+                        "  [{}] include or file changed, rebuilding all...",
+                        timestamp
+                    );
                     do_full_build(&input, &output, &config, inline_css, framework_css);
                 } else {
                     for file in &changed_files {
-                        rebuild_single_file(file, &input, &output, &config, inline_css, framework_css);
+                        rebuild_single_file(
+                            file,
+                            &input,
+                            &output,
+                            &config,
+                            inline_css,
+                            framework_css,
+                        );
                     }
                 }
             }
@@ -169,7 +182,13 @@ fn current_time() -> String {
     format!("{:02}:{:02}:{:02}", hours, minutes, seconds)
 }
 
-fn do_full_build(input: &Path, output: &Path, config: &Config, inline_css: bool, framework_css: bool) {
+fn do_full_build(
+    input: &Path,
+    output: &Path,
+    config: &Config,
+    inline_css: bool,
+    framework_css: bool,
+) {
     let inky = Inky::with_config(config.clone());
     let files = find_template_files(input);
 
@@ -184,7 +203,15 @@ fn do_full_build(input: &Path, output: &Path, config: &Config, inline_css: bool,
 
     let mut built = 0;
     for file in &files {
-        match build_file(&inky, file, input, output, config, inline_css, framework_css) {
+        match build_file(
+            &inky,
+            file,
+            input,
+            output,
+            config,
+            inline_css,
+            framework_css,
+        ) {
             Ok(dest) => {
                 let timestamp = current_time();
                 eprintln!(
@@ -202,11 +229,7 @@ fn do_full_build(input: &Path, output: &Path, config: &Config, inline_css: bool,
         }
     }
 
-    eprintln!(
-        "  {} built {} file(s)\n",
-        "done".green().bold(),
-        built
-    );
+    eprintln!("  {} built {} file(s)\n", "done".green().bold(), built);
 }
 
 fn rebuild_single_file(
@@ -220,7 +243,15 @@ fn rebuild_single_file(
     let inky = Inky::with_config(config.clone());
     let timestamp = current_time();
 
-    match build_file(&inky, file, input_dir, output_dir, config, inline_css, framework_css) {
+    match build_file(
+        &inky,
+        file,
+        input_dir,
+        output_dir,
+        config,
+        inline_css,
+        framework_css,
+    ) {
         Ok(dest) => {
             eprintln!(
                 "  [{}] {} {} → {}",
@@ -251,8 +282,7 @@ fn build_file(
     inline_css: bool,
     framework_css: bool,
 ) -> Result<PathBuf, String> {
-    let html = std::fs::read_to_string(file)
-        .map_err(|e| format!("Failed to read: {}", e))?;
+    let html = std::fs::read_to_string(file).map_err(|e| format!("Failed to read: {}", e))?;
 
     // Run validation
     let diagnostics = inky_core::validate::validate(&html, config);
@@ -264,15 +294,21 @@ fn build_file(
         eprintln!("  {} {} [{}] {}", label, file.display(), d.rule, d.message);
     }
 
-    let result = crate::build::process_template(inky, &html, inline_css, framework_css, file.parent(), crate::build::ErrorMode::Continue);
+    let result = crate::build::process_template(
+        inky,
+        &html,
+        inline_css,
+        framework_css,
+        file.parent(),
+        crate::build::ErrorMode::Continue,
+    );
 
     let dest = to_output_path(file, input_dir, output_dir);
     if let Some(parent) = dest.parent() {
         std::fs::create_dir_all(parent)
             .map_err(|e| format!("Failed to create directory: {}", e))?;
     }
-    std::fs::write(&dest, &result)
-        .map_err(|e| format!("Failed to write: {}", e))?;
+    std::fs::write(&dest, &result).map_err(|e| format!("Failed to write: {}", e))?;
 
     Ok(dest)
 }
@@ -288,7 +324,8 @@ fn find_template_files(dir: &Path) -> Vec<PathBuf> {
 fn find_include_dirs(input_dir: &Path) -> Vec<PathBuf> {
     let include_re = Regex::new(r#"<include\s+[^>]*?src\s*=\s*"([^"]+)"[^>]*/?\s*>"#).unwrap();
     let layout_re = Regex::new(r#"<layout\s+[^>]*?src\s*=\s*"([^"]+)"[^>]*>"#).unwrap();
-    let link_re = Regex::new(r#"<link\s+[^>]*href\s*=\s*"([^"]+\.(?:scss|css))"[^>]*/?\s*>"#).unwrap();
+    let link_re =
+        Regex::new(r#"<link\s+[^>]*href\s*=\s*"([^"]+\.(?:scss|css))"[^>]*/?\s*>"#).unwrap();
     let mut dirs = HashSet::new();
     let mut referenced_files: Vec<PathBuf> = Vec::new();
     let files = find_template_files(input_dir);

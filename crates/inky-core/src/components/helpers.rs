@@ -1,6 +1,6 @@
 use scraper::ElementRef;
 
-use crate::attrs::{get_classes};
+use crate::attrs::get_classes;
 
 /// Get inner HTML of an element.
 pub fn inner_html(element: &ElementRef) -> String {

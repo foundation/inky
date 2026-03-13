@@ -160,12 +160,9 @@ impl grass::Fs for EmbeddedFs {
 
     fn read(&self, path: &Path) -> io::Result<Vec<u8>> {
         let normalized = normalize_path(path);
-        self.files
-            .get(&normalized)
-            .cloned()
-            .ok_or_else(|| {
-                io::Error::new(io::ErrorKind::NotFound, format!("{}", normalized.display()))
-            })
+        self.files.get(&normalized).cloned().ok_or_else(|| {
+            io::Error::new(io::ErrorKind::NotFound, format!("{}", normalized.display()))
+        })
     }
 
     fn canonicalize(&self, path: &Path) -> io::Result<PathBuf> {
@@ -176,10 +173,15 @@ impl grass::Fs for EmbeddedFs {
 /// Extract SCSS variable overrides from `<style type="text/scss">` blocks and
 /// `<link rel="stylesheet" href="*.scss">` tags.
 /// Returns (html_with_scss_elements_removed, vec_of_variable_overrides).
-pub fn extract_scss_overrides(html: &str, base_path: Option<&Path>) -> (String, Vec<(String, String)>) {
+pub fn extract_scss_overrides(
+    html: &str,
+    base_path: Option<&Path>,
+) -> (String, Vec<(String, String)>) {
     let html_comment_re = Regex::new(r"(?s)<!--.*?-->").unwrap();
-    let style_re = Regex::new(r#"(?si)<style\s+type\s*=\s*["']text/scss["']\s*>(.*?)</style>"#).unwrap();
-    let link_re = Regex::new(r#"<link\s+[^>]*href\s*=\s*["']([^"']+\.scss)["'][^>]*/?\s*>"#).unwrap();
+    let style_re =
+        Regex::new(r#"(?si)<style\s+type\s*=\s*["']text/scss["']\s*>(.*?)</style>"#).unwrap();
+    let link_re =
+        Regex::new(r#"<link\s+[^>]*href\s*=\s*["']([^"']+\.scss)["'][^>]*/?\s*>"#).unwrap();
     let block_comment_re = Regex::new(r"(?s)/\*.*?\*/").unwrap();
     let line_comment_re = Regex::new(r"//[^\n]*").unwrap();
     let var_re = Regex::new(r#"(\$[\w-]+)\s*:\s*([^;]+)\s*;"#).unwrap();
@@ -229,9 +231,7 @@ pub fn extract_scss_overrides(html: &str, base_path: Option<&Path>) -> (String, 
 }
 
 /// Compile the embedded Inky framework SCSS, optionally with variable overrides.
-pub fn compile_framework_scss(
-    overrides: &[(String, String)],
-) -> Result<String, Box<grass::Error>> {
+pub fn compile_framework_scss(overrides: &[(String, String)]) -> Result<String, Box<grass::Error>> {
     let embedded_fs = EmbeddedFs::new(overrides);
     let entry_path = format!("{}/inky.scss", EMBEDDED_ROOT);
     let options = grass::Options::default()
@@ -278,20 +278,31 @@ mod tests {
     #[test]
     fn test_compile_framework_no_overrides() {
         let css = compile_framework_scss(&[]).unwrap();
-        assert!(css.len() > 1000, "CSS output too small: {} bytes", css.len());
+        assert!(
+            css.len() > 1000,
+            "CSS output too small: {} bytes",
+            css.len()
+        );
         assert!(css.contains("table.button"), "Should contain button styles");
-        assert!(css.contains(".block-grid"), "Should contain block-grid styles");
+        assert!(
+            css.contains(".block-grid"),
+            "Should contain block-grid styles"
+        );
     }
 
     #[test]
     fn test_compile_framework_with_overrides() {
-        let overrides = vec![
-            ("$primary-color".to_string(), "#ff0000".to_string()),
-        ];
+        let overrides = vec![("$primary-color".to_string(), "#ff0000".to_string())];
         let css = compile_framework_scss(&overrides).unwrap();
-        assert!(css.contains("#ff0000") || css.contains("red"), "Should use overridden primary color");
+        assert!(
+            css.contains("#ff0000") || css.contains("red"),
+            "Should use overridden primary color"
+        );
         // Default primary is #2199e8 — make sure it's NOT in the output
-        assert!(!css.contains("#2199e8"), "Should not contain default primary color");
+        assert!(
+            !css.contains("#2199e8"),
+            "Should not contain default primary color"
+        );
     }
 
     #[test]
@@ -345,9 +356,14 @@ $global-width: 640px;
         let dir = std::env::temp_dir().join("inky-test-scss");
         std::fs::create_dir_all(&dir).unwrap();
         let scss_file = dir.join("theme.scss");
-        std::fs::write(&scss_file, "$primary-color: #cc0000;\n$global-width: 700px;\n").unwrap();
+        std::fs::write(
+            &scss_file,
+            "$primary-color: #cc0000;\n$global-width: 700px;\n",
+        )
+        .unwrap();
 
-        let html = r#"<html><head><link rel="stylesheet" href="theme.scss"></head><body></body></html>"#;
+        let html =
+            r#"<html><head><link rel="stylesheet" href="theme.scss"></head><body></body></html>"#;
         let (cleaned, overrides) = extract_scss_overrides(html, Some(&dir));
 
         assert_eq!(overrides.len(), 2);

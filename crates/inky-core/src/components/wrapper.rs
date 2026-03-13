@@ -1,7 +1,7 @@
 use scraper::ElementRef;
 
+use super::helpers::{build_classes, inner_html};
 use crate::attrs::get_attrs;
-use super::helpers::{inner_html, build_classes};
 
 pub fn make_wrapper(element: &ElementRef) -> String {
     let attrs = get_attrs(element);

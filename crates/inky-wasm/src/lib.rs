@@ -1,6 +1,6 @@
-use wasm_bindgen::prelude::*;
-use inky_core::{Config, Inky};
 use inky_core::validate::{self, Severity};
+use inky_core::{Config, Inky};
+use wasm_bindgen::prelude::*;
 
 /// Transform Inky HTML into email-safe table markup.
 #[wasm_bindgen]
@@ -39,9 +39,16 @@ pub fn migrate(html: &str) -> String {
 #[wasm_bindgen]
 pub fn migrate_with_details(html: &str) -> String {
     let result = inky_core::migrate::migrate(html);
-    let changes: Vec<String> = result.changes.iter().map(|c| c.description.clone()).collect();
+    let changes: Vec<String> = result
+        .changes
+        .iter()
+        .map(|c| c.description.clone())
+        .collect();
     // Return as JSON manually to avoid serde dependency
-    let changes_json: Vec<String> = changes.iter().map(|c| format!("\"{}\"", escape_json(c))).collect();
+    let changes_json: Vec<String> = changes
+        .iter()
+        .map(|c| format!("\"{}\"", escape_json(c)))
+        .collect();
     format!(
         r#"{{"html":"{}","changes":[{}]}}"#,
         escape_json(&result.html),

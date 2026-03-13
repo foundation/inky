@@ -43,7 +43,8 @@ impl Inky {
         let (raws, working_html) = extract_raws(&html);
 
         // Step 1b: Preserve <td> content inside <block-grid> from html5ever stripping
-        let working_html = preserve_block_grid_tds(&working_html, &self.config.components.block_grid);
+        let working_html =
+            preserve_block_grid_tds(&working_html, &self.config.components.block_grid);
 
         // Step 2: Iteratively transform custom components
         let mut current = working_html;
@@ -58,8 +59,7 @@ impl Inky {
             let selector_str = tags
                 .iter()
                 .map(|tag| {
-                    if *tag == self.config.components.center
-                        || *tag == self.config.components.video
+                    if *tag == self.config.components.center || *tag == self.config.components.video
                     {
                         format!("{}:not([data-parsed])", tag)
                     } else {
@@ -207,8 +207,12 @@ fn transform_all_columns(html: &str, config: &Config, actual_tag: &str) -> Strin
 
         // Track depth to find the matching close tag
         loop {
-            let next_open = open_re.find(&html[pos..]).map(|m| (pos + m.start(), pos + m.end()));
-            let next_close = close_re.find(&html[pos..]).map(|m| (pos + m.start(), pos + m.end()));
+            let next_open = open_re
+                .find(&html[pos..])
+                .map(|m| (pos + m.start(), pos + m.end()));
+            let next_close = close_re
+                .find(&html[pos..])
+                .map(|m| (pos + m.start(), pos + m.end()));
 
             match (next_open, next_close) {
                 (Some((os, oe)), Some((cs, ce))) => {
@@ -286,12 +290,7 @@ fn transform_all_columns(html: &str, config: &Config, actual_tag: &str) -> Strin
         prev_end = end;
     }
 
-    format!(
-        "{}{}{}",
-        &html[..group_start],
-        result,
-        &html[group_end..]
-    )
+    format!("{}{}{}", &html[..group_start], result, &html[group_end..])
 }
 
 /// Replace the first occurrence of a custom tag (with its content) in the source HTML.
@@ -342,8 +341,12 @@ fn replace_first_tag(html: &str, tag_name: &str, replacement: &str) -> String {
 
         loop {
             // Find next opening or closing tag after current position
-            let next_open = open_re.find(&html[pos..]).map(|m| (pos + m.start(), pos + m.end()));
-            let next_close = close_re.find(&html[pos..]).map(|m| (pos + m.start(), pos + m.end()));
+            let next_open = open_re
+                .find(&html[pos..])
+                .map(|m| (pos + m.start(), pos + m.end()));
+            let next_close = close_re
+                .find(&html[pos..])
+                .map(|m| (pos + m.start(), pos + m.end()));
 
             match (next_open, next_close) {
                 (Some((os, oe)), Some((cs, ce))) => {
@@ -351,7 +354,12 @@ fn replace_first_tag(html: &str, tag_name: &str, replacement: &str) -> String {
                         // Close tag comes first
                         depth -= 1;
                         if depth == 0 {
-                            return format!("{}{}{}", &html[..open_start], replacement, &html[ce..]);
+                            return format!(
+                                "{}{}{}",
+                                &html[..open_start],
+                                replacement,
+                                &html[ce..]
+                            );
                         }
                         pos = ce;
                     } else {
@@ -372,7 +380,12 @@ fn replace_first_tag(html: &str, tag_name: &str, replacement: &str) -> String {
         }
 
         // If we get here, there's no matching close tag — treat the open tag alone
-        return format!("{}{}{}", &html[..open_start], replacement, &html[open_end..]);
+        return format!(
+            "{}{}{}",
+            &html[..open_start],
+            replacement,
+            &html[open_end..]
+        );
     }
 
     html.to_string()
@@ -386,17 +399,20 @@ fn add_float_center_to_centered_menu_items(html: &str) -> String {
     let center_re = Regex::new(r"(?s)<center[^>]*>(.*?)</center>").unwrap();
     let menu_item_re = Regex::new(r#"(<th\s[^>]*class=")menu-item(")"#).unwrap();
 
-    center_re.replace_all(html, |caps: &regex::Captures| {
-        let inner = &caps[1];
-        let updated = menu_item_re.replace_all(inner, |mcaps: &regex::Captures| {
-            format!("{}menu-item float-center{}", &mcaps[1], &mcaps[2])
-        });
-        format!("<center{}>{}</center>",
-            // Preserve any attributes on the center tag
-            &caps[0][7..caps[0].find('>').unwrap()],
-            updated
-        )
-    }).to_string()
+    center_re
+        .replace_all(html, |caps: &regex::Captures| {
+            let inner = &caps[1];
+            let updated = menu_item_re.replace_all(inner, |mcaps: &regex::Captures| {
+                format!("{}menu-item float-center{}", &mcaps[1], &mcaps[2])
+            });
+            format!(
+                "<center{}>{}</center>",
+                // Preserve any attributes on the center tag
+                &caps[0][7..caps[0].find('>').unwrap()],
+                updated
+            )
+        })
+        .to_string()
 }
 
 /// Preserve <td> content inside <block-grid> tags from being stripped by html5ever.
@@ -405,7 +421,11 @@ fn add_float_center_to_centered_menu_items(html: &str) -> String {
 /// then unwrap it after the block-grid is transformed into a proper table.
 fn preserve_block_grid_tds(html: &str, block_grid_tag: &str) -> String {
     let escaped = regex::escape(block_grid_tag);
-    let re = Regex::new(&format!(r"(?s)(<{e}(?:\s[^>]*)?>)(.*?)(</{e}>)", e = escaped)).unwrap();
+    let re = Regex::new(&format!(
+        r"(?s)(<{e}(?:\s[^>]*)?>)(.*?)(</{e}>)",
+        e = escaped
+    ))
+    .unwrap();
     re.replace_all(html, |caps: &regex::Captures| {
         let open = &caps[1];
         let inner = &caps[2];
@@ -415,12 +435,14 @@ fn preserve_block_grid_tds(html: &str, block_grid_tag: &str) -> String {
             .replace("<td>", "###BGTD###")
             .replace("</td>", "###/BGTD###");
         format!("{}{}{}", open, protected, close)
-    }).to_string()
+    })
+    .to_string()
 }
 
 /// Restore <td> tags that were protected from html5ever stripping.
 fn restore_block_grid_tds(html: &str) -> String {
-    html.replace("###BGTD###", "<td>").replace("###/BGTD###", "</td>")
+    html.replace("###BGTD###", "<td>")
+        .replace("###/BGTD###", "</td>")
 }
 
 /// Pre-process `<image>` tags into their final HTML output.
@@ -428,7 +450,8 @@ fn restore_block_grid_tds(html: &str) -> String {
 /// so we handle this before parsing.
 fn preprocess_image_tags(html: &str) -> String {
     let re = Regex::new(r#"(?i)<image\s+([^>]*?)(/?\s*)>"#).unwrap();
-    let attr_re = Regex::new(r#"(\w[\w-]*)(?:\s*=\s*"([^"]*)"|\s*=\s*'([^']*)'|\s*=\s*(\S+))?"#).unwrap();
+    let attr_re =
+        Regex::new(r#"(\w[\w-]*)(?:\s*=\s*"([^"]*)"|\s*=\s*'([^']*)'|\s*=\s*(\S+))?"#).unwrap();
 
     re.replace_all(html, |caps: &regex::Captures| {
         let attrs_str = &caps[1];
@@ -440,7 +463,8 @@ fn preprocess_image_tags(html: &str) -> String {
 
         for attr_cap in attr_re.captures_iter(attrs_str) {
             let name = &attr_cap[1];
-            let value = attr_cap.get(2)
+            let value = attr_cap
+                .get(2)
                 .or(attr_cap.get(3))
                 .or(attr_cap.get(4))
                 .map(|m| m.as_str().to_string());
@@ -450,14 +474,19 @@ fn preprocess_image_tags(html: &str) -> String {
                 "alt" => alt = value.unwrap_or_default(),
                 "width" => width = value,
                 "retina" => retina = true,
-                "class" => if let Some(v) = value { classes.push(v); },
+                "class" => {
+                    if let Some(v) = value {
+                        classes.push(v);
+                    }
+                }
                 _ => {}
             }
         }
 
         // For retina, display at half the source width
         let display_width = if retina {
-            width.as_ref()
+            width
+                .as_ref()
                 .and_then(|w| w.parse::<u32>().ok())
                 .map(|w| (w / 2).to_string())
         } else {
@@ -478,7 +507,8 @@ fn preprocess_image_tags(html: &str) -> String {
         }
 
         format!("<img {}>", parts.join(" "))
-    }).to_string()
+    })
+    .to_string()
 }
 
 /// Protect template merge tags that look like HTML (ERB/EJS/ASP tags) from html5ever.
@@ -494,7 +524,12 @@ fn protect_merge_tags(html: &str) -> (Vec<String>, String) {
     while let Some(m) = re.find(&result) {
         let tag = m.as_str().to_string();
         let placeholder = format!("###MERGE{}###", tags.len());
-        result = format!("{}{}{}", &result[..m.start()], placeholder, &result[m.end()..]);
+        result = format!(
+            "{}{}{}",
+            &result[..m.start()],
+            placeholder,
+            &result[m.end()..]
+        );
         tags.push(tag);
     }
 

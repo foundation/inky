@@ -1,7 +1,7 @@
 use scraper::ElementRef;
 
-use crate::attrs::{get_attr, get_classes};
 use super::helpers::inner_html;
+use crate::attrs::{get_attr, get_classes};
 
 /// `<hero background="hero.jpg" width="600" height="400">Content</hero>`
 ///
@@ -32,9 +32,7 @@ pub fn make_hero(element: &ElementRef) -> String {
     ));
 
     // Close Outlook VML
-    html.push_str(
-        "\n<!--[if mso]>\n</v:textbox>\n</v:rect>\n<![endif]-->"
-    );
+    html.push_str("\n<!--[if mso]>\n</v:textbox>\n</v:rect>\n<![endif]-->");
 
     html
 }

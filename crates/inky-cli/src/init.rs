@@ -7,7 +7,11 @@ pub fn cmd_init(name: Option<String>) {
     let project_dir = match &name {
         Some(n) => PathBuf::from(n),
         None => std::env::current_dir().unwrap_or_else(|e| {
-            eprintln!("{} Could not determine current directory: {}", "error:".red().bold(), e);
+            eprintln!(
+                "{} Could not determine current directory: {}",
+                "error:".red().bold(),
+                e
+            );
             process::exit(1);
         }),
     };

@@ -1,6 +1,6 @@
-use css_inline::{CSSInliner, InlineOptions};
 #[cfg(not(target_arch = "wasm32"))]
 use css_inline::Url;
+use css_inline::{CSSInliner, InlineOptions};
 
 /// Inline CSS into element `style=""` attributes.
 ///
@@ -17,9 +17,7 @@ pub fn inline_css(html: &str, base_path: Option<&std::path::Path>) -> Result<Str
             let abs = if path.is_absolute() {
                 path.to_path_buf()
             } else {
-                std::env::current_dir()
-                    .unwrap_or_default()
-                    .join(path)
+                std::env::current_dir().unwrap_or_default().join(path)
             };
             Url::from_directory_path(abs).ok()
         }

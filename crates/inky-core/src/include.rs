@@ -17,7 +17,6 @@ impl FileIncludeResolver {
             base_path: base_path.into(),
         }
     }
-
 }
 
 impl IncludeResolver for FileIncludeResolver {
@@ -446,12 +445,16 @@ mod tests {
         let mut files = HashMap::new();
         files.insert(
             "page.inky".to_string(),
-            "<title>$title|Default Title$</title><h1>$heading$</h1><p>$footer|© 2026$</p>".to_string(),
+            "<title>$title|Default Title$</title><h1>$heading$</h1><p>$footer|© 2026$</p>"
+                .to_string(),
         );
         let resolver = MapResolver { files };
 
         let html = r#"<include src="page.inky" heading="Hello">"#;
         let result = process_includes_with_resolver(html, &resolver).unwrap();
-        assert_eq!(result, "<title>Default Title</title><h1>Hello</h1><p>© 2026</p>");
+        assert_eq!(
+            result,
+            "<title>Default Title</title><h1>Hello</h1><p>© 2026</p>"
+        );
     }
 }

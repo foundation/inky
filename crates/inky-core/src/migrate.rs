@@ -38,7 +38,10 @@ pub fn migrate(html: &str) -> MigrateResult {
     // 9. <center><menu ...> → <menu align="center" ...> and remove wrapping <center>
     result = migrate_centered_menu(&result, &mut changes);
 
-    MigrateResult { html: result, changes }
+    MigrateResult {
+        html: result,
+        changes,
+    }
 }
 
 /// Result of a migration, including the transformed HTML and a list of changes made.
@@ -91,18 +94,10 @@ fn rename_attr_on_tag(
     let from_escaped = regex::escape(from_attr);
 
     // Match the full opening tag for this element
-    let tag_re = Regex::new(&format!(
-        r"<{t}(\s[^>]*)?>",
-        t = tag_escaped
-    ))
-    .unwrap();
+    let tag_re = Regex::new(&format!(r"<{t}(\s[^>]*)?>", t = tag_escaped)).unwrap();
 
     // Match the attribute within the tag
-    let attr_re = Regex::new(&format!(
-        r#"\b{a}\s*="#,
-        a = from_escaped
-    ))
-    .unwrap();
+    let attr_re = Regex::new(&format!(r#"\b{a}\s*="#, a = from_escaped)).unwrap();
 
     let mut made_change = false;
 
@@ -202,7 +197,10 @@ fn migrate_button_classes(html: &str, changes: &mut Vec<MigrateChange>) -> Strin
             let after_trimmed = after.trim();
             if after_trimmed != ">" && after_trimmed != "/>" {
                 // Strip the closing > or /> to get remaining attrs
-                let remaining = after_trimmed.trim_end_matches('>').trim_end_matches('/').trim();
+                let remaining = after_trimmed
+                    .trim_end_matches('>')
+                    .trim_end_matches('/')
+                    .trim();
                 if !remaining.is_empty() {
                     parts.push(remaining.to_string());
                     parts.push(" ".to_string());
@@ -358,10 +356,7 @@ fn migrate_centered_menu(html: &str, changes: &mut Vec<MigrateChange>) -> String
         let existing_attrs = caps.get(1).map(|m| m.as_str()).unwrap_or("");
         let inner = &caps[3];
 
-        format!(
-            r#"<menu{} align="center">{}</menu>"#,
-            existing_attrs, inner
-        )
+        format!(r#"<menu{} align="center">{}</menu>"#, existing_attrs, inner)
     })
     .to_string()
 }

@@ -16,7 +16,6 @@ use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::process;
 
-
 #[derive(Parser)]
 #[command(name = "inky")]
 #[command(about = "Inky — transform email templates into email-safe HTML")]
@@ -116,10 +115,21 @@ fn main() {
             strict,
         } => {
             let (input, output, columns) = resolve_config(input, output, columns);
-            cmd_build(input, output, columns, !no_inline_css, !no_framework_css, strict)
+            cmd_build(
+                input,
+                output,
+                columns,
+                !no_inline_css,
+                !no_framework_css,
+                strict,
+            )
         }
         Commands::Validate { input } => cmd_validate(input),
-        Commands::Migrate { input, output, in_place } => migrate::cmd_migrate(input, output, in_place),
+        Commands::Migrate {
+            input,
+            output,
+            in_place,
+        } => migrate::cmd_migrate(input, output, in_place),
         Commands::Init { name } => init::cmd_init(name),
         Commands::Watch {
             input,
@@ -149,7 +159,11 @@ fn main() {
 fn find_project_config(input: Option<&Path>) -> Option<(config::ProjectConfig, PathBuf)> {
     // If an input path was given, check it and its ancestors first
     if let Some(path) = input {
-        let dir = if path.is_dir() { path.to_path_buf() } else { path.parent().unwrap_or(path).to_path_buf() };
+        let dir = if path.is_dir() {
+            path.to_path_buf()
+        } else {
+            path.parent().unwrap_or(path).to_path_buf()
+        };
         if let Some(cfg) = config::load_config(&dir) {
             return Some(cfg);
         }
@@ -221,12 +235,26 @@ fn cmd_build(
     let has_warnings = match input {
         Some(path) => {
             if path.is_dir() {
-                build_directory(&inky, &path, output.as_deref(), inline_css, framework_css, &config)
+                build_directory(
+                    &inky,
+                    &path,
+                    output.as_deref(),
+                    inline_css,
+                    framework_css,
+                    &config,
+                )
             } else {
                 let base = path.parent().map(Path::to_path_buf);
                 let html = read_file(&path);
                 let warnings = print_validation_warnings(&html, &config, &path);
-                let result = build::process_template(&inky, &html, inline_css, framework_css, base.as_deref(), build::ErrorMode::Exit);
+                let result = build::process_template(
+                    &inky,
+                    &html,
+                    inline_css,
+                    framework_css,
+                    base.as_deref(),
+                    build::ErrorMode::Exit,
+                );
                 // If no output specified and input is .inky, write to .html
                 let out = output.clone().or_else(|| {
                     if path.extension().and_then(OsStr::to_str) == Some("inky") {
@@ -242,15 +270,20 @@ fn cmd_build(
         None => {
             // Read from stdin — use cwd as base for resolving CSS files
             let mut html = String::new();
-            io::stdin()
-                .read_to_string(&mut html)
-                .unwrap_or_else(|e| {
-                    eprintln!("{} Failed to read stdin: {}", "error:".red().bold(), e);
-                    process::exit(1);
-                });
+            io::stdin().read_to_string(&mut html).unwrap_or_else(|e| {
+                eprintln!("{} Failed to read stdin: {}", "error:".red().bold(), e);
+                process::exit(1);
+            });
             let warnings = print_validation_warnings(&html, &config, Path::new("stdin"));
             let cwd = std::env::current_dir().ok();
-            let result = build::process_template(&inky, &html, inline_css, framework_css, cwd.as_deref(), build::ErrorMode::Exit);
+            let result = build::process_template(
+                &inky,
+                &html,
+                inline_css,
+                framework_css,
+                cwd.as_deref(),
+                build::ErrorMode::Exit,
+            );
             write_output(&result, output.as_deref());
             warnings
         }
@@ -274,7 +307,14 @@ fn print_validation_warnings(html: &str, config: &Config, path: &Path) -> bool {
     !diagnostics.is_empty()
 }
 
-fn build_directory(inky: &Inky, input_dir: &Path, output_dir: Option<&Path>, inline_css: bool, framework_css: bool, config: &Config) -> bool {
+fn build_directory(
+    inky: &Inky,
+    input_dir: &Path,
+    output_dir: Option<&Path>,
+    inline_css: bool,
+    framework_css: bool,
+    config: &Config,
+) -> bool {
     let files = find_template_files(input_dir);
     let mut has_warnings = false;
 
@@ -293,7 +333,14 @@ fn build_directory(inky: &Inky, input_dir: &Path, output_dir: Option<&Path>, inl
             has_warnings = true;
         }
         let base = file.parent().map(Path::to_path_buf);
-        let result = build::process_template(inky, &html, inline_css, framework_css, base.as_deref(), build::ErrorMode::Exit);
+        let result = build::process_template(
+            inky,
+            &html,
+            inline_css,
+            framework_css,
+            base.as_deref(),
+            build::ErrorMode::Exit,
+        );
 
         let out_path = match output_dir {
             Some(dir) => {
@@ -419,7 +466,6 @@ fn read_file(path: &std::path::Path) -> String {
         process::exit(1);
     })
 }
-
 
 fn write_output(content: &str, path: Option<&std::path::Path>) {
     match path {

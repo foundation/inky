@@ -1,4 +1,4 @@
-use inky_core::{ComponentNames, Config, Inky, migrate};
+use inky_core::{migrate, ComponentNames, Config, Inky};
 use serde::Deserialize;
 use std::fs;
 
