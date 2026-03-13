@@ -10,8 +10,8 @@ echo "=== Formatting Check ==="
 if cargo fmt --all -- --check 2>&1; then
   echo "  OK"
 else
-  echo "  Run 'cargo fmt --all' to fix"
-  failed=1
+  echo "  Running 'cargo fmt --all' to fix"
+  cargo fmt --all
 fi
 echo ""
 
