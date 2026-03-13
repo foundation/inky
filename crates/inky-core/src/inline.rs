@@ -1,6 +1,5 @@
-#[cfg(not(target_arch = "wasm32"))]
-use css_inline::Url;
 use css_inline::{CSSInliner, InlineOptions};
+use regex::Regex;
 
 /// Inline CSS into element `style=""` attributes.
 ///
@@ -11,46 +10,18 @@ use css_inline::{CSSInliner, InlineOptions};
 /// `base_path` is the directory used to resolve relative `href` paths in
 /// `<link>` tags. If `None`, link tags with relative paths won't resolve.
 pub fn inline_css(html: &str, base_path: Option<&std::path::Path>) -> Result<String, String> {
-    let base_url = match base_path {
-        #[cfg(not(target_arch = "wasm32"))]
-        Some(path) => {
-            let abs = if path.is_absolute() {
-                path.to_path_buf()
-            } else {
-                std::env::current_dir().unwrap_or_default().join(path)
-            };
-            // On Windows, Url::from_directory_path can fail with canonicalized
-            // paths (\\?\ UNC prefix). Build the file:/// URL manually instead.
-            #[cfg(target_os = "windows")]
-            {
-                let s = abs.to_string_lossy().replace('\\', "/");
-                let s = s.strip_prefix("//\\?/").unwrap_or(&s);
-                let url_str = if s.starts_with('/') {
-                    format!("file://{}/", s)
-                } else {
-                    format!("file:///{}/", s)
-                };
-                Url::parse(&url_str).ok()
-            }
-            #[cfg(not(target_os = "windows"))]
-            {
-                Url::from_directory_path(&abs).ok()
-            }
-        }
-        #[cfg(target_arch = "wasm32")]
-        Some(_) => None,
-        None => None,
-    };
+    // Resolve <link rel="stylesheet"> tags to inline <style> blocks ourselves,
+    // rather than relying on css_inline's file URL resolution which breaks on Windows.
+    let html = resolve_link_tags(html, base_path);
 
     let options = InlineOptions {
         keep_style_tags: false,
         keep_link_tags: false,
         inline_style_tags: true,
-        base_url,
         ..InlineOptions::default()
     };
     let inliner = CSSInliner::new(options);
-    let result = inliner.inline(html).map_err(|e| e.to_string())?;
+    let result = inliner.inline(&html).map_err(|e| e.to_string())?;
 
     // Move remaining <style> blocks from <head> to end of <body>.
     // Gmail clips emails at ~102KB — styles in <head> eat into that budget
@@ -59,10 +30,47 @@ pub fn inline_css(html: &str, base_path: Option<&std::path::Path>) -> Result<Str
     Ok(move_styles_to_body_end(&result))
 }
 
+/// Replace `<link rel="stylesheet" href="...">` tags with inline `<style>` blocks
+/// by reading the referenced CSS files from disk.
+fn resolve_link_tags(html: &str, base_path: Option<&std::path::Path>) -> String {
+    let base = match base_path {
+        Some(p) => {
+            if p.is_absolute() {
+                p.to_path_buf()
+            } else {
+                std::env::current_dir().unwrap_or_default().join(p)
+            }
+        }
+        None => return html.to_string(),
+    };
+
+    let link_re =
+        Regex::new(r#"(?i)<link\s+[^>]*rel\s*=\s*["']stylesheet["'][^>]*>"#).unwrap();
+    let href_re = Regex::new(r#"href\s*=\s*["']([^"']+)["']"#).unwrap();
+
+    link_re
+        .replace_all(html, |caps: &regex::Captures| {
+            let full = &caps[0];
+            if let Some(href_cap) = href_re.captures(full) {
+                let href = &href_cap[1];
+                // Skip absolute URLs
+                if href.starts_with("http://") || href.starts_with("https://") {
+                    return full.to_string();
+                }
+                let css_path = base.join(href);
+                match std::fs::read_to_string(&css_path) {
+                    Ok(css) => format!("<style type=\"text/css\">{}</style>", css),
+                    Err(_) => full.to_string(),
+                }
+            } else {
+                full.to_string()
+            }
+        })
+        .to_string()
+}
+
 /// Move `<style>` blocks from `<head>` to just before `</body>`.
 fn move_styles_to_body_end(html: &str) -> String {
-    use regex::Regex;
-
     let style_re = Regex::new(r"(?si)<style[^>]*>.*?</style>").unwrap();
 
     // Find <head>...</head> region
@@ -112,7 +120,9 @@ mod tests {
     fn test_inline_basic() {
         let html = r#"<html><head><style>.red { color: red; }</style></head><body><p class="red">Hello</p></body></html>"#;
         let result = inline_css(html, None).unwrap();
-        assert!(result.contains("style=\"color: red;\"") || result.contains("style=\"color:red\""));
+        assert!(
+            result.contains("style=\"color: red;\"") || result.contains("style=\"color:red\"")
+        );
         assert!(result.contains("Hello"));
     }
 
