@@ -1,0 +1,115 @@
+// Inky Email Framework
+// Dark Mode Utilities
+// Licensed under MIT Open Source
+@use 'sass:color';
+@use '../settings' as *;
+
+////
+/// @group dark-mode
+////
+
+// Dark mode settings
+$dark-body-background: #1a1a1a !default;
+$dark-container-background: #2d2d2d !default;
+$dark-font-color: #f0f0f0 !default;
+$dark-muted-color: #a0a0a0 !default;
+$dark-border-color: #444444 !default;
+$dark-link-color: #5ab5f7 !default;
+
+// Color scheme meta support
+// Add these meta tags to your <head> for client support:
+//   <meta name="color-scheme" content="light dark">
+//   <meta name="supported-color-schemes" content="light dark">
+
+@media (prefers-color-scheme: dark) {
+  // Body and container backgrounds
+  .body,
+  body {
+    background-color: $dark-body-background !important;
+  }
+
+  .container {
+    background-color: $dark-container-background !important;
+  }
+
+  // Text colors
+  h1, h2, h3, h4, h5, h6 {
+    color: $dark-font-color !important;
+  }
+
+  p, td, th, li, span {
+    color: $dark-font-color !important;
+  }
+
+  .subheader {
+    color: $dark-muted-color !important;
+  }
+
+  // Links
+  a {
+    color: $dark-link-color !important;
+  }
+
+  // Dividers
+  table.divider th,
+  table.h-line th {
+    border-top-color: $dark-border-color !important;
+  }
+
+  // Callouts
+  th.callout-inner {
+    background-color: color.adjust($dark-container-background, $lightness: 5%) !important;
+    border-color: $dark-border-color !important;
+  }
+
+  th.callout-inner.primary {
+    background-color: color.adjust($primary-color, $lightness: -30%) !important;
+  }
+
+  th.callout-inner.secondary {
+    background-color: color.adjust($secondary-color, $lightness: -30%) !important;
+  }
+
+  th.callout-inner.success {
+    background-color: color.adjust($success-color, $lightness: -30%) !important;
+  }
+
+  th.callout-inner.warning {
+    background-color: color.adjust($warning-color, $lightness: -30%) !important;
+  }
+
+  th.callout-inner.alert {
+    background-color: color.adjust($alert-color, $lightness: -30%) !important;
+  }
+
+  // Wrapper
+  .wrapper-inner {
+    background-color: $dark-container-background !important;
+  }
+
+  // Utility classes for manual dark mode control
+  .dark-bg {
+    background-color: $dark-container-background !important;
+  }
+
+  .dark-text {
+    color: $dark-font-color !important;
+  }
+
+  .dark-muted {
+    color: $dark-muted-color !important;
+  }
+
+  .dark-hidden {
+    display: none !important;
+  }
+
+  .dark-shown {
+    display: block !important;
+  }
+}
+
+// Light-only / dark-only visibility helpers (outside media query)
+.dark-shown {
+  display: none;
+}
