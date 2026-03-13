@@ -84,3 +84,32 @@ table, tr, td, th {
   vertical-align: top;
   text-align: left;
 }
+
+// Prevent Gmail from showing a download icon on large images
+u + .body img + div,
+.body img + div {
+  display: none;
+}
+
+// Neutralize auto-detected links (dates, addresses, phone numbers)
+// Gmail
+.aBn {
+  border-bottom: 0 !important;
+  cursor: default !important;
+  color: inherit !important;
+  text-decoration: none !important;
+  font-size: inherit !important;
+  font-family: inherit !important;
+  font-weight: inherit !important;
+  line-height: inherit !important;
+}
+
+// iOS
+a[x-apple-data-detectors] {
+  color: inherit !important;
+  text-decoration: none !important;
+  font-size: inherit !important;
+  font-family: inherit !important;
+  font-weight: inherit !important;
+  line-height: inherit !important;
+}
