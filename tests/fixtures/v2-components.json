@@ -269,6 +269,86 @@
       "name": "accordion: with items",
       "input": "<accordion><accordion-item title=\"Section 1\">Content 1</accordion-item></accordion>",
       "expected": "<table role=\"presentation\" class=\"accordion\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr class=\"accordion-item\"><td><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td class=\"accordion-title\" style=\"padding: 10px 16px; background-color: #f4f4f4; font-weight: bold; cursor: pointer;\">Section 1</td></tr><tr><td class=\"accordion-content\" style=\"padding: 16px;\">Content 1</td></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "accordion: multiple items",
+      "input": "<accordion><accordion-item title=\"FAQ 1\">Answer 1</accordion-item><accordion-item title=\"FAQ 2\">Answer 2</accordion-item><accordion-item title=\"FAQ 3\">Answer 3</accordion-item></accordion>",
+      "expected": "<table role=\"presentation\" class=\"accordion\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr class=\"accordion-item\"><td><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td class=\"accordion-title\" style=\"padding: 10px 16px; background-color: #f4f4f4; font-weight: bold; cursor: pointer;\">FAQ 1</td></tr><tr><td class=\"accordion-content\" style=\"padding: 16px;\">Answer 1</td></tr></tbody></table></td></tr><tr class=\"accordion-item\"><td><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td class=\"accordion-title\" style=\"padding: 10px 16px; background-color: #f4f4f4; font-weight: bold; cursor: pointer;\">FAQ 2</td></tr><tr><td class=\"accordion-content\" style=\"padding: 16px;\">Answer 2</td></tr></tbody></table></td></tr><tr class=\"accordion-item\"><td><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td class=\"accordion-title\" style=\"padding: 10px 16px; background-color: #f4f4f4; font-weight: bold; cursor: pointer;\">FAQ 3</td></tr><tr><td class=\"accordion-content\" style=\"padding: 16px;\">Answer 3</td></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "hero: with classes",
+      "input": "<hero background=\"bg.jpg\" width=\"600\" height=\"300\" class=\"dark\"><h1>Title</h1></hero>",
+      "expected": "<!--[if mso]>\n<v:rect xmlns:v=\"urn:schemas-microsoft-com:vml\" fill=\"true\" stroke=\"false\" style=\"width:600px;height:300px;\">\n<v:fill type=\"frame\" src=\"bg.jpg\" />\n<v:textbox style=\"mso-fit-shape-to-text:true\" inset=\"0,0,0,0\">\n<![endif]-->\n<table role=\"presentation\" class=\"hero dark\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-image: url('bg.jpg'); background-size: cover; background-position: center center; background-repeat: no-repeat; width: 600px;\"><tbody><tr><td style=\"padding: 0;\"><h1>Title</h1></td></tr></tbody></table>\n<!--[if mso]>\n</v:textbox>\n</v:rect>\n<![endif]-->"
+    },
+    {
+      "name": "hero: default width and height",
+      "input": "<hero background=\"bg.jpg\"><p>Content</p></hero>",
+      "expected": "<!--[if mso]>\n<v:rect xmlns:v=\"urn:schemas-microsoft-com:vml\" fill=\"true\" stroke=\"false\" style=\"width:600px;height:400px;\">\n<v:fill type=\"frame\" src=\"bg.jpg\" />\n<v:textbox style=\"mso-fit-shape-to-text:true\" inset=\"0,0,0,0\">\n<![endif]-->\n<table role=\"presentation\" class=\"hero\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-image: url('bg.jpg'); background-size: cover; background-position: center center; background-repeat: no-repeat; width: 600px;\"><tbody><tr><td style=\"padding: 0;\"><p>Content</p></td></tr></tbody></table>\n<!--[if mso]>\n</v:textbox>\n</v:rect>\n<![endif]-->"
+    },
+    {
+      "name": "social: multiple social-link children",
+      "input": "<social align=\"center\"><social-link platform=\"facebook\" href=\"https://fb.com\">Facebook</social-link><social-link platform=\"twitter\" href=\"https://twitter.com\">Twitter</social-link><social-link platform=\"instagram\" href=\"https://ig.com\">Instagram</social-link></social>",
+      "expected": "<table role=\"presentation\" class=\"social\" align=\"center\"><tbody><tr><td><table role=\"presentation\" align=\"center\"><tbody><tr><td class=\"social-link facebook\" style=\"padding: 0 4px;\"><a href=\"https://fb.com\" target=\"_blank\" style=\"color: #3b5998; text-decoration: none;\">Facebook</a></td><td class=\"social-link twitter\" style=\"padding: 0 4px;\"><a href=\"https://twitter.com\" target=\"_blank\" style=\"color: #1da1f2; text-decoration: none;\">Twitter</a></td><td class=\"social-link instagram\" style=\"padding: 0 4px;\"><a href=\"https://ig.com\" target=\"_blank\" style=\"color: #e1306c; text-decoration: none;\">Instagram</a></td></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "social-link: with icon image",
+      "input": "<social-link platform=\"facebook\" href=\"https://fb.com\" icon=\"https://cdn.example.com/fb.png\">Facebook</social-link>",
+      "expected": "<td class=\"social-link facebook\" style=\"padding: 0 4px;\"><a href=\"https://fb.com\" target=\"_blank\" style=\"color: #3b5998; text-decoration: none;\"><img src=\"https://cdn.example.com/fb.png\" alt=\"facebook\" width=\"24\" height=\"24\" style=\"display: block; border: 0;\">Facebook</a></td>"
+    },
+    {
+      "name": "card: with href links image",
+      "input": "<card title=\"Click Me\" image=\"photo.jpg\" href=\"https://example.com\">Body</card>",
+      "expected": "<table role=\"presentation\" class=\"card\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border: 1px solid #e0e0e0; border-radius: 4px; overflow: hidden;\"><tbody><tr><td class=\"card-image\"><a href=\"https://example.com\" target=\"_blank\"><img src=\"photo.jpg\" alt=\"\" width=\"100%\" style=\"display: block; border: 0;\"></a></td></tr><tr><td class=\"card-title\" style=\"padding: 16px 16px 0 16px; font-weight: bold; font-size: 18px;\">Click Me</td></tr><tr><td class=\"card-body\" style=\"padding: 16px;\">Body</td></tr></tbody></table>"
+    },
+    {
+      "name": "card: title only",
+      "input": "<card title=\"Just a Title\"></card>",
+      "expected": "<table role=\"presentation\" class=\"card\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border: 1px solid #e0e0e0; border-radius: 4px; overflow: hidden;\"><tbody><tr><td class=\"card-title\" style=\"padding: 16px 16px 0 16px; font-weight: bold; font-size: 18px;\">Just a Title</td></tr></tbody></table>"
+    },
+    {
+      "name": "alert: with HTML content",
+      "input": "<alert type=\"error\"><strong>Error:</strong> Something went wrong</alert>",
+      "expected": "<table role=\"presentation\" class=\"alert alert-error\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td style=\"padding: 12px 16px; background-color: #f2dede; border-radius: 4px;\"><strong>Error:</strong> Something went wrong</td></tr></tbody></table>"
+    },
+    {
+      "name": "alert: with custom color override",
+      "input": "<alert type=\"info\" color=\"#abcdef\">Custom colored</alert>",
+      "expected": "<table role=\"presentation\" class=\"alert alert-info\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td style=\"padding: 12px 16px; background-color: #abcdef; border-radius: 4px;\">Custom colored</td></tr></tbody></table>"
+    },
+    {
+      "name": "badge: default color",
+      "input": "<badge>Default</badge>",
+      "expected": "<span class=\"badge\" style=\"display: inline-block; padding: 2px 8px; background-color: #333333; color: #ffffff; border-radius: 12px; font-size: 12px; font-weight: bold; line-height: 1.4;\">Default</span>"
+    },
+    {
+      "name": "badge: with class",
+      "input": "<badge color=\"#27ae60\" class=\"status\">Active</badge>",
+      "expected": "<span class=\"badge status\" style=\"display: inline-block; padding: 2px 8px; background-color: #27ae60; color: #ffffff; border-radius: 12px; font-size: 12px; font-weight: bold; line-height: 1.4;\">Active</span>"
+    },
+    {
+      "name": "blockquote: with HTML content",
+      "input": "<blockquote cite=\"Shakespeare\"><em>To be or not to be</em>, that is the question.</blockquote>",
+      "expected": "<table role=\"presentation\" class=\"blockquote\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-left: 4px solid #cccccc;\"><tbody><tr><td style=\"padding: 0 0 0 16px; font-style: italic;\"><em>To be or not to be</em>, that is the question.</td></tr><tr><td style=\"padding: 8px 0 0 16px; font-size: 14px; color: #999999;\">&mdash; Shakespeare</td></tr></tbody></table>"
+    },
+    {
+      "name": "preview: with HTML entities",
+      "input": "<preview>50% off &amp; free shipping!</preview>",
+      "expected": "<div style=\"display: none; max-height: 0; overflow: hidden; mso-hide: all;\">50% off &amp; free shipping!</div><div style=\"display: none; max-height: 0; overflow: hidden; mso-hide: all;\">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>"
+    },
+    {
+      "name": "video: default width",
+      "input": "<video src=\"clip.mp4\" poster=\"thumb.jpg\"></video>",
+      "expected": "<a href=\"clip.mp4\" target=\"_blank\" style=\"text-decoration: none;\"><video width=\"600\" autoplay muted loop playsinline poster=\"thumb.jpg\" style=\"max-width: 100%; display: block;\"><source src=\"clip.mp4\" type=\"video/mp4\"><img src=\"thumb.jpg\" alt=\"Video\" width=\"600\" style=\"width: 600px; max-width: 100%; display: block;\"></video></a>"
+    },
+    {
+      "name": "alert: data attribute passthrough",
+      "input": "<alert type=\"info\" data-testid=\"my-alert\">Test</alert>",
+      "expected": "<table role=\"presentation\" data-testid=\"my-alert\" class=\"alert alert-info\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td style=\"padding: 12px 16px; background-color: #d9edf7; border-radius: 4px;\">Test</td></tr></tbody></table>"
+    },
+    {
+      "name": "card: data attribute passthrough",
+      "input": "<card data-id=\"123\" title=\"Test\">Content</card>",
+      "expected": "<table role=\"presentation\" data-id=\"123\" class=\"card\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border: 1px solid #e0e0e0; border-radius: 4px; overflow: hidden;\"><tbody><tr><td class=\"card-title\" style=\"padding: 16px 16px 0 16px; font-weight: bold; font-size: 18px;\">Test</td></tr><tr><td class=\"card-body\" style=\"padding: 16px;\">Content</td></tr></tbody></table>"
     }
   ]
 }

@@ -156,6 +156,13 @@ fn test_v2_grid_fixtures() {
     run_v2_fixtures("../../tests/fixtures/v2-grid.json");
 }
 
+// --- v2 nesting/integration tests ---
+
+#[test]
+fn test_v2_nesting_fixtures() {
+    run_v2_fixtures("../../tests/fixtures/v2-nesting.json");
+}
+
 // --- Migration fixture tests (v1 → v2) ---
 
 #[test]

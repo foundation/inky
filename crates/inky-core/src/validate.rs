@@ -45,6 +45,9 @@ pub fn validate_source(html: &str, config: &Config) -> Vec<Diagnostic> {
     diags.extend(check_button_no_href(html, config));
     diags.extend(check_missing_alt(html));
     diags.extend(check_missing_preheader(html));
+    diags.extend(check_video_no_src(html, config));
+    diags.extend(check_hero_no_background(html, config));
+    diags.extend(check_social_link_no_platform(html, config));
     diags
 }
 
@@ -158,6 +161,57 @@ fn check_missing_preheader(html: &str) -> Vec<Diagnostic> {
     } else {
         vec![]
     }
+}
+
+fn check_video_no_src(html: &str, config: &Config) -> Vec<Diagnostic> {
+    let tag = &config.components.video;
+    let doc = Html::parse_fragment(html);
+    let mut diags = Vec::new();
+    if let Ok(sel) = Selector::parse(tag) {
+        for (i, el) in doc.select(&sel).enumerate() {
+            if el.value().attr("src").is_none() {
+                diags.push(Diagnostic::error("video-no-src", format!(
+                    "<video> #{} missing src attribute — no video source to play",
+                    i + 1
+                )));
+            }
+        }
+    }
+    diags
+}
+
+fn check_hero_no_background(html: &str, config: &Config) -> Vec<Diagnostic> {
+    let tag = &config.components.hero;
+    let doc = Html::parse_fragment(html);
+    let mut diags = Vec::new();
+    if let Ok(sel) = Selector::parse(tag) {
+        for (i, el) in doc.select(&sel).enumerate() {
+            if el.value().attr("background").map_or(true, |v| v.is_empty()) {
+                diags.push(Diagnostic::warning("hero-no-background", format!(
+                    "<hero> #{} missing background attribute — section will have no background image",
+                    i + 1
+                )));
+            }
+        }
+    }
+    diags
+}
+
+fn check_social_link_no_platform(html: &str, config: &Config) -> Vec<Diagnostic> {
+    let tag = &config.components.social_link;
+    let doc = Html::parse_fragment(html);
+    let mut diags = Vec::new();
+    if let Ok(sel) = Selector::parse(tag) {
+        for (i, el) in doc.select(&sel).enumerate() {
+            if el.value().attr("platform").map_or(true, |v| v.is_empty()) {
+                diags.push(Diagnostic::warning("social-link-no-platform", format!(
+                    "<social-link> #{} missing platform attribute — no icon or color will be applied",
+                    i + 1
+                )));
+            }
+        }
+    }
+    diags
 }
 
 // --- Output-level checks ---
@@ -366,6 +420,48 @@ mod tests {
         let html = "<table><tr><td><table><tr><td>ok</td></tr></table></td></tr></table>";
         let diags = validate_output(html);
         assert!(!diags.iter().any(|d| d.rule == "deep-nesting"));
+    }
+
+    #[test]
+    fn test_video_no_src() {
+        let html = r#"<container><video poster="poster.jpg"></video></container>"#;
+        let diags = validate_source(html, &default_config());
+        assert!(diags.iter().any(|d| d.rule == "video-no-src"));
+    }
+
+    #[test]
+    fn test_video_with_src() {
+        let html = r#"<container><video src="movie.mp4" poster="poster.jpg"></video></container>"#;
+        let diags = validate_source(html, &default_config());
+        assert!(!diags.iter().any(|d| d.rule == "video-no-src"));
+    }
+
+    #[test]
+    fn test_hero_no_background() {
+        let html = "<container><hero><p>Content</p></hero></container>";
+        let diags = validate_source(html, &default_config());
+        assert!(diags.iter().any(|d| d.rule == "hero-no-background"));
+    }
+
+    #[test]
+    fn test_hero_with_background() {
+        let html = r#"<container><hero background="bg.jpg"><p>Content</p></hero></container>"#;
+        let diags = validate_source(html, &default_config());
+        assert!(!diags.iter().any(|d| d.rule == "hero-no-background"));
+    }
+
+    #[test]
+    fn test_social_link_no_platform() {
+        let html = "<container><social-link href=\"#\">Link</social-link></container>";
+        let diags = validate_source(html, &default_config());
+        assert!(diags.iter().any(|d| d.rule == "social-link-no-platform"));
+    }
+
+    #[test]
+    fn test_social_link_with_platform() {
+        let html = "<container><social-link platform=\"facebook\" href=\"#\">FB</social-link></container>";
+        let diags = validate_source(html, &default_config());
+        assert!(!diags.iter().any(|d| d.rule == "social-link-no-platform"));
     }
 
     #[test]
