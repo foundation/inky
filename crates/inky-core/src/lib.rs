@@ -58,7 +58,9 @@ impl Inky {
             let selector_str = tags
                 .iter()
                 .map(|tag| {
-                    if *tag == self.config.components.center {
+                    if *tag == self.config.components.center
+                        || *tag == self.config.components.video
+                    {
                         format!("{}:not([data-parsed])", tag)
                     } else {
                         tag.to_string()
@@ -113,8 +115,9 @@ impl Inky {
         // Step 4: Restore protected block-grid <td> tags
         current = restore_block_grid_tds(&current);
 
-        // Step 5: Remove data-parsed attributes
+        // Step 5: Remove data-parsed attributes (both forms: with and without ="")
         current = current.replace(" data-parsed=\"\"", "");
+        current = current.replace(" data-parsed", "");
 
         // Step 6: Re-inject raw blocks
         let current = re_inject_raws(&current, &raws);
@@ -328,8 +331,8 @@ fn replace_first_tag(html: &str, tag_name: &str, replacement: &str) -> String {
     for &(open_start, open_end) in &opens {
         let open_str = &html[open_start..open_end];
 
-        // For <center>, skip tags that already have data-parsed
-        if tag_name == "center" && open_str.contains("data-parsed") {
+        // For <center> and <video>, skip tags that already have data-parsed
+        if (tag_name == "center" || tag_name == "video") && open_str.contains("data-parsed") {
             continue;
         }
 

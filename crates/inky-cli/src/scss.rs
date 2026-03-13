@@ -64,6 +64,14 @@ const SCSS_FILES: &[(&str, &str)] = &[
         include_str!("../../../scss/components/_media-query.scss"),
     ),
     (
+        "components/_divider.scss",
+        include_str!("../../../scss/components/_divider.scss"),
+    ),
+    (
+        "components/_dark-mode.scss",
+        include_str!("../../../scss/components/_dark-mode.scss"),
+    ),
+    (
         "grid/_grid.scss",
         include_str!("../../../scss/grid/_grid.scss"),
     ),

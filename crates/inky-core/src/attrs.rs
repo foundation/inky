@@ -5,6 +5,9 @@ const IGNORED_ATTRIBUTES: &[&str] = &[
     "class", "id", "href", "size", "size-sm", "size-lg", "large", "no-expander", "small", "target",
     // v2 attribute names
     "sm", "lg", "height", "up", "retina", "color", "direction",
+    // new component attributes
+    "align", "background", "platform", "icon", "poster", "src", "alt", "width",
+    "image", "title", "cite", "text-color", "type",
 ];
 
 /// Extract passthrough attributes from an element, excluding ignored ones.

@@ -174,6 +174,101 @@
       "name": "block-grid: with classes",
       "input": "<block-grid up=\"4\" class=\"show-for-large\"><td>Item</td></block-grid>",
       "expected": "<table role=\"presentation\" class=\"block-grid up-4 show-for-large\"><tbody><tr><td>Item</td></tr></tbody></table>"
+    },
+    {
+      "name": "preview: basic preheader text",
+      "input": "<preview>Check out our sale!</preview>",
+      "expected": "<div style=\"display: none; max-height: 0; overflow: hidden; mso-hide: all;\">Check out our sale!</div><div style=\"display: none; max-height: 0; overflow: hidden; mso-hide: all;\">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>"
+    },
+    {
+      "name": "video: basic video with poster",
+      "input": "<video src=\"movie.mp4\" poster=\"poster.jpg\" width=\"600\"></video>",
+      "expected": "<a href=\"movie.mp4\" target=\"_blank\" style=\"text-decoration: none;\"><video width=\"600\" autoplay muted loop playsinline poster=\"poster.jpg\" style=\"max-width: 100%; display: block;\"><source src=\"movie.mp4\" type=\"video/mp4\"><img src=\"poster.jpg\" alt=\"Video\" width=\"600\" style=\"width: 600px; max-width: 100%; display: block;\"></video></a>"
+    },
+    {
+      "name": "video: with custom href and alt",
+      "input": "<video src=\"movie.mp4\" poster=\"poster.jpg\" href=\"https://example.com/watch\" alt=\"Watch now\" width=\"600\"></video>",
+      "expected": "<a href=\"https://example.com/watch\" target=\"_blank\" style=\"text-decoration: none;\"><video width=\"600\" autoplay muted loop playsinline poster=\"poster.jpg\" style=\"max-width: 100%; display: block;\"><source src=\"movie.mp4\" type=\"video/mp4\"><img src=\"poster.jpg\" alt=\"Watch now\" width=\"600\" style=\"width: 600px; max-width: 100%; display: block;\"></video></a>"
+    },
+    {
+      "name": "hero: basic hero section",
+      "input": "<hero background=\"hero.jpg\" width=\"600\" height=\"400\"><p>Hello</p></hero>",
+      "expected": "<!--[if mso]>\n<v:rect xmlns:v=\"urn:schemas-microsoft-com:vml\" fill=\"true\" stroke=\"false\" style=\"width:600px;height:400px;\">\n<v:fill type=\"frame\" src=\"hero.jpg\" />\n<v:textbox style=\"mso-fit-shape-to-text:true\" inset=\"0,0,0,0\">\n<![endif]-->\n<table role=\"presentation\" class=\"hero\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-image: url('hero.jpg'); background-size: cover; background-position: center center; background-repeat: no-repeat; width: 600px;\"><tbody><tr><td style=\"padding: 0;\"><p>Hello</p></td></tr></tbody></table>\n<!--[if mso]>\n</v:textbox>\n</v:rect>\n<![endif]-->"
+    },
+    {
+      "name": "social: with social-link children",
+      "input": "<social align=\"center\"><social-link platform=\"facebook\" href=\"https://fb.com\">Facebook</social-link></social>",
+      "expected": "<table role=\"presentation\" class=\"social\" align=\"center\"><tbody><tr><td><table role=\"presentation\" align=\"center\"><tbody><tr><td class=\"social-link facebook\" style=\"padding: 0 4px;\"><a href=\"https://fb.com\" target=\"_blank\" style=\"color: #3b5998; text-decoration: none;\">Facebook</a></td></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "social-link: auto-capitalize platform name when no label",
+      "input": "<social-link platform=\"twitter\" href=\"https://twitter.com\"></social-link>",
+      "expected": "<td class=\"social-link twitter\" style=\"padding: 0 4px;\"><a href=\"https://twitter.com\" target=\"_blank\" style=\"color: #1da1f2; text-decoration: none;\">Twitter</a></td>"
+    },
+    {
+      "name": "social-link: with custom color",
+      "input": "<social-link platform=\"custom\" href=\"#\" color=\"#ff0000\">Custom</social-link>",
+      "expected": "<td class=\"social-link custom\" style=\"padding: 0 4px;\"><a href=\"#\" target=\"_blank\" style=\"color: #ff0000; text-decoration: none;\">Custom</a></td>"
+    },
+    {
+      "name": "badge: basic badge",
+      "input": "<badge color=\"#e74c3c\">New</badge>",
+      "expected": "<span class=\"badge\" style=\"display: inline-block; padding: 2px 8px; background-color: #e74c3c; color: #ffffff; border-radius: 12px; font-size: 12px; font-weight: bold; line-height: 1.4;\">New</span>"
+    },
+    {
+      "name": "badge: with custom text color",
+      "input": "<badge color=\"#f0f0f0\" text-color=\"#333333\">Sale</badge>",
+      "expected": "<span class=\"badge\" style=\"display: inline-block; padding: 2px 8px; background-color: #f0f0f0; color: #333333; border-radius: 12px; font-size: 12px; font-weight: bold; line-height: 1.4;\">Sale</span>"
+    },
+    {
+      "name": "alert: success alert",
+      "input": "<alert type=\"success\">Done!</alert>",
+      "expected": "<table role=\"presentation\" class=\"alert alert-success\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td style=\"padding: 12px 16px; background-color: #dff0d8; border-radius: 4px;\">Done!</td></tr></tbody></table>"
+    },
+    {
+      "name": "alert: warning alert",
+      "input": "<alert type=\"warning\">Caution!</alert>",
+      "expected": "<table role=\"presentation\" class=\"alert alert-warning\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td style=\"padding: 12px 16px; background-color: #fcf8e3; border-radius: 4px;\">Caution!</td></tr></tbody></table>"
+    },
+    {
+      "name": "alert: error alert",
+      "input": "<alert type=\"error\">Failed!</alert>",
+      "expected": "<table role=\"presentation\" class=\"alert alert-error\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td style=\"padding: 12px 16px; background-color: #f2dede; border-radius: 4px;\">Failed!</td></tr></tbody></table>"
+    },
+    {
+      "name": "alert: info alert (default)",
+      "input": "<alert type=\"info\">Note</alert>",
+      "expected": "<table role=\"presentation\" class=\"alert alert-info\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td style=\"padding: 12px 16px; background-color: #d9edf7; border-radius: 4px;\">Note</td></tr></tbody></table>"
+    },
+    {
+      "name": "blockquote: with citation",
+      "input": "<blockquote cite=\"Author\">Some quote</blockquote>",
+      "expected": "<table role=\"presentation\" class=\"blockquote\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-left: 4px solid #cccccc;\"><tbody><tr><td style=\"padding: 0 0 0 16px; font-style: italic;\">Some quote</td></tr><tr><td style=\"padding: 8px 0 0 16px; font-size: 14px; color: #999999;\">&mdash; Author</td></tr></tbody></table>"
+    },
+    {
+      "name": "blockquote: without citation",
+      "input": "<blockquote>Some quote</blockquote>",
+      "expected": "<table role=\"presentation\" class=\"blockquote\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-left: 4px solid #cccccc;\"><tbody><tr><td style=\"padding: 0 0 0 16px; font-style: italic;\">Some quote</td></tr></tbody></table>"
+    },
+    {
+      "name": "blockquote: with custom color",
+      "input": "<blockquote color=\"#3498db\">Styled quote</blockquote>",
+      "expected": "<table role=\"presentation\" class=\"blockquote\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-left: 4px solid #3498db;\"><tbody><tr><td style=\"padding: 0 0 0 16px; font-style: italic;\">Styled quote</td></tr></tbody></table>"
+    },
+    {
+      "name": "card: with image and title",
+      "input": "<card title=\"My Card\" image=\"photo.jpg\">Body text</card>",
+      "expected": "<table role=\"presentation\" class=\"card\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border: 1px solid #e0e0e0; border-radius: 4px; overflow: hidden;\"><tbody><tr><td class=\"card-image\"><img src=\"photo.jpg\" alt=\"\" width=\"100%\" style=\"display: block; border: 0;\"></td></tr><tr><td class=\"card-title\" style=\"padding: 16px 16px 0 16px; font-weight: bold; font-size: 18px;\">My Card</td></tr><tr><td class=\"card-body\" style=\"padding: 16px;\">Body text</td></tr></tbody></table>"
+    },
+    {
+      "name": "card: body only",
+      "input": "<card>Body text</card>",
+      "expected": "<table role=\"presentation\" class=\"card\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border: 1px solid #e0e0e0; border-radius: 4px; overflow: hidden;\"><tbody><tr><td class=\"card-body\" style=\"padding: 16px;\">Body text</td></tr></tbody></table>"
+    },
+    {
+      "name": "accordion: with items",
+      "input": "<accordion><accordion-item title=\"Section 1\">Content 1</accordion-item></accordion>",
+      "expected": "<table role=\"presentation\" class=\"accordion\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr class=\"accordion-item\"><td><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td class=\"accordion-title\" style=\"padding: 10px 16px; background-color: #f4f4f4; font-weight: bold; cursor: pointer;\">Section 1</td></tr><tr><td class=\"accordion-content\" style=\"padding: 16px;\">Content 1</td></tr></tbody></table></td></tr></tbody></table>"
     }
   ]
 }

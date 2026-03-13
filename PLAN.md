@@ -488,7 +488,7 @@ Subcommands:
 | 10 | Add auto-detection for template merge tags | Done |
 | 11 | Add `<image>`, `<outlook>`, `<not-outlook>`, `<divider>` components | Done |
 
-### Stage 2: CLI + Migration — COMPLETE (except fixture tests)
+### Stage 2: CLI + Migration — COMPLETE
 
 | Step | Task | Status |
 |------|------|--------|
@@ -498,8 +498,8 @@ Subcommands:
 | 15 | Implement `validate` command (source + output checks, 16 tests) | Done |
 | 16 | Add v1 syntax detection with helpful error messages | Done |
 | 17 | Implement `watch` command (with SCSS/layout/include change detection) | Done |
-| 18 | Write v2 syntax fixture tests | **TODO** |
-| 19 | Write migration fixture tests | **TODO** |
+| 18 | Write v2 syntax fixture tests (48 tests across v2-components.json + v2-grid.json) | Done |
+| 19 | Write migration fixture tests (17 tests in migration.json) | Done |
 | 20 | Implement `init` command (project scaffolding with themes) | Done |
 | 21 | Implement `<include>` tag support (template partials/layouts) | Done |
 | 22 | Implement `<layout>` + `<yield>` system | Done |
@@ -508,28 +508,28 @@ Subcommands:
 | 25 | Blank line cleanup and DRY refactoring | Done |
 | 26 | Build WASM playground | Done |
 
-### Stage 3: Distribution — UP NEXT
+### Stage 3: Distribution — COMPLETE (Go deferred to separate repo)
 
 | Step | Task | Status |
 |------|------|--------|
-| 27 | Build `inky-wasm` with wasm-bindgen | Done |
-| 28 | Build `inky-ffi` with cbindgen | Done |
-| 29 | Create Node.js wrapper (WASM) | TODO |
-| 30 | Create PHP Composer package (C extension + FFI drivers) | TODO |
-| 31 | Create Python PyPI package (ctypes) | TODO |
-| 32 | Create Ruby gem (fiddle) | TODO |
-| 33 | Create Go module (cgo, separate repo) | TODO |
+| 27 | Build `inky-wasm` with wasm-bindgen (+ CSS inlining) | Done |
+| 28 | Build `inky-ffi` with cbindgen (transform, migrate, validate, inline, version) | Done |
+| 29 | Create Node.js wrapper (WASM) — 32 tests | Done |
+| 30 | Create PHP Composer package (FFI driver) — 32 tests | Done |
+| 31 | Create Python PyPI package (ctypes) — 32 tests | Done |
+| 32 | Create Ruby gem (fiddle) — 32 tests | Done |
+| 33 | Create Go module (cgo, separate repo) | Deferred |
 
-### Stage 4: Styles + Templates
+### Stage 4: Styles + Templates — COMPLETE
 
 | Step | Task | Status |
 |------|------|--------|
 | 34 | Move SCSS from `foundation-emails` into `inky/scss/` | Done |
 | 35 | Rename entry point to `inky.scss`, update variable prefixes | Done |
-| 36 | Add dark mode utilities (`_dark-mode.scss`) | TODO |
-| 37 | Add styles for new components (image, divider) | TODO |
-| 38 | Build dist CSS with `sass` command (no gulp) | TODO |
-| 39 | Create starter templates using v2 syntax | Partial (init scaffolds themes) |
+| 36 | Add dark mode utilities (`_dark-mode.scss`) | Done |
+| 37 | Add styles for new components (`_divider.scss` — divider, h-line, image) | Done |
+| 38 | Build dist CSS with `sass` command (36KB / 30KB min) | Done |
+| 39 | Create starter templates using v2 syntax | Done (init scaffolds themes) |
 
 ### Stage 5: Ship It
 

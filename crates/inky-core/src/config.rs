@@ -25,6 +25,17 @@ pub struct ComponentNames {
     pub image: String,
     pub outlook: String,
     pub not_outlook: String,
+    pub video: String,
+    pub preview: String,
+    pub hero: String,
+    pub social: String,
+    pub social_link: String,
+    pub accordion: String,
+    pub accordion_item: String,
+    pub card: String,
+    pub alert: String,
+    pub badge: String,
+    pub blockquote: String,
 }
 
 impl Default for Config {
@@ -57,6 +68,17 @@ impl ComponentNames {
             image: "image".into(),
             outlook: "outlook".into(),
             not_outlook: "not-outlook".into(),
+            video: "video".into(),
+            preview: "preview".into(),
+            hero: "hero".into(),
+            social: "social".into(),
+            social_link: "social-link".into(),
+            accordion: "accordion".into(),
+            accordion_item: "accordion-item".into(),
+            card: "card".into(),
+            alert: "alert".into(),
+            badge: "badge".into(),
+            blockquote: "blockquote".into(),
         }
     }
 }
@@ -85,6 +107,17 @@ impl Default for ComponentNames {
             image: "image".into(),
             outlook: "outlook".into(),
             not_outlook: "not-outlook".into(),
+            video: "video".into(),
+            preview: "preview".into(),
+            hero: "hero".into(),
+            social: "social".into(),
+            social_link: "social-link".into(),
+            accordion: "accordion".into(),
+            accordion_item: "accordion-item".into(),
+            card: "card".into(),
+            alert: "alert".into(),
+            badge: "badge".into(),
+            blockquote: "blockquote".into(),
         }
     }
 }
@@ -112,6 +145,17 @@ impl ComponentNames {
             // because html5ever converts <image> to <img>
             &self.outlook as &str,
             &self.not_outlook as &str,
+            &self.video as &str,
+            &self.preview as &str,
+            &self.hero as &str,
+            &self.social as &str,
+            &self.social_link as &str,
+            &self.accordion as &str,
+            &self.accordion_item as &str,
+            &self.card as &str,
+            &self.alert as &str,
+            &self.badge as &str,
+            &self.blockquote as &str,
         ];
         // Add v1 aliases if not already present
         if self.columns != "columns" && !tags.contains(&"columns") {

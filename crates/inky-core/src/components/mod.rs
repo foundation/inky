@@ -1,16 +1,25 @@
+mod accordion;
+mod alert;
+mod badge;
 mod block_grid;
+mod blockquote;
 mod button;
 mod callout;
+mod card;
 mod center;
 mod column;
 mod container;
 mod divider;
 mod helpers;
+mod hero;
 mod inky;
 mod menu;
 mod outlook;
+mod preview;
 mod row;
+mod social;
 mod spacer;
+mod video;
 mod wrapper;
 
 use scraper::ElementRef;
@@ -57,6 +66,28 @@ pub fn transform_component(element: &ElementRef, config: &Config) -> Option<Stri
         Some(outlook::make_outlook(element))
     } else if tag == comps.not_outlook {
         Some(outlook::make_not_outlook(element))
+    } else if tag == comps.video {
+        Some(video::make_video(element))
+    } else if tag == comps.preview {
+        Some(preview::make_preview(element))
+    } else if tag == comps.hero {
+        Some(hero::make_hero(element))
+    } else if tag == comps.social {
+        Some(social::make_social(element))
+    } else if tag == comps.social_link {
+        Some(social::make_social_link(element))
+    } else if tag == comps.accordion {
+        Some(accordion::make_accordion(element))
+    } else if tag == comps.accordion_item {
+        Some(accordion::make_accordion_item(element))
+    } else if tag == comps.card {
+        Some(card::make_card(element))
+    } else if tag == comps.alert {
+        Some(alert::make_alert(element))
+    } else if tag == comps.badge {
+        Some(badge::make_badge(element))
+    } else if tag == comps.blockquote {
+        Some(blockquote::make_blockquote(element))
     } else {
         None
     }
