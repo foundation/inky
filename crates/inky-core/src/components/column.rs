@@ -45,7 +45,7 @@ pub fn transform_column_with_position(
         && (no_expander.is_none() || no_expander.as_deref() == Some("false"));
 
     let expander = if needs_expander {
-        "\n<th class=\"expander\"></th>"
+        "\n<th class=\"expander\" aria-hidden=\"true\"></th>"
     } else {
         ""
     };
@@ -102,7 +102,7 @@ pub fn make_column(element: &ElementRef, config: &Config) -> String {
         && (no_expander.is_none() || no_expander.as_deref() == Some("false"));
 
     let expander = if needs_expander {
-        "\n<th class=\"expander\"></th>"
+        "\n<th class=\"expander\" aria-hidden=\"true\"></th>"
     } else {
         ""
     };

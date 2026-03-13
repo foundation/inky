@@ -24,7 +24,7 @@ pub fn make_button(element: &ElementRef) -> String {
     let expander;
     if has_class(element, "expand") || has_class(element, "expanded") {
         inner = format!("<center>{}</center>", inner);
-        expander = "\n<td class=\"expander\"></td>";
+        expander = "\n<td class=\"expander\" aria-hidden=\"true\"></td>";
     } else {
         expander = "";
     }

@@ -28,7 +28,7 @@
     {
       "name": "button: expanded button",
       "input": "<button href=\"#\" class=\"expand\">Click</button>",
-      "expected": "<table role=\"presentation\" class=\"button expand\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><td><center><a href=\"#\" align=\"center\" class=\"float-center\">Click</a></center></td></tr></tbody></table></td>\n<td class=\"expander\"></td></tr></tbody></table>"
+      "expected": "<table role=\"presentation\" class=\"button expand\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><td><center><a href=\"#\" align=\"center\" class=\"float-center\">Click</a></center></td></tr></tbody></table></td>\n<td class=\"expander\" aria-hidden=\"true\"></td></tr></tbody></table>"
     },
     {
       "name": "button: with no href",
@@ -38,57 +38,57 @@
     {
       "name": "divider: basic divider",
       "input": "<divider></divider>",
-      "expected": "<table role=\"presentation\" class=\"divider\"><tbody><tr><th>&nbsp;</th></tr></tbody></table>"
+      "expected": "<table role=\"presentation\" class=\"divider\" aria-hidden=\"true\"><tbody><tr><th>&nbsp;</th></tr></tbody></table>"
     },
     {
       "name": "divider: with classes",
       "input": "<divider class=\"dotted\"></divider>",
-      "expected": "<table role=\"presentation\" class=\"divider dotted\"><tbody><tr><th>&nbsp;</th></tr></tbody></table>"
+      "expected": "<table role=\"presentation\" class=\"divider dotted\" aria-hidden=\"true\"><tbody><tr><th>&nbsp;</th></tr></tbody></table>"
     },
     {
       "name": "spacer: with height attribute (v2 syntax)",
       "input": "<spacer height=\"20\"></spacer>",
-      "expected": "<table role=\"presentation\" class=\"spacer\"><tbody><tr><td height=\"20\" style=\"font-size:20px;line-height:20px;\">&nbsp;</td></tr></tbody></table>"
+      "expected": "<table role=\"presentation\" class=\"spacer\" aria-hidden=\"true\"><tbody><tr><td height=\"20\" style=\"font-size:20px;line-height:20px;\">&nbsp;</td></tr></tbody></table>"
     },
     {
       "name": "spacer: default height",
       "input": "<spacer></spacer>",
-      "expected": "<table role=\"presentation\" class=\"spacer\"><tbody><tr><td height=\"16\" style=\"font-size:16px;line-height:16px;\">&nbsp;</td></tr></tbody></table>"
+      "expected": "<table role=\"presentation\" class=\"spacer\" aria-hidden=\"true\"><tbody><tr><td height=\"16\" style=\"font-size:16px;line-height:16px;\">&nbsp;</td></tr></tbody></table>"
     },
     {
       "name": "spacer: with sm attribute (v2 syntax)",
       "input": "<spacer sm=\"10\"></spacer>",
-      "expected": "<table role=\"presentation\" class=\"spacer hide-for-large\"><tbody><tr><td height=\"10\" style=\"font-size:10px;line-height:10px;\">&nbsp;</td></tr></tbody></table>"
+      "expected": "<table role=\"presentation\" class=\"spacer hide-for-large\" aria-hidden=\"true\"><tbody><tr><td height=\"10\" style=\"font-size:10px;line-height:10px;\">&nbsp;</td></tr></tbody></table>"
     },
     {
       "name": "spacer: with lg attribute (v2 syntax)",
       "input": "<spacer lg=\"20\"></spacer>",
-      "expected": "<table role=\"presentation\" class=\"spacer show-for-large\"><tbody><tr><td height=\"20\" style=\"font-size:20px;line-height:20px;\">&nbsp;</td></tr></tbody></table>"
+      "expected": "<table role=\"presentation\" class=\"spacer show-for-large\" aria-hidden=\"true\"><tbody><tr><td height=\"20\" style=\"font-size:20px;line-height:20px;\">&nbsp;</td></tr></tbody></table>"
     },
     {
       "name": "spacer: with sm and lg attributes (v2 syntax)",
       "input": "<spacer sm=\"10\" lg=\"20\"></spacer>",
-      "expected": "<table role=\"presentation\" class=\"spacer hide-for-large\"><tbody><tr><td height=\"10\" style=\"font-size:10px;line-height:10px;\">&nbsp;</td></tr></tbody></table><table role=\"presentation\" class=\"spacer show-for-large\"><tbody><tr><td height=\"20\" style=\"font-size:20px;line-height:20px;\">&nbsp;</td></tr></tbody></table>"
+      "expected": "<table role=\"presentation\" class=\"spacer hide-for-large\" aria-hidden=\"true\"><tbody><tr><td height=\"10\" style=\"font-size:10px;line-height:10px;\">&nbsp;</td></tr></tbody></table><table role=\"presentation\" class=\"spacer show-for-large\" aria-hidden=\"true\"><tbody><tr><td height=\"20\" style=\"font-size:20px;line-height:20px;\">&nbsp;</td></tr></tbody></table>"
     },
     {
       "name": "spacer: with class",
       "input": "<spacer height=\"10\" class=\"bgcolor\"></spacer>",
-      "expected": "<table role=\"presentation\" class=\"spacer bgcolor\"><tbody><tr><td height=\"10\" style=\"font-size:10px;line-height:10px;\">&nbsp;</td></tr></tbody></table>"
+      "expected": "<table role=\"presentation\" class=\"spacer bgcolor\" aria-hidden=\"true\"><tbody><tr><td height=\"10\" style=\"font-size:10px;line-height:10px;\">&nbsp;</td></tr></tbody></table>"
     },
     {
       "name": "callout: basic callout",
       "input": "<callout>Important</callout>",
-      "expected": "<table role=\"presentation\" class=\"callout\"><tbody><tr><th class=\"callout-inner\">Important</th><th class=\"expander\"></th></tr></tbody></table>"
+      "expected": "<table role=\"presentation\" class=\"callout\"><tbody><tr><th class=\"callout-inner\">Important</th><th class=\"expander\" aria-hidden=\"true\"></th></tr></tbody></table>"
     },
     {
       "name": "callout: with color attribute (v2 syntax)",
       "input": "<callout color=\"primary\">Important</callout>",
-      "expected": "<table role=\"presentation\" class=\"callout\"><tbody><tr><th class=\"callout-inner primary\">Important</th><th class=\"expander\"></th></tr></tbody></table>"
+      "expected": "<table role=\"presentation\" class=\"callout\"><tbody><tr><th class=\"callout-inner primary\">Important</th><th class=\"expander\" aria-hidden=\"true\"></th></tr></tbody></table>"
     },
     {
       "name": "callout: with class (still works)",
       "input": "<callout class=\"secondary\">Important</callout>",
-      "expected": "<table role=\"presentation\" class=\"callout\"><tbody><tr><th class=\"callout-inner secondary\">Important</th><th class=\"expander\"></th></tr></tbody></table>"
+      "expected": "<table role=\"presentation\" class=\"callout\"><tbody><tr><th class=\"callout-inner secondary\">Important</th><th class=\"expander\" aria-hidden=\"true\"></th></tr></tbody></table>"
     },
     {
       "name": "menu: basic menu with items",

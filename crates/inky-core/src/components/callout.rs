@@ -16,7 +16,7 @@ pub fn make_callout(element: &ElementRef) -> String {
     let class_str = classes.join(" ");
 
     format!(
-        r#"<table role="presentation"{} class="callout"><tbody><tr><th class="{}">{}</th><th class="expander"></th></tr></tbody></table>"#,
+        r#"<table role="presentation"{} class="callout"><tbody><tr><th class="{}">{}</th><th class="expander" aria-hidden="true"></th></tr></tbody></table>"#,
         attrs, class_str, inner
     )
 }

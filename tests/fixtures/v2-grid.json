@@ -3,7 +3,7 @@
     {
       "name": "column: single column with sm and lg (v2 syntax)",
       "input": "<column lg=\"12\" sm=\"12\">One</column>",
-      "expected": "<th class=\"small-12 large-12 columns first last\"><table role=\"presentation\"><tbody><tr><th>One</th>\n<th class=\"expander\"></th></tr></tbody></table></th>"
+      "expected": "<th class=\"small-12 large-12 columns first last\"><table role=\"presentation\"><tbody><tr><th>One</th>\n<th class=\"expander\" aria-hidden=\"true\"></th></tr></tbody></table></th>"
     },
     {
       "name": "column: two columns with sm and lg",
@@ -18,7 +18,7 @@
     {
       "name": "column: defaults to full width when no attributes",
       "input": "<column>Content</column>",
-      "expected": "<th class=\"small-12 large-12 columns first last\"><table role=\"presentation\"><tbody><tr><th>Content</th>\n<th class=\"expander\"></th></tr></tbody></table></th>"
+      "expected": "<th class=\"small-12 large-12 columns first last\"><table role=\"presentation\"><tbody><tr><th>Content</th>\n<th class=\"expander\" aria-hidden=\"true\"></th></tr></tbody></table></th>"
     },
     {
       "name": "column: with no-expander",
@@ -33,7 +33,7 @@
     {
       "name": "column: with no-expander=\"false\" (expander still shown)",
       "input": "<column lg=\"12\" sm=\"12\" no-expander=\"false\">One</column>",
-      "expected": "<th class=\"small-12 large-12 columns first last\"><table role=\"presentation\"><tbody><tr><th>One</th>\n<th class=\"expander\"></th></tr></tbody></table></th>"
+      "expected": "<th class=\"small-12 large-12 columns first last\"><table role=\"presentation\"><tbody><tr><th>One</th>\n<th class=\"expander\" aria-hidden=\"true\"></th></tr></tbody></table></th>"
     },
     {
       "name": "column: auto-assigns lg from sm",

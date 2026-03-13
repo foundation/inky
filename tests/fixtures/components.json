@@ -18,47 +18,47 @@
     {
       "name": "button: creates a correct expanded button",
       "input": "<button class=\"expand\" href=\"http://get.foundation\">Button</button>",
-      "expected": "<table class=\"button expand\"><tbody><tr><td><table><tbody><tr><td><center><a href=\"http://get.foundation\" align=\"center\" class=\"float-center\">Button</a></center></td></tr></tbody></table></td>\n<td class=\"expander\"></td></tr></tbody></table>"
+      "expected": "<table class=\"button expand\"><tbody><tr><td><table><tbody><tr><td><center><a href=\"http://get.foundation\" align=\"center\" class=\"float-center\">Button</a></center></td></tr></tbody></table></td>\n<td class=\"expander\" aria-hidden=\"true\"></td></tr></tbody></table>"
     },
     {
       "name": "callout: creates a callout with correct syntax",
       "input": "<callout>Callout</callout>",
-      "expected": "<table class=\"callout\"><tbody><tr><th class=\"callout-inner\">Callout</th><th class=\"expander\"></th></tr></tbody></table>"
+      "expected": "<table class=\"callout\"><tbody><tr><th class=\"callout-inner\">Callout</th><th class=\"expander\" aria-hidden=\"true\"></th></tr></tbody></table>"
     },
     {
       "name": "callout: copies classes to the final HTML",
       "input": "<callout class=\"primary\">Callout</callout>",
-      "expected": "<table class=\"callout\"><tbody><tr><th class=\"callout-inner primary\">Callout</th><th class=\"expander\"></th></tr></tbody></table>"
+      "expected": "<table class=\"callout\"><tbody><tr><th class=\"callout-inner primary\">Callout</th><th class=\"expander\" aria-hidden=\"true\"></th></tr></tbody></table>"
     },
     {
       "name": "spacer: creates a spacer element with correct size",
       "input": "<spacer size=\"10\"></spacer>",
-      "expected": "<table class=\"spacer\"><tbody><tr><td height=\"10\" style=\"font-size:10px;line-height:10px;\">&nbsp;</td></tr></tbody></table>"
+      "expected": "<table class=\"spacer\" aria-hidden=\"true\"><tbody><tr><td height=\"10\" style=\"font-size:10px;line-height:10px;\">&nbsp;</td></tr></tbody></table>"
     },
     {
       "name": "spacer: creates a spacer with a default size",
       "input": "<spacer></spacer>",
-      "expected": "<table class=\"spacer\"><tbody><tr><td height=\"16\" style=\"font-size:16px;line-height:16px;\">&nbsp;</td></tr></tbody></table>"
+      "expected": "<table class=\"spacer\" aria-hidden=\"true\"><tbody><tr><td height=\"16\" style=\"font-size:16px;line-height:16px;\">&nbsp;</td></tr></tbody></table>"
     },
     {
       "name": "spacer: creates a spacer element for small screens",
       "input": "<spacer size-sm=\"10\"></spacer>",
-      "expected": "<table class=\"spacer hide-for-large\"><tbody><tr><td height=\"10\" style=\"font-size:10px;line-height:10px;\">&nbsp;</td></tr></tbody></table>"
+      "expected": "<table class=\"spacer hide-for-large\" aria-hidden=\"true\"><tbody><tr><td height=\"10\" style=\"font-size:10px;line-height:10px;\">&nbsp;</td></tr></tbody></table>"
     },
     {
       "name": "spacer: creates a spacer element for large screens",
       "input": "<spacer size-lg=\"20\"></spacer>",
-      "expected": "<table class=\"spacer show-for-large\"><tbody><tr><td height=\"20\" style=\"font-size:20px;line-height:20px;\">&nbsp;</td></tr></tbody></table>"
+      "expected": "<table class=\"spacer show-for-large\" aria-hidden=\"true\"><tbody><tr><td height=\"20\" style=\"font-size:20px;line-height:20px;\">&nbsp;</td></tr></tbody></table>"
     },
     {
       "name": "spacer: creates a spacer for small and large screens",
       "input": "<spacer size-sm=\"10\" size-lg=\"20\"></spacer>",
-      "expected": "<table class=\"spacer hide-for-large\"><tbody><tr><td height=\"10\" style=\"font-size:10px;line-height:10px;\">&nbsp;</td></tr></tbody></table><table class=\"spacer show-for-large\"><tbody><tr><td height=\"20\" style=\"font-size:20px;line-height:20px;\">&nbsp;</td></tr></tbody></table>"
+      "expected": "<table class=\"spacer hide-for-large\" aria-hidden=\"true\"><tbody><tr><td height=\"10\" style=\"font-size:10px;line-height:10px;\">&nbsp;</td></tr></tbody></table><table class=\"spacer show-for-large\" aria-hidden=\"true\"><tbody><tr><td height=\"20\" style=\"font-size:20px;line-height:20px;\">&nbsp;</td></tr></tbody></table>"
     },
     {
       "name": "spacer: copies classes to the final spacer HTML",
       "input": "<spacer size=\"10\" class=\"bgcolor\"></spacer>",
-      "expected": "<table class=\"spacer bgcolor\"><tbody><tr><td height=\"10\" style=\"font-size:10px;line-height:10px;\">&nbsp;</td></tr></tbody></table>"
+      "expected": "<table class=\"spacer bgcolor\" aria-hidden=\"true\"><tbody><tr><td height=\"10\" style=\"font-size:10px;line-height:10px;\">&nbsp;</td></tr></tbody></table>"
     },
     {
       "name": "wrapper: creates a wrapper with classes",
@@ -68,7 +68,7 @@
     {
       "name": "h-line: creates a horizontal rule with classes",
       "input": "<h-line class=\"dotted\"></h-line>",
-      "expected": "<table class=\"h-line dotted\"><tbody><tr><th>&nbsp;</th></tr></tbody></table>"
+      "expected": "<table class=\"h-line dotted\" aria-hidden=\"true\"><tbody><tr><th>&nbsp;</th></tr></tbody></table>"
     },
     {
       "name": "menu: creates a menu with item tags inside",

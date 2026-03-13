@@ -17,13 +17,13 @@ pub fn make_spacer(element: &ElementRef) -> String {
         let mut html = String::new();
         if let Some(size) = &size_sm {
             html.push_str(&format!(
-                r#"<table role="presentation"{} class="{} hide-for-large"><tbody><tr><td height="{}" style="font-size:{}px;line-height:{}px;">&nbsp;</td></tr></tbody></table>"#,
+                r#"<table role="presentation"{} class="{} hide-for-large" aria-hidden="true"><tbody><tr><td height="{}" style="font-size:{}px;line-height:{}px;">&nbsp;</td></tr></tbody></table>"#,
                 attrs, class_str, size, size, size
             ));
         }
         if let Some(size) = &size_lg {
             html.push_str(&format!(
-                r#"<table role="presentation"{} class="{} show-for-large"><tbody><tr><td height="{}" style="font-size:{}px;line-height:{}px;">&nbsp;</td></tr></tbody></table>"#,
+                r#"<table role="presentation"{} class="{} show-for-large" aria-hidden="true"><tbody><tr><td height="{}" style="font-size:{}px;line-height:{}px;">&nbsp;</td></tr></tbody></table>"#,
                 attrs, class_str, size, size, size
             ));
         }
@@ -34,7 +34,7 @@ pub fn make_spacer(element: &ElementRef) -> String {
             .or_else(|| get_attr(element, "size"))
             .unwrap_or_else(|| "16".to_string());
         format!(
-            r#"<table role="presentation"{} class="{}"><tbody><tr><td height="{}" style="font-size:{}px;line-height:{}px;">&nbsp;</td></tr></tbody></table>"#,
+            r#"<table role="presentation"{} class="{}" aria-hidden="true"><tbody><tr><td height="{}" style="font-size:{}px;line-height:{}px;">&nbsp;</td></tr></tbody></table>"#,
             attrs, class_str, size, size, size
         )
     }

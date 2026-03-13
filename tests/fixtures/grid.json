@@ -13,7 +13,7 @@
     {
       "name": "grid: creates a single column with first and last classes",
       "input": "<columns large=\"12\" small=\"12\">One</columns>",
-      "expected": "<th class=\"small-12 large-12 columns first last\"><table><tbody><tr><th>One</th>\n<th class=\"expander\"></th></tr></tbody></table></th>"
+      "expected": "<th class=\"small-12 large-12 columns first last\"><table><tbody><tr><th>One</th>\n<th class=\"expander\" aria-hidden=\"true\"></th></tr></tbody></table></th>"
     },
     {
       "name": "grid: single column with no-expander",
@@ -23,7 +23,7 @@
     {
       "name": "grid: single column with no-expander=\"false\"",
       "input": "<columns large=\"12\" small=\"12\" no-expander=\"false\">One</columns>",
-      "expected": "<th class=\"small-12 large-12 columns first last\"><table><tbody><tr><th>One</th>\n<th class=\"expander\"></th></tr></tbody></table></th>"
+      "expected": "<th class=\"small-12 large-12 columns first last\"><table><tbody><tr><th>One</th>\n<th class=\"expander\" aria-hidden=\"true\"></th></tr></tbody></table></th>"
     },
     {
       "name": "grid: single column with no-expander=\"true\"",
@@ -43,7 +43,7 @@
     {
       "name": "grid: transfers classes to the final HTML",
       "input": "<columns class=\"small-offset-8 hide-for-small\">One</columns>",
-      "expected": "<th class=\"small-offset-8 hide-for-small small-12 large-12 columns first last\"><table><tbody><tr><th>One</th>\n<th class=\"expander\"></th></tr></tbody></table></th>"
+      "expected": "<th class=\"small-offset-8 hide-for-small small-12 large-12 columns first last\"><table><tbody><tr><th>One</th>\n<th class=\"expander\" aria-hidden=\"true\"></th></tr></tbody></table></th>"
     },
     {
       "name": "grid: automatically assigns large from small if no large",

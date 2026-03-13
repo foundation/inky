@@ -6,7 +6,7 @@ use super::helpers::build_classes;
 pub fn make_h_line(element: &ElementRef) -> String {
     let classes = build_classes("h-line", element);
     format!(
-        r#"<table role="presentation" class="{}"><tbody><tr><th>&nbsp;</th></tr></tbody></table>"#,
+        r#"<table role="presentation" class="{}" aria-hidden="true"><tbody><tr><th>&nbsp;</th></tr></tbody></table>"#,
         classes
     )
 }
@@ -15,7 +15,7 @@ pub fn make_h_line(element: &ElementRef) -> String {
 pub fn make_divider(element: &ElementRef) -> String {
     let classes = build_classes("divider", element);
     format!(
-        r#"<table role="presentation" class="{}"><tbody><tr><th>&nbsp;</th></tr></tbody></table>"#,
+        r#"<table role="presentation" class="{}" aria-hidden="true"><tbody><tr><th>&nbsp;</th></tr></tbody></table>"#,
         classes
     )
 }
