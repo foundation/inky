@@ -48,6 +48,7 @@ pub fn validate_source(html: &str, config: &Config) -> Vec<Diagnostic> {
     diags.extend(check_video_no_src(html, config));
     diags.extend(check_hero_no_background(html, config));
     diags.extend(check_social_link_no_platform(html, config));
+    diags.extend(check_generic_link_text(html));
     diags
 }
 
@@ -212,6 +213,30 @@ fn check_social_link_no_platform(html: &str, config: &Config) -> Vec<Diagnostic>
         }
     }
     diags
+}
+
+fn check_generic_link_text(html: &str) -> Vec<Diagnostic> {
+    let doc = Html::parse_fragment(html);
+    let sel = Selector::parse("a").unwrap();
+    let generic_phrases = [
+        "click here", "learn more", "read more", "here", "link",
+    ];
+    let mut count = 0;
+    for el in doc.select(&sel) {
+        let text: String = el.text().collect();
+        let trimmed = text.trim().to_lowercase();
+        if generic_phrases.contains(&trimmed.as_str()) {
+            count += 1;
+        }
+    }
+    if count > 0 {
+        vec![Diagnostic::warning("generic-link-text", format!(
+            "{} link(s) use generic text like \"Click Here\" — use descriptive text for accessibility and spam filtering",
+            count
+        ))]
+    } else {
+        vec![]
+    }
 }
 
 // --- Output-level checks ---
@@ -462,6 +487,27 @@ mod tests {
         let html = "<container><social-link platform=\"facebook\" href=\"#\">FB</social-link></container>";
         let diags = validate_source(html, &default_config());
         assert!(!diags.iter().any(|d| d.rule == "social-link-no-platform"));
+    }
+
+    #[test]
+    fn test_generic_link_text() {
+        let html = "<container><a href=\"https://example.com\">Click Here</a></container>";
+        let diags = validate_source(html, &default_config());
+        assert!(diags.iter().any(|d| d.rule == "generic-link-text"));
+    }
+
+    #[test]
+    fn test_generic_link_text_learn_more() {
+        let html = "<container><a href=\"https://example.com\">Learn More</a></container>";
+        let diags = validate_source(html, &default_config());
+        assert!(diags.iter().any(|d| d.rule == "generic-link-text"));
+    }
+
+    #[test]
+    fn test_descriptive_link_text() {
+        let html = "<container><a href=\"https://example.com\">View your order details</a></container>";
+        let diags = validate_source(html, &default_config());
+        assert!(!diags.iter().any(|d| d.rule == "generic-link-text"));
     }
 
     #[test]
