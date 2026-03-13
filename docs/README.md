@@ -4,8 +4,9 @@ Inky is a complete email framework that converts simple HTML into complex, respo
 
 ## Docs
 
-- **[Getting Started](getting-started.md)** -- Installation, basic usage, first email template
-- **[Component Reference](components.md)** -- Every component with syntax, attributes, and examples
+- **[Getting Started](getting-started.md)** -- Installation, basic usage, layouts, includes, custom components
+- **[Component Reference](components.md)** -- Every built-in component with syntax, attributes, and examples
+- **[Style Reference](styles.md)** -- All SCSS variables for customizing colors, typography, layout, and more
 - **[Migration Guide](migration.md)** -- Upgrading from Inky v1 to v2
 - **[Language Bindings](bindings.md)** -- Node.js, PHP, Python, and Ruby integration
 

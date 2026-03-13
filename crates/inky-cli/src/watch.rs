@@ -15,6 +15,7 @@ pub fn cmd_watch(
     columns: u32,
     inline_css: bool,
     framework_css: bool,
+    components_dir: Option<String>,
 ) {
     if !input.is_dir() {
         eprintln!(
@@ -44,7 +45,14 @@ pub fn cmd_watch(
         output.display()
     );
 
-    do_full_build(&input, &output, &config, inline_css, framework_css);
+    do_full_build(
+        &input,
+        &output,
+        &config,
+        inline_css,
+        framework_css,
+        components_dir.as_deref(),
+    );
 
     eprintln!("  press {} to stop\n", "Ctrl+C".bold());
 
@@ -135,7 +143,14 @@ pub fn cmd_watch(
                         "  [{}] include or file changed, rebuilding all...",
                         timestamp
                     );
-                    do_full_build(&input, &output, &config, inline_css, framework_css);
+                    do_full_build(
+                        &input,
+                        &output,
+                        &config,
+                        inline_css,
+                        framework_css,
+                        components_dir.as_deref(),
+                    );
                 } else {
                     for file in &changed_files {
                         rebuild_single_file(
@@ -145,6 +160,7 @@ pub fn cmd_watch(
                             &config,
                             inline_css,
                             framework_css,
+                            components_dir.as_deref(),
                         );
                     }
                 }
@@ -188,6 +204,7 @@ fn do_full_build(
     config: &Config,
     inline_css: bool,
     framework_css: bool,
+    components_dir: Option<&str>,
 ) {
     let inky = Inky::with_config(config.clone());
     let files = find_template_files(input);
@@ -211,6 +228,7 @@ fn do_full_build(
             config,
             inline_css,
             framework_css,
+            components_dir,
         ) {
             Ok(dest) => {
                 let timestamp = current_time();
@@ -239,6 +257,7 @@ fn rebuild_single_file(
     config: &Config,
     inline_css: bool,
     framework_css: bool,
+    components_dir: Option<&str>,
 ) {
     let inky = Inky::with_config(config.clone());
     let timestamp = current_time();
@@ -251,6 +270,7 @@ fn rebuild_single_file(
         config,
         inline_css,
         framework_css,
+        components_dir,
     ) {
         Ok(dest) => {
             eprintln!(
@@ -273,6 +293,7 @@ fn rebuild_single_file(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn build_file(
     inky: &Inky,
     file: &Path,
@@ -281,6 +302,7 @@ fn build_file(
     config: &Config,
     inline_css: bool,
     framework_css: bool,
+    components_dir: Option<&str>,
 ) -> Result<PathBuf, String> {
     let html = std::fs::read_to_string(file).map_err(|e| format!("Failed to read: {}", e))?;
 
@@ -300,6 +322,7 @@ fn build_file(
         inline_css,
         framework_css,
         file.parent(),
+        components_dir,
         crate::build::ErrorMode::Continue,
     );
 

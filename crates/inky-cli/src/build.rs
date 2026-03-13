@@ -23,20 +23,27 @@ fn handle_error(mode: ErrorMode, msg: &str) -> String {
     }
 }
 
-/// Full build pipeline: layout → includes → extract SCSS overrides → compile framework CSS → inject → transform → inline → cleanup.
+/// Full build pipeline: layout → custom components → includes → extract SCSS overrides → compile framework CSS → inject → transform → inline → cleanup.
 pub fn process_template(
     inky: &Inky,
     html: &str,
     inline_css: bool,
     framework_css: bool,
     base_path: Option<&Path>,
+    components_dir: Option<&str>,
     error_mode: ErrorMode,
 ) -> String {
-    // Resolve <layout> tag, then <include> tags before any other processing
+    // Resolve <layout> tag, then custom components, then <include> tags
     let mut html = if let Some(base) = base_path {
         let with_layout = inky_core::include::process_layout(html, base)
             .unwrap_or_else(|e| handle_error(error_mode, &e));
-        inky_core::include::process_includes(&with_layout, base)
+        let with_components = inky_core::include::process_custom_components(
+            &with_layout,
+            base,
+            components_dir.unwrap_or("components"),
+        )
+        .unwrap_or_else(|e| handle_error(error_mode, &e));
+        inky_core::include::process_includes(&with_components, base)
             .unwrap_or_else(|e| handle_error(error_mode, &e))
     } else {
         html.to_string()

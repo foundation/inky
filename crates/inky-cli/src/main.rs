@@ -114,7 +114,7 @@ fn main() {
             no_framework_css,
             strict,
         } => {
-            let (input, output, columns) = resolve_config(input, output, columns);
+            let (input, output, columns, components) = resolve_config(input, output, columns);
             cmd_build(
                 input,
                 output,
@@ -122,6 +122,7 @@ fn main() {
                 !no_inline_css,
                 !no_framework_css,
                 strict,
+                components,
             )
         }
         Commands::Validate { input } => cmd_validate(input),
@@ -138,7 +139,7 @@ fn main() {
             no_inline_css,
             no_framework_css,
         } => {
-            let (input, output, columns) = resolve_config(input, output, columns);
+            let (input, output, columns, components) = resolve_config(input, output, columns);
             let input = input.unwrap_or_else(|| {
                 eprintln!("{} No input directory specified. Use `inky watch <dir>` or set \"src\" in inky.config.json", "error:".red().bold());
                 process::exit(1);
@@ -147,7 +148,14 @@ fn main() {
                 eprintln!("{} No output directory specified. Use `-o <dir>` or set \"dist\" in inky.config.json", "error:".red().bold());
                 process::exit(1);
             });
-            watch::cmd_watch(input, output, columns, !no_inline_css, !no_framework_css)
+            watch::cmd_watch(
+                input,
+                output,
+                columns,
+                !no_inline_css,
+                !no_framework_css,
+                components,
+            )
         }
     }
 }
@@ -183,16 +191,23 @@ fn resolve_config(
     input: Option<PathBuf>,
     output: Option<PathBuf>,
     columns: Option<u32>,
-) -> (Option<PathBuf>, Option<PathBuf>, u32) {
+) -> (Option<PathBuf>, Option<PathBuf>, u32, Option<String>) {
     let project_config = find_project_config(input.as_deref());
 
-    let (cfg_src, cfg_dist, cfg_columns) = match &project_config {
+    let (cfg_src, cfg_dist, cfg_columns, cfg_components) = match &project_config {
         Some((cfg, base_dir)) => (
             cfg.src.as_ref().map(|s| base_dir.join(s)),
             cfg.dist.as_ref().map(|d| base_dir.join(d)),
             cfg.columns,
+            cfg.components.as_ref().map(|c| {
+                let p = base_dir.join(c);
+                std::fs::canonicalize(&p)
+                    .unwrap_or(p)
+                    .to_string_lossy()
+                    .to_string()
+            }),
         ),
-        None => (None, None, None),
+        None => (None, None, None, None),
     };
 
     // If input points to a project root (has config), use config's src
@@ -212,7 +227,7 @@ fn resolve_config(
     let output = output.or(cfg_dist);
     let columns = columns.or(cfg_columns).unwrap_or(12);
 
-    (input, output, columns)
+    (input, output, columns, cfg_components)
 }
 
 fn cmd_build(
@@ -222,6 +237,7 @@ fn cmd_build(
     inline_css: bool,
     framework_css: bool,
     strict: bool,
+    components_dir: Option<String>,
 ) {
     let config = Config {
         column_count: columns,
@@ -239,6 +255,7 @@ fn cmd_build(
                     inline_css,
                     framework_css,
                     &config,
+                    components_dir.as_deref(),
                 )
             } else {
                 let base = path.parent().map(Path::to_path_buf);
@@ -250,6 +267,7 @@ fn cmd_build(
                     inline_css,
                     framework_css,
                     base.as_deref(),
+                    components_dir.as_deref(),
                     build::ErrorMode::Exit,
                 );
                 // If no output specified and input is .inky, write to .html
@@ -279,6 +297,7 @@ fn cmd_build(
                 inline_css,
                 framework_css,
                 cwd.as_deref(),
+                components_dir.as_deref(),
                 build::ErrorMode::Exit,
             );
             write_output(&result, output.as_deref());
@@ -311,6 +330,7 @@ fn build_directory(
     inline_css: bool,
     framework_css: bool,
     config: &Config,
+    components_dir: Option<&str>,
 ) -> bool {
     let files = find_template_files(input_dir);
     let mut has_warnings = false;
@@ -336,6 +356,7 @@ fn build_directory(
             inline_css,
             framework_css,
             base.as_deref(),
+            components_dir,
             build::ErrorMode::Exit,
         );
 

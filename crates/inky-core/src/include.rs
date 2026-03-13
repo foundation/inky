@@ -222,6 +222,170 @@ impl<'a> IncludeResolver for NestedResolver<'a> {
     }
 }
 
+/// Process custom component tags (`<ink-NAME>`) by resolving them to partials.
+///
+/// Tags like `<ink-card title="Hello">content</ink-card>` are resolved to
+/// the file `{components_dir}/card.html`, with attributes passed as variables
+/// and inner content injected via `<yield>`.
+pub fn process_custom_components(
+    html: &str,
+    base_path: &Path,
+    components_dir: &str,
+) -> Result<String, String> {
+    let components_path = Path::new(components_dir);
+    let resolved = if components_path.is_absolute() {
+        components_path.to_path_buf()
+    } else {
+        base_path.join(components_dir)
+    };
+    let resolver = FileIncludeResolver::new(resolved);
+    process_custom_components_with_resolver(html, &resolver)
+}
+
+/// Process custom components with a custom resolver (useful for testing).
+pub fn process_custom_components_with_resolver(
+    html: &str,
+    resolver: &dyn IncludeResolver,
+) -> Result<String, String> {
+    process_custom_components_recursive(html, resolver, 0)
+}
+
+fn process_custom_components_recursive(
+    html: &str,
+    resolver: &dyn IncludeResolver,
+    depth: usize,
+) -> Result<String, String> {
+    if depth >= MAX_INCLUDE_DEPTH {
+        return Err(format!(
+            "Maximum custom component depth ({}) exceeded — check for circular components",
+            MAX_INCLUDE_DEPTH
+        ));
+    }
+
+    // Match <ink-NAME ...> opening tags (not self-closing)
+    let open_re = Regex::new(r"<ink-([\w][\w-]*)(\s[^>]*)?>").unwrap();
+    let self_close_re = Regex::new(r"<ink-([\w][\w-]*)(\s[^>]*)?\s*/>").unwrap();
+
+    let mut result = html.to_string();
+
+    loop {
+        // Try self-closing first: <ink-card title="Hello" />
+        if let Some(caps) = self_close_re.captures(&result) {
+            let full = caps.get(0).unwrap();
+            let name = &caps[1];
+            let attrs_str = caps.get(2).map(|m| m.as_str()).unwrap_or("");
+
+            let resolved = resolve_component(name, attrs_str, "", resolver, depth)?;
+            result = format!(
+                "{}{}{}",
+                &result[..full.start()],
+                resolved,
+                &result[full.end()..]
+            );
+            continue;
+        }
+
+        // Try opening tag with body: <ink-card>...</ink-card>
+        if let Some(caps) = open_re.captures(&result) {
+            let full = caps.get(0).unwrap();
+            let name = caps[1].to_string();
+            let attrs_str = caps.get(2).map(|m| m.as_str()).unwrap_or("").to_string();
+
+            // Find matching closing tag with depth tracking
+            let close_tag = format!("</ink-{}>", name);
+            let nested_open =
+                Regex::new(&format!(r"<ink-{}(?:\s[^>]*)?>", regex::escape(&name))).unwrap();
+            let nested_close = Regex::new(&format!(r"</ink-{}>", regex::escape(&name))).unwrap();
+
+            let mut depth_count = 1;
+            let mut pos = full.end();
+            let close_end;
+
+            loop {
+                let next_open = nested_open
+                    .find(&result[pos..])
+                    .map(|m| (pos + m.start(), pos + m.end()));
+                let next_close = nested_close
+                    .find(&result[pos..])
+                    .map(|m| (pos + m.start(), pos + m.end()));
+
+                match (next_open, next_close) {
+                    (Some((os, oe)), Some((cs, ce))) => {
+                        if cs < os {
+                            depth_count -= 1;
+                            if depth_count == 0 {
+                                close_end = ce;
+                                break;
+                            }
+                            pos = ce;
+                        } else {
+                            depth_count += 1;
+                            pos = oe;
+                        }
+                    }
+                    (None, Some((_cs, ce))) => {
+                        depth_count -= 1;
+                        if depth_count == 0 {
+                            close_end = ce;
+                            break;
+                        }
+                        pos = ce;
+                    }
+                    _ => {
+                        return Err(format!(
+                            "Missing closing tag {} for custom component",
+                            close_tag
+                        ));
+                    }
+                }
+            }
+
+            let inner_content = &result[full.end()..close_end - close_tag.len()];
+            let resolved =
+                resolve_component(&name, &attrs_str, inner_content.trim(), resolver, depth)?;
+            result = format!(
+                "{}{}{}",
+                &result[..full.start()],
+                resolved,
+                &result[close_end..]
+            );
+            continue;
+        }
+
+        // No more ink- tags
+        break;
+    }
+
+    Ok(result)
+}
+
+/// Resolve a single custom component: load partial, replace variables and yield.
+fn resolve_component(
+    name: &str,
+    attrs_str: &str,
+    inner_content: &str,
+    resolver: &dyn IncludeResolver,
+    depth: usize,
+) -> Result<String, String> {
+    let file_name = format!("{}.inky", name);
+    let template = resolver.resolve(&file_name).map_err(|_| {
+        format!(
+            "Custom component <ink-{}> not found: could not load '{}'. Create this file in your components directory.",
+            name, file_name
+        )
+    })?;
+
+    let attrs = parse_attributes(attrs_str);
+    let template = replace_variables(&template, &attrs);
+
+    // Replace <yield> with inner content
+    let yield_re = Regex::new(r"<yield\s*/?\s*>").unwrap();
+    let resolved = yield_re.replace_all(&template, inner_content).to_string();
+
+    // Recursively process any nested ink- tags in the result
+    process_custom_components_recursive(&resolved, resolver, depth + 1)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -456,5 +620,177 @@ mod tests {
             result,
             "<title>Default Title</title><h1>Hello</h1><p>© 2026</p>"
         );
+    }
+
+    // --- Custom component tests ---
+
+    #[test]
+    fn test_custom_component_basic() {
+        let mut files = HashMap::new();
+        files.insert(
+            "card.inky".to_string(),
+            "<div class=\"card\"><h2>$title$</h2></div>".to_string(),
+        );
+        let resolver = MapResolver { files };
+
+        let html = r#"<ink-card title="Hello" />"#;
+        let result = process_custom_components_with_resolver(html, &resolver).unwrap();
+        assert_eq!(result, r#"<div class="card"><h2>Hello</h2></div>"#);
+    }
+
+    #[test]
+    fn test_custom_component_with_body() {
+        let mut files = HashMap::new();
+        files.insert(
+            "card.inky".to_string(),
+            "<div class=\"card\"><h2>$title$</h2><yield></div>".to_string(),
+        );
+        let resolver = MapResolver { files };
+
+        let html = r#"<ink-card title="Hello"><p>Card body</p></ink-card>"#;
+        let result = process_custom_components_with_resolver(html, &resolver).unwrap();
+        assert_eq!(
+            result,
+            r#"<div class="card"><h2>Hello</h2><p>Card body</p></div>"#
+        );
+    }
+
+    #[test]
+    fn test_custom_component_self_closing() {
+        let mut files = HashMap::new();
+        files.insert(
+            "divider.inky".to_string(),
+            "<hr class=\"$color|gray$\">".to_string(),
+        );
+        let resolver = MapResolver { files };
+
+        let html = r#"<ink-divider color="red" />"#;
+        let result = process_custom_components_with_resolver(html, &resolver).unwrap();
+        assert_eq!(result, r#"<hr class="red">"#);
+    }
+
+    #[test]
+    fn test_custom_component_defaults() {
+        let mut files = HashMap::new();
+        files.insert(
+            "badge.inky".to_string(),
+            "<span class=\"badge $color|blue$\">$text|New$</span>".to_string(),
+        );
+        let resolver = MapResolver { files };
+
+        let html = r#"<ink-badge />"#;
+        let result = process_custom_components_with_resolver(html, &resolver).unwrap();
+        assert_eq!(result, r#"<span class="badge blue">New</span>"#);
+    }
+
+    #[test]
+    fn test_custom_component_nested() {
+        let mut files = HashMap::new();
+        files.insert(
+            "card.inky".to_string(),
+            "<div class=\"card\"><yield></div>".to_string(),
+        );
+        files.insert(
+            "badge.inky".to_string(),
+            "<span class=\"badge\">$text$</span>".to_string(),
+        );
+        let resolver = MapResolver { files };
+
+        let html = r#"<ink-card><ink-badge text="New" /></ink-card>"#;
+        let result = process_custom_components_with_resolver(html, &resolver).unwrap();
+        assert_eq!(
+            result,
+            r#"<div class="card"><span class="badge">New</span></div>"#
+        );
+    }
+
+    #[test]
+    fn test_custom_component_nested_same_type() {
+        let mut files = HashMap::new();
+        files.insert(
+            "box.inky".to_string(),
+            "<div class=\"box $style|plain$\"><yield></div>".to_string(),
+        );
+        let resolver = MapResolver { files };
+
+        let html =
+            r#"<ink-box style="outer"><ink-box style="inner"><p>Content</p></ink-box></ink-box>"#;
+        let result = process_custom_components_with_resolver(html, &resolver).unwrap();
+        assert_eq!(
+            result,
+            r#"<div class="box outer"><div class="box inner"><p>Content</p></div></div>"#
+        );
+    }
+
+    #[test]
+    fn test_custom_component_missing_file() {
+        let resolver = MapResolver {
+            files: HashMap::new(),
+        };
+
+        let html = r#"<ink-missing />"#;
+        let result = process_custom_components_with_resolver(html, &resolver);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("ink-missing"));
+    }
+
+    #[test]
+    fn test_custom_component_circular_depth() {
+        let mut files = HashMap::new();
+        files.insert(
+            "loop.inky".to_string(),
+            "<div><ink-loop /></div>".to_string(),
+        );
+        let resolver = MapResolver { files };
+
+        let html = r#"<ink-loop />"#;
+        let result = process_custom_components_with_resolver(html, &resolver);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .contains("Maximum custom component depth"));
+    }
+
+    #[test]
+    fn test_custom_component_alongside_html() {
+        let mut files = HashMap::new();
+        files.insert(
+            "alert.inky".to_string(),
+            "<div class=\"alert\">$message$</div>".to_string(),
+        );
+        let resolver = MapResolver { files };
+
+        let html = r#"<h1>Title</h1><ink-alert message="Warning!" /><p>Footer</p>"#;
+        let result = process_custom_components_with_resolver(html, &resolver).unwrap();
+        assert_eq!(
+            result,
+            r#"<h1>Title</h1><div class="alert">Warning!</div><p>Footer</p>"#
+        );
+    }
+
+    #[test]
+    fn test_custom_component_no_ink_tags() {
+        let resolver = MapResolver {
+            files: HashMap::new(),
+        };
+
+        let html = "<p>No custom components here</p>";
+        let result = process_custom_components_with_resolver(html, &resolver).unwrap();
+        assert_eq!(result, html);
+    }
+
+    #[test]
+    fn test_custom_component_partial_contains_include() {
+        let mut files = HashMap::new();
+        files.insert(
+            "wrapper.inky".to_string(),
+            "<div><include src=\"inner.html\"></div>".to_string(),
+        );
+        let resolver = MapResolver { files };
+
+        // Custom components don't resolve <include> tags — that's a separate step
+        let html = r#"<ink-wrapper />"#;
+        let result = process_custom_components_with_resolver(html, &resolver).unwrap();
+        assert_eq!(result, r#"<div><include src="inner.html"></div>"#);
     }
 }

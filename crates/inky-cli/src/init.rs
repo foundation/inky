@@ -35,6 +35,7 @@ pub fn cmd_init(name: Option<String>) {
     let dirs = [
         "src/layouts",
         "src/partials",
+        "src/components",
         "src/styles",
         "src/emails",
         "dist",
@@ -60,6 +61,7 @@ pub fn cmd_init(name: Option<String>) {
         ("src/styles/theme.scss", STYLES_THEME),
         ("src/partials/header.inky", PARTIAL_HEADER),
         ("src/partials/footer.inky", PARTIAL_FOOTER),
+        ("src/components/cta.inky", COMPONENT_CTA),
         ("src/emails/welcome.inky", EMAIL_WELCOME),
     ];
 
@@ -103,7 +105,8 @@ fn print_created(path: &str) {
 const CONFIG_JSON: &str = r#"{
   "src": "src/emails",
   "dist": "dist",
-  "columns": 12
+  "columns": 12,
+  "components": "src/components"
 }
 "#;
 
@@ -142,13 +145,38 @@ const LAYOUT_DEFAULT: &str = r#"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Tra
 
 const STYLES_THEME: &str = r#"// Inky Theme
 // Uncomment and edit variables to customize your email styles.
-// See the full list of variables in the Inky docs.
+// See all available variables: https://github.com/foundation/inky/blob/develop/docs/styles.md
 
+// Colors
 // $primary-color: #2199e8;
-// $global-font-family: Helvetica, Arial, sans-serif;
+// $secondary-color: #777777;
+// $success-color: #3adb76;
+// $warning-color: #ffae00;
+// $alert-color: #ec5840;
+
+// Layout
 // $global-width: 580px;
+// $global-gutter: 16px;
 // $body-background: #f3f3f3;
 // $container-background: #fefefe;
+
+// Typography
+// $body-font-family: Helvetica, Arial, sans-serif;
+// $global-font-size: 16px;
+// $global-font-color: #0a0a0a;
+// $header-font-family: $body-font-family;
+
+// Buttons
+// $button-background: $primary-color;
+// $button-color: #fefefe;
+// $button-font-weight: bold;
+// $button-radius: 3px;
+
+// Dark Mode
+// $dark-body-background: #1a1a1a;
+// $dark-container-background: #2d2d2d;
+// $dark-font-color: #f0f0f0;
+// $dark-link-color: #5ab5f7;
 "#;
 
 const PARTIAL_HEADER: &str = r#"<wrapper class="header">
@@ -173,6 +201,16 @@ const PARTIAL_FOOTER: &str = r##"<wrapper class="footer">
 </wrapper>
 "##;
 
+const COMPONENT_CTA: &str = r#"<row>
+  <column sm="12" lg="12">
+    <center>
+      <button href="$href$" class="$color|primary$">$text|Learn More$</button>
+    </center>
+    <yield>
+  </column>
+</row>
+"#;
+
 const EMAIL_WELCOME: &str = r#"<layout src="../layouts/default.html" title="Welcome!" preheader="Thanks for signing up — here's how to get started.">
 <include src="../partials/header.inky">
 
@@ -181,15 +219,14 @@ const EMAIL_WELCOME: &str = r#"<layout src="../layouts/default.html" title="Welc
     <column sm="12" lg="12">
       <h1>Welcome!</h1>
       <p>Thanks for signing up. We're excited to have you on board.</p>
-      <button href="https://example.com">Get Started</button>
     </column>
   </row>
-  <row>
-    <column sm="12" lg="12">
-      <spacer height="16"></spacer>
-      <p>If you have any questions, just reply to this email — we'd love to help.</p>
-    </column>
-  </row>
+
+  <!-- Custom component: resolves to src/components/cta.html -->
+  <ink-cta href="https://example.com" text="Get Started">
+    <spacer height="16"></spacer>
+    <p class="text-center"><small>Questions? Just reply to this email.</small></p>
+  </ink-cta>
 </container>
 
 <include src="../partials/footer.inky">

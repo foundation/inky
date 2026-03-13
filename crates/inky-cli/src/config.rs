@@ -11,6 +11,8 @@ pub struct ProjectConfig {
     pub dist: Option<String>,
     /// Number of grid columns
     pub columns: Option<u32>,
+    /// Custom components directory (default: "components")
+    pub components: Option<String>,
 }
 
 /// Search for `inky.config.json` starting from `start_dir` and walking up to the filesystem root.

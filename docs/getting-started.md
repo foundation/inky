@@ -165,7 +165,7 @@ inky init my-project
 
 ### Framework CSS
 
-Inky includes a built-in SCSS framework for responsive email styles. It is injected automatically during build. Override variables in your layout:
+Inky includes a built-in SCSS framework for responsive email styles. It is injected automatically during build. Override variables in your layout (see the full [Style Reference](styles.md) for all available variables):
 
 ```html
 <!-- Inline SCSS overrides -->
@@ -240,6 +240,48 @@ Reference it from your email:
 ```
 
 Partials can include other partials (max depth: 10).
+
+### Custom Components
+
+Create reusable components with the `ink-` prefix. Any tag like `<ink-NAME>` resolves to the file `components/NAME.inky` in your project.
+
+**Define a component** (`src/components/cta.inky`):
+
+```html
+<row>
+  <column sm="12" lg="12">
+    <center>
+      <button href="$href$" class="$color|primary$">$text|Learn More$</button>
+    </center>
+    <yield>
+  </column>
+</row>
+```
+
+**Use it in your email:**
+
+```html
+<ink-cta href="https://example.com" text="Get Started">
+  <p>Extra content below the button</p>
+</ink-cta>
+```
+
+- Attributes become template variables (`$href$`, `$text$`, `$color$`)
+- Inner content replaces `<yield>` in the component
+- Self-closing works too: `<ink-cta href="https://example.com" />`
+- Components can nest inside other components
+- Variable defaults use the `$name|default$` syntax
+- Max nesting depth: 10 (prevents circular references)
+
+Configure the components directory in `inky.config.json`:
+
+```json
+{
+  "components": "src/components"
+}
+```
+
+The default directory is `components` relative to the input file.
 
 ### Template Variables
 
