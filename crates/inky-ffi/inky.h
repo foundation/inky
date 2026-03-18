@@ -82,6 +82,15 @@ char *inky_migrate_with_details(const char *input);
 char *inky_validate(const char *input);
 
 /**
+ * Convert HTML to plain text for multipart email.
+ * Caller must free the returned string with inky_free().
+ *
+ * # Safety
+ * `input` must be a valid, non-null, null-terminated C string.
+ */
+char *inky_to_plain_text(const char *input);
+
+/**
  * Get the Inky version string.
  * Caller must free the returned string with inky_free().
  */

@@ -125,6 +125,12 @@ fn diagnostics_to_json(diagnostics: &[validate::Diagnostic]) -> String {
     format!("[{}]", items.join(","))
 }
 
+/// Convert HTML to plain text for multipart email.
+#[wasm_bindgen]
+pub fn to_plain_text(html: &str) -> String {
+    inky_core::plaintext::html_to_plain_text(html)
+}
+
 /// Get the Inky version.
 #[wasm_bindgen]
 pub fn version() -> String {

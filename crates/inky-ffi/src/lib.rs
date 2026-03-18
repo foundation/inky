@@ -151,6 +151,19 @@ pub unsafe extern "C" fn inky_validate(input: *const c_char) -> *mut c_char {
     CString::new(json).unwrap_or_default().into_raw()
 }
 
+/// Convert HTML to plain text for multipart email.
+/// Caller must free the returned string with inky_free().
+///
+/// # Safety
+/// `input` must be a valid, non-null, null-terminated C string.
+#[no_mangle]
+pub unsafe extern "C" fn inky_to_plain_text(input: *const c_char) -> *mut c_char {
+    let c_str = unsafe { CStr::from_ptr(input) };
+    let html = c_str.to_str().unwrap_or("");
+    let result = inky_core::plaintext::html_to_plain_text(html);
+    CString::new(result).unwrap_or_default().into_raw()
+}
+
 /// Get the Inky version string.
 /// Caller must free the returned string with inky_free().
 #[no_mangle]
