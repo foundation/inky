@@ -1,0 +1,494 @@
+use std::collections::{HashMap, HashSet};
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::mpsc;
+use std::sync::{Arc, RwLock};
+use std::time::Duration;
+
+use colored::Colorize;
+use notify_debouncer_mini::{new_debouncer, DebouncedEventKind};
+use regex::Regex;
+
+use inky_core::{Config, Inky, OutputMode};
+
+use crate::build;
+
+/// A rendered template held in memory.
+struct RenderedTemplate {
+    html: String,
+}
+
+/// Global version counter incremented on each rebuild.
+static VERSION: AtomicU64 = AtomicU64::new(1);
+
+#[allow(clippy::too_many_arguments)]
+pub fn cmd_serve(
+    input: PathBuf,
+    columns: u32,
+    inline_css: bool,
+    framework_css: bool,
+    components_dir: Option<String>,
+    data_path: Option<PathBuf>,
+    port: u16,
+    output_mode: OutputMode,
+) {
+    if !input.is_dir() {
+        eprintln!(
+            "{} Input path '{}' is not a directory",
+            "error:".red().bold(),
+            input.display()
+        );
+        std::process::exit(1);
+    }
+
+    let input = std::fs::canonicalize(&input).unwrap_or(input);
+
+    let config = Config {
+        column_count: columns,
+        output_mode,
+        ..Config::default()
+    };
+
+    // Load merge data
+    let merge_data = load_serve_data(data_path.as_deref());
+
+    // Build all templates into memory
+    let templates: Arc<RwLock<HashMap<String, RenderedTemplate>>> =
+        Arc::new(RwLock::new(HashMap::new()));
+
+    build_all_templates(
+        &input,
+        &config,
+        inline_css,
+        framework_css,
+        components_dir.as_deref(),
+        merge_data.as_ref(),
+        &templates,
+    );
+
+    let addr = format!("0.0.0.0:{}", port);
+    let server = tiny_http::Server::http(&addr).unwrap_or_else(|e| {
+        eprintln!(
+            "{} Failed to start server on {}: {}",
+            "error:".red().bold(),
+            addr,
+            e
+        );
+        std::process::exit(1);
+    });
+
+    eprintln!("\n  {} http://localhost:{}", "serving".green().bold(), port);
+    eprintln!("  {} {}", "watching".cyan().bold(), input.display());
+    eprintln!("  press {} to stop\n", "Ctrl+C".bold());
+
+    // Spawn file watcher thread
+    let watcher_templates = Arc::clone(&templates);
+    let watcher_input = input.clone();
+    let watcher_components = components_dir.clone();
+    let watcher_data_path = data_path.clone();
+
+    std::thread::spawn(move || {
+        run_file_watcher(
+            watcher_input,
+            config,
+            inline_css,
+            framework_css,
+            watcher_components,
+            watcher_data_path,
+            watcher_templates,
+        );
+    });
+
+    // Handle HTTP requests
+    let server = Arc::new(server);
+    for request in server.incoming_requests() {
+        let url = request.url().to_string();
+
+        if url == "/_poll" {
+            let version = VERSION.load(Ordering::Relaxed);
+            let response = tiny_http::Response::from_string(version.to_string())
+                .with_header(
+                    "Content-Type: text/plain"
+                        .parse::<tiny_http::Header>()
+                        .unwrap(),
+                )
+                .with_header(
+                    "Cache-Control: no-cache"
+                        .parse::<tiny_http::Header>()
+                        .unwrap(),
+                );
+            let _ = request.respond(response);
+        } else if url == "/" {
+            let index_html = build_index_page(&templates, port);
+            let response = tiny_http::Response::from_string(index_html).with_header(
+                "Content-Type: text/html; charset=utf-8"
+                    .parse::<tiny_http::Header>()
+                    .unwrap(),
+            );
+            let _ = request.respond(response);
+        } else {
+            // Strip leading slash to get the template name
+            let name = url.trim_start_matches('/');
+            let state = templates.read().unwrap();
+            if let Some(tmpl) = state.get(name) {
+                let html = inject_reload_script(&tmpl.html);
+                let response = tiny_http::Response::from_string(html).with_header(
+                    "Content-Type: text/html; charset=utf-8"
+                        .parse::<tiny_http::Header>()
+                        .unwrap(),
+                );
+                let _ = request.respond(response);
+            } else {
+                let response = tiny_http::Response::from_string("404 Not Found")
+                    .with_status_code(404)
+                    .with_header(
+                        "Content-Type: text/plain"
+                            .parse::<tiny_http::Header>()
+                            .unwrap(),
+                    );
+                let _ = request.respond(response);
+            }
+        }
+    }
+}
+
+fn load_serve_data(path: Option<&Path>) -> Option<serde_json::Value> {
+    let path = path?;
+    match std::fs::read_to_string(path) {
+        Ok(content) => match serde_json::from_str(&content) {
+            Ok(data) => Some(data),
+            Err(e) => {
+                eprintln!(
+                    "  {} Failed to parse data file {}: {}",
+                    "warning:".yellow().bold(),
+                    path.display(),
+                    e
+                );
+                None
+            }
+        },
+        Err(e) => {
+            eprintln!(
+                "  {} Failed to read data file {}: {}",
+                "warning:".yellow().bold(),
+                path.display(),
+                e
+            );
+            None
+        }
+    }
+}
+
+fn build_all_templates(
+    input: &Path,
+    config: &Config,
+    inline_css: bool,
+    framework_css: bool,
+    components_dir: Option<&str>,
+    merge_data: Option<&serde_json::Value>,
+    templates: &Arc<RwLock<HashMap<String, RenderedTemplate>>>,
+) {
+    let inky = Inky::with_config(config.clone());
+    let files = crate::util::find_files(input, crate::util::TEMPLATE_EXTENSIONS);
+
+    let mut state = templates.write().unwrap();
+    state.clear();
+
+    for file in &files {
+        let name = template_name(file, input);
+        match std::fs::read_to_string(file) {
+            Ok(html) => {
+                let result = build::process_template(
+                    &inky,
+                    &html,
+                    inline_css,
+                    framework_css,
+                    file.parent(),
+                    components_dir,
+                    merge_data,
+                    build::ErrorMode::Continue,
+                );
+                eprintln!("  {} {}", "built".green().bold(), name);
+                state.insert(name, RenderedTemplate { html: result });
+            }
+            Err(e) => {
+                eprintln!(
+                    "  {} Failed to read {}: {}",
+                    "warning:".yellow().bold(),
+                    file.display(),
+                    e
+                );
+            }
+        }
+    }
+}
+
+/// Derive a template name from a file path relative to the input directory.
+/// e.g. /path/to/input/welcome.inky -> "welcome.html"
+fn template_name(file: &Path, input_dir: &Path) -> String {
+    let relative = file.strip_prefix(input_dir).unwrap_or(file);
+    let mut name = relative.to_string_lossy().to_string();
+    if name.ends_with(".inky") {
+        name = name[..name.len() - 5].to_string() + ".html";
+    }
+    name
+}
+
+fn run_file_watcher(
+    input: PathBuf,
+    config: Config,
+    inline_css: bool,
+    framework_css: bool,
+    components_dir: Option<String>,
+    data_path: Option<PathBuf>,
+    templates: Arc<RwLock<HashMap<String, RenderedTemplate>>>,
+) {
+    let (tx, rx) = mpsc::channel();
+
+    let mut debouncer = new_debouncer(Duration::from_millis(300), tx).unwrap_or_else(|e| {
+        eprintln!(
+            "{} Failed to create file watcher: {}",
+            "error:".red().bold(),
+            e
+        );
+        std::process::exit(1);
+    });
+
+    debouncer
+        .watcher()
+        .watch(&input, notify::RecursiveMode::Recursive)
+        .unwrap_or_else(|e| {
+            eprintln!(
+                "{} Failed to watch directory '{}': {}",
+                "error:".red().bold(),
+                input.display(),
+                e
+            );
+            std::process::exit(1);
+        });
+
+    // Watch data file directory
+    if let Some(ref data_file) = data_path {
+        if let Some(parent) = data_file.parent() {
+            let canonical = std::fs::canonicalize(parent).unwrap_or(parent.to_path_buf());
+            debouncer
+                .watcher()
+                .watch(&canonical, notify::RecursiveMode::NonRecursive)
+                .unwrap_or_else(|e| {
+                    eprintln!(
+                        "  {} Failed to watch data file directory '{}': {}",
+                        "warning:".yellow().bold(),
+                        canonical.display(),
+                        e
+                    );
+                });
+        }
+    }
+
+    // Watch include directories
+    let include_dirs = find_include_dirs(&input);
+    for dir in &include_dirs {
+        if dir != &input {
+            eprintln!("  {} {}", "watching".cyan().bold(), dir.display());
+            debouncer
+                .watcher()
+                .watch(dir, notify::RecursiveMode::Recursive)
+                .unwrap_or_else(|e| {
+                    eprintln!(
+                        "  {} Failed to watch include directory '{}': {}",
+                        "warning:".yellow().bold(),
+                        dir.display(),
+                        e
+                    );
+                });
+        }
+    }
+
+    let mut merge_data = load_serve_data(data_path.as_deref());
+
+    loop {
+        match rx.recv() {
+            Ok(Ok(events)) => {
+                let mut needs_rebuild = false;
+                let mut data_changed = false;
+
+                for event in &events {
+                    let path = &event.path;
+
+                    // Check if data file changed
+                    if let Some(ref data_file) = data_path {
+                        let canonical_data =
+                            std::fs::canonicalize(data_file).unwrap_or(data_file.clone());
+                        let canonical_event = std::fs::canonicalize(path).unwrap_or(path.clone());
+                        if canonical_event == canonical_data {
+                            data_changed = true;
+                            continue;
+                        }
+                    }
+
+                    if !is_watchable_file(path) {
+                        continue;
+                    }
+
+                    if let DebouncedEventKind::Any = event.kind {
+                        needs_rebuild = true;
+                    }
+                }
+
+                if data_changed {
+                    eprintln!("  data file changed, reloading...");
+                    merge_data = load_serve_data(data_path.as_deref());
+                    needs_rebuild = true;
+                }
+
+                if needs_rebuild {
+                    eprintln!("  rebuilding templates...");
+                    build_all_templates(
+                        &input,
+                        &config,
+                        inline_css,
+                        framework_css,
+                        components_dir.as_deref(),
+                        merge_data.as_ref(),
+                        &templates,
+                    );
+                    VERSION.fetch_add(1, Ordering::Relaxed);
+                    eprintln!("  {} templates updated", "done".green().bold());
+                }
+            }
+            Ok(Err(error)) => {
+                eprintln!("  {} watch error: {}", "error:".red().bold(), error);
+            }
+            Err(e) => {
+                eprintln!("{} Watch channel closed: {}", "error:".red().bold(), e);
+                return;
+            }
+        }
+    }
+}
+
+fn is_watchable_file(path: &Path) -> bool {
+    path.extension()
+        .and_then(|e| e.to_str())
+        .map(|ext| crate::util::WATCH_EXTENSIONS.contains(&ext))
+        .unwrap_or(false)
+}
+
+fn build_index_page(
+    templates: &Arc<RwLock<HashMap<String, RenderedTemplate>>>,
+    port: u16,
+) -> String {
+    let state = templates.read().unwrap();
+    let mut names: Vec<&String> = state.keys().collect();
+    names.sort();
+
+    let mut links = String::new();
+    for name in &names {
+        links.push_str(&format!(
+            "        <li><a href=\"/{}\">{}</a></li>\n",
+            name, name
+        ));
+    }
+
+    format!(
+        r#"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Inky Dev Server</title>
+    <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; color: #333; }}
+        h1 {{ font-size: 1.5em; }}
+        ul {{ list-style: none; padding: 0; }}
+        li {{ padding: 8px 0; border-bottom: 1px solid #eee; }}
+        a {{ color: #0066cc; text-decoration: none; }}
+        a:hover {{ text-decoration: underline; }}
+        .info {{ color: #888; font-size: 0.9em; margin-top: 20px; }}
+    </style>
+</head>
+<body>
+    <h1>Inky Dev Server</h1>
+    <p>{} template(s) found:</p>
+    <ul>
+{}    </ul>
+    <p class="info">Serving on port {}. Templates auto-reload on file changes.</p>
+</body>
+</html>"#,
+        names.len(),
+        links,
+        port
+    )
+}
+
+fn inject_reload_script(html: &str) -> String {
+    let script = r#"<script>
+(function(){
+  var v = 0;
+  setInterval(function(){
+    fetch('/_poll').then(function(r){return r.text()}).then(function(t){
+      var nv = parseInt(t);
+      if(v && nv !== v) location.reload();
+      v = nv;
+    }).catch(function(){});
+  }, 500);
+})();
+</script>"#;
+
+    if let Some(pos) = html.to_lowercase().rfind("</body>") {
+        let mut result = String::with_capacity(html.len() + script.len() + 1);
+        result.push_str(&html[..pos]);
+        result.push_str(script);
+        result.push('\n');
+        result.push_str(&html[pos..]);
+        result
+    } else {
+        // No </body> tag, append at the end
+        format!("{}\n{}", html, script)
+    }
+}
+
+/// Scan templates for include/layout/link references and return their directories.
+fn find_include_dirs(input_dir: &Path) -> Vec<PathBuf> {
+    let include_re = Regex::new(r#"<include\s+[^>]*?src\s*=\s*"([^"]+)"[^>]*/?\s*>"#).unwrap();
+    let layout_re = Regex::new(r#"<layout\s+[^>]*?src\s*=\s*"([^"]+)"[^>]*>"#).unwrap();
+    let link_re =
+        Regex::new(r#"<link\s+[^>]*href\s*=\s*"([^"]+\.(?:scss|css))"[^>]*/?\s*>"#).unwrap();
+    let mut dirs = HashSet::new();
+    let mut referenced_files: Vec<PathBuf> = Vec::new();
+    let files = crate::util::find_files(input_dir, crate::util::TEMPLATE_EXTENSIONS);
+
+    for file in &files {
+        if let Ok(content) = std::fs::read_to_string(file) {
+            let base = file.parent().unwrap_or(input_dir);
+            for re in [&include_re, &layout_re, &link_re] {
+                for cap in re.captures_iter(&content) {
+                    let ref_path = base.join(&cap[1]);
+                    if let Some(parent) = ref_path.parent() {
+                        if let Ok(canonical) = std::fs::canonicalize(parent) {
+                            dirs.insert(canonical);
+                        }
+                    }
+                    if re.as_str().contains("layout") {
+                        referenced_files.push(ref_path);
+                    }
+                }
+            }
+        }
+    }
+
+    for layout_file in &referenced_files {
+        if let Ok(content) = std::fs::read_to_string(layout_file) {
+            let base = layout_file.parent().unwrap_or(input_dir);
+            for cap in link_re.captures_iter(&content) {
+                let ref_path = base.join(&cap[1]);
+                if let Some(parent) = ref_path.parent() {
+                    if let Ok(canonical) = std::fs::canonicalize(parent) {
+                        dirs.insert(canonical);
+                    }
+                }
+            }
+        }
+    }
+
+    dirs.into_iter().collect()
+}

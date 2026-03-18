@@ -11,6 +11,7 @@ Every binding provides these functions:
 | `transform(html, columns?)` | Transform Inky HTML into email-safe table markup |
 | `transformInline(html)` | Transform and inline CSS from `<style>` blocks |
 | `transformWithData(html, dataJson)` | Transform with JSON data merge, then inline CSS |
+| `transformHybrid(html)` | Transform using hybrid output (div + MSO ghost tables) |
 | `migrate(html)` | Migrate v1 syntax to v2 (returns HTML string) |
 | `migrateWithDetails(html)` | Migrate v1 syntax, returns `{html, changes[]}` |
 | `validate(html)` | Validate template, returns array of diagnostics |

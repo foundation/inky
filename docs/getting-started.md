@@ -108,6 +108,9 @@ inky build email.inky --columns 16
 
 # Strict mode -- exit 1 on warnings
 inky build src/ -o dist/ --strict
+
+# Hybrid output (div + MSO ghost tables)
+inky build email.inky --hybrid
 ```
 
 ### `inky watch`
@@ -140,8 +143,21 @@ inky validate src/
 | `style-block-too-large` | warning | `<style>` > 8KB (Gmail strips entire block) |
 | `img-no-width` | warning | Images without `width` (breaks Outlook) |
 | `deep-nesting` | warning | Tables nested > 5 levels |
+| `low-contrast` | warning | Text/background color fails WCAG AA contrast ratio |
 
 Exit codes: `0` success, `1` errors, `2` warnings (with `--strict`).
+
+### `inky serve`
+
+Start a local dev server with live preview and auto-reload.
+
+```bash
+inky serve src/emails
+inky serve src/emails --port 8080
+inky serve src/emails --data data.json
+```
+
+Opens an index page at `http://localhost:3000` listing all templates. Click any template to preview the rendered output. Edits to source files or data automatically trigger a browser reload.
 
 ### `inky migrate`
 
@@ -334,11 +350,14 @@ Place `inky.config.json` in your project root:
   "src": "src/emails",
   "dist": "dist",
   "columns": 12,
-  "data": "data.json"
+  "data": "data.json",
+  "hybrid": false
 }
 ```
 
-The `data` field is optional. When set, templates are merged with the JSON data during build. See [Data Merging](data-merging.md).
+Optional fields:
+- `data` — merge templates with JSON data during build (see [Data Merging](data-merging.md))
+- `hybrid` — use hybrid `<div>` + MSO ghost table output (see [Hybrid Output](hybrid-output.md))
 
 With this in place, just run `inky build` or `inky watch` with no arguments.
 

@@ -18,10 +18,11 @@ All design, component reference, migration guide, CLI usage, bindings docs, and 
 | 48 | Submit formula to `homebrew-core` (once project is established) | TODO |
 | 49 | Re-enable Dependabot | TODO |
 
-## Future (v2.x / v3.0)
+## Completed (v2.x)
 
 | Feature | Description |
 |---------|-------------|
-| Hybrid output mode | `<div>` layout with Outlook table fallbacks |
-| Contrast checker | Validates color accessibility |
-| Live preview | `inky serve` with browser preview |
+| Data merging | MiniJinja template merge via `--data data.json` |
+| Hybrid output mode | `--hybrid` flag for `<div>` layout with Outlook MSO ghost table fallbacks |
+| Contrast checker | WCAG AA color contrast validation (`low-contrast` rule) |
+| Live preview | `inky serve` with browser preview and live reload |
