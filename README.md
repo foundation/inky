@@ -91,7 +91,10 @@ inky watch
 - **Hybrid output** — `--hybrid` mode emits `<div>` layout with Outlook MSO ghost table fallbacks
 - **Live preview** — `inky serve` starts a local dev server with auto-reload
 - **Template friendly** — auto-preserves ERB, Jinja2, Handlebars, and other merge tag syntax
-- **Contrast checker** — WCAG AA color contrast validation
+- **Plain text generation** — auto-generate `.txt` multipart email version (`--plain-text`)
+- **Spam checker** — `inky spam-check` detects common spam triggers
+- **22 validation rules** — links, accessibility, rendering quirks, Gmail clipping, spam detection
+- **Per-template data** — `--data-dir` auto-pairs JSON data files with templates
 - **Migration tool** — `inky migrate` converts v1 syntax to v2 automatically
 - **Language bindings** — Node.js, PHP, Python, Ruby, Go
 

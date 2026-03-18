@@ -111,6 +111,12 @@ inky build src/ -o dist/ --strict
 
 # Hybrid output (div + MSO ghost tables)
 inky build email.inky --hybrid
+
+# Generate plain text version alongside HTML
+inky build src/ -o dist/ --plain-text
+
+# Use per-template data files (data/welcome.json for src/welcome.inky)
+inky build src/ -o dist/ --data-dir data/
 ```
 
 ### `inky watch`
@@ -136,14 +142,26 @@ inky validate src/
 |------|----------|----------------|
 | `v1-syntax` | warning | Deprecated v1 syntax |
 | `missing-alt` | warning | Images without `alt` text |
+| `generic-alt` | warning | Generic alt text like "image", "logo", or single character |
 | `button-no-href` | error | Buttons without `href` |
+| `empty-link` | error | Links with empty or `#` href |
+| `insecure-link` | warning | Links using `http://` instead of `https://` |
+| `bad-shortlink` | warning | URL shorteners that get blocked (bit.ly, youtu.be, t.co, etc.) |
+| `mailto-in-button` | warning | `mailto:` href on a `<button>` component |
 | `missing-container` | warning | No `<container>` element |
 | `missing-preheader` | warning | No preheader/preview text |
-| `email-too-large` | warning | HTML > 90KB (Gmail clips at 102KB) |
+| `gmail-clipping` | warning/error | HTML approaching or exceeding Gmail's 102KB clip limit |
 | `style-block-too-large` | warning | `<style>` > 8KB (Gmail strips entire block) |
 | `img-no-width` | warning | Images without `width` (breaks Outlook) |
 | `deep-nesting` | warning | Tables nested > 5 levels |
 | `low-contrast` | warning | Text/background color fails WCAG AA contrast ratio |
+| `outlook-unsupported-css` | warning | CSS grid, flexbox, or border-radius (Outlook ignores) |
+| `gmail-strips-class` | warning | Class names with `.` or `:` that Gmail strips |
+| `spam-all-caps` | warning | Over 20% of text is ALL CAPS |
+| `spam-exclamation` | warning | Three or more consecutive exclamation marks |
+| `spam-image-heavy` | warning | High image-to-text ratio |
+| `spam-missing-unsubscribe` | warning | No unsubscribe link found |
+| `spam-suspicious-phrases` | warning | 3+ common spam trigger phrases detected |
 
 Exit codes: `0` success, `1` errors, `2` warnings (with `--strict`).
 
@@ -158,6 +176,17 @@ inky serve src/emails --data data.json
 ```
 
 Opens an index page at `http://localhost:3000` listing all templates. Click any template to preview the rendered output. Edits to source files or data automatically trigger a browser reload.
+
+### `inky spam-check`
+
+Check templates for common spam triggers.
+
+```bash
+inky spam-check email.inky
+inky spam-check src/
+```
+
+Checks for ALL CAPS text, excessive exclamation marks, high image-to-text ratio, missing unsubscribe link, and common spam trigger phrases. Exit code `1` if any issues found.
 
 ### `inky migrate`
 
@@ -351,13 +380,17 @@ Place `inky.config.json` in your project root:
   "dist": "dist",
   "columns": 12,
   "data": "data.json",
-  "hybrid": false
+  "data_dir": "data",
+  "hybrid": false,
+  "plain_text": false
 }
 ```
 
 Optional fields:
-- `data` — merge templates with JSON data during build (see [Data Merging](data-merging.md))
+- `data` — merge all templates with a single JSON data file (see [Data Merging](data-merging.md))
+- `data_dir` — directory of per-template JSON data files (`data/welcome.json` pairs with `src/welcome.inky`)
 - `hybrid` — use hybrid `<div>` + MSO ghost table output (see [Hybrid Output](hybrid-output.md))
+- `plain_text` — generate `.txt` plain text version alongside each HTML file
 
 With this in place, just run `inky build` or `inky watch` with no arguments.
 
