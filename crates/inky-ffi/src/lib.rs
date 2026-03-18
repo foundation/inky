@@ -54,6 +54,33 @@ pub unsafe extern "C" fn inky_transform_inline(input: *const c_char) -> *mut c_c
     CString::new(result).unwrap_or_default().into_raw()
 }
 
+/// Transform Inky HTML with MiniJinja data merge, then inline CSS.
+///
+/// `data_json` must be a valid JSON C string with merge variables.
+/// Missing keys render as empty strings (lenient mode).
+/// Caller must free the returned string with inky_free().
+///
+/// # Safety
+/// `input` and `data_json` must be valid, non-null, null-terminated C strings.
+#[no_mangle]
+pub unsafe extern "C" fn inky_transform_with_data(
+    input: *const c_char,
+    data_json: *const c_char,
+) -> *mut c_char {
+    let html = unsafe { CStr::from_ptr(input) }.to_str().unwrap_or("");
+    let json_str = unsafe { CStr::from_ptr(data_json) }
+        .to_str()
+        .unwrap_or("{}");
+    let data: serde_json::Value = serde_json::from_str(json_str).unwrap_or_default();
+    let merged = inky_core::templating::render_template(html, &data, false)
+        .unwrap_or_else(|_| html.to_string());
+    let result = match Inky::new().transform_and_inline(&merged, None) {
+        Ok(r) => r,
+        Err(_) => Inky::new().transform(&merged),
+    };
+    CString::new(result).unwrap_or_default().into_raw()
+}
+
 /// Migrate v1 Inky syntax to v2.
 /// Returns the migrated HTML string.
 /// Caller must free the returned string with inky_free().

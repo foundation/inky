@@ -51,6 +51,10 @@ enum Commands {
         /// Exit with non-zero code if validation finds any warnings or errors
         #[arg(long)]
         strict: bool,
+
+        /// Path to a JSON file with template merge data
+        #[arg(long)]
+        data: Option<PathBuf>,
     },
 
     /// Validate Inky templates for common issues
@@ -99,6 +103,10 @@ enum Commands {
         /// Skip injecting framework CSS
         #[arg(long)]
         no_framework_css: bool,
+
+        /// Path to a JSON file with template merge data
+        #[arg(long)]
+        data: Option<PathBuf>,
     },
 }
 
@@ -113,8 +121,12 @@ fn main() {
             no_inline_css,
             no_framework_css,
             strict,
+            data,
         } => {
-            let (input, output, columns, components) = resolve_config(input, output, columns);
+            let (input, output, columns, components, cfg_data) =
+                resolve_config(input, output, columns);
+            let data = data.or(cfg_data);
+            let merge_data = load_merge_data(data.as_deref());
             cmd_build(
                 input,
                 output,
@@ -123,6 +135,7 @@ fn main() {
                 !no_framework_css,
                 strict,
                 components,
+                merge_data.as_ref(),
             )
         }
         Commands::Validate { input } => cmd_validate(input),
@@ -138,8 +151,11 @@ fn main() {
             columns,
             no_inline_css,
             no_framework_css,
+            data,
         } => {
-            let (input, output, columns, components) = resolve_config(input, output, columns);
+            let (input, output, columns, components, cfg_data) =
+                resolve_config(input, output, columns);
+            let data = data.or(cfg_data);
             let input = input.unwrap_or_else(|| {
                 eprintln!("{} No input directory specified. Use `inky watch <dir>` or set \"src\" in inky.config.json", "error:".red().bold());
                 process::exit(1);
@@ -155,6 +171,7 @@ fn main() {
                 !no_inline_css,
                 !no_framework_css,
                 components,
+                data,
             )
         }
     }
@@ -191,10 +208,16 @@ fn resolve_config(
     input: Option<PathBuf>,
     output: Option<PathBuf>,
     columns: Option<u32>,
-) -> (Option<PathBuf>, Option<PathBuf>, u32, Option<String>) {
+) -> (
+    Option<PathBuf>,
+    Option<PathBuf>,
+    u32,
+    Option<String>,
+    Option<PathBuf>,
+) {
     let project_config = find_project_config(input.as_deref());
 
-    let (cfg_src, cfg_dist, cfg_columns, cfg_components) = match &project_config {
+    let (cfg_src, cfg_dist, cfg_columns, cfg_components, cfg_data) = match &project_config {
         Some((cfg, base_dir)) => (
             cfg.src.as_ref().map(|s| base_dir.join(s)),
             cfg.dist.as_ref().map(|d| base_dir.join(d)),
@@ -206,8 +229,9 @@ fn resolve_config(
                     .to_string_lossy()
                     .to_string()
             }),
+            cfg.data.as_ref().map(|d| base_dir.join(d)),
         ),
-        None => (None, None, None, None),
+        None => (None, None, None, None, None),
     };
 
     // If input points to a project root (has config), use config's src
@@ -227,9 +251,34 @@ fn resolve_config(
     let output = output.or(cfg_dist);
     let columns = columns.or(cfg_columns).unwrap_or(12);
 
-    (input, output, columns, cfg_components)
+    (input, output, columns, cfg_components, cfg_data)
 }
 
+/// Load and parse a JSON data file for template merging.
+fn load_merge_data(path: Option<&Path>) -> Option<serde_json::Value> {
+    let path = path?;
+    let content = fs::read_to_string(path).unwrap_or_else(|e| {
+        eprintln!(
+            "{} Failed to read data file {}: {}",
+            "error:".red().bold(),
+            path.display(),
+            e
+        );
+        process::exit(1);
+    });
+    let data: serde_json::Value = serde_json::from_str(&content).unwrap_or_else(|e| {
+        eprintln!(
+            "{} Failed to parse data file {}: {}",
+            "error:".red().bold(),
+            path.display(),
+            e
+        );
+        process::exit(1);
+    });
+    Some(data)
+}
+
+#[allow(clippy::too_many_arguments)]
 fn cmd_build(
     input: Option<PathBuf>,
     output: Option<PathBuf>,
@@ -238,6 +287,7 @@ fn cmd_build(
     framework_css: bool,
     strict: bool,
     components_dir: Option<String>,
+    merge_data: Option<&serde_json::Value>,
 ) {
     let config = Config {
         column_count: columns,
@@ -256,6 +306,7 @@ fn cmd_build(
                     framework_css,
                     &config,
                     components_dir.as_deref(),
+                    merge_data,
                 )
             } else {
                 let base = path.parent().map(Path::to_path_buf);
@@ -268,6 +319,7 @@ fn cmd_build(
                     framework_css,
                     base.as_deref(),
                     components_dir.as_deref(),
+                    merge_data,
                     build::ErrorMode::Exit,
                 );
                 // If no output specified and input is .inky, write to .html
@@ -298,6 +350,7 @@ fn cmd_build(
                 framework_css,
                 cwd.as_deref(),
                 components_dir.as_deref(),
+                merge_data,
                 build::ErrorMode::Exit,
             );
             write_output(&result, output.as_deref());
@@ -323,6 +376,7 @@ fn print_validation_warnings(html: &str, config: &Config, path: &Path) -> bool {
     !diagnostics.is_empty()
 }
 
+#[allow(clippy::too_many_arguments)]
 fn build_directory(
     inky: &Inky,
     input_dir: &Path,
@@ -331,6 +385,7 @@ fn build_directory(
     framework_css: bool,
     config: &Config,
     components_dir: Option<&str>,
+    merge_data: Option<&serde_json::Value>,
 ) -> bool {
     let files = find_template_files(input_dir);
     let mut has_warnings = false;
@@ -357,6 +412,7 @@ fn build_directory(
             framework_css,
             base.as_deref(),
             components_dir,
+            merge_data,
             build::ErrorMode::Exit,
         );
 

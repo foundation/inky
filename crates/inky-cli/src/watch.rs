@@ -16,6 +16,7 @@ pub fn cmd_watch(
     inline_css: bool,
     framework_css: bool,
     components_dir: Option<String>,
+    data_path: Option<PathBuf>,
 ) {
     if !input.is_dir() {
         eprintln!(
@@ -37,6 +38,9 @@ pub fn cmd_watch(
         ..Config::default()
     };
 
+    // Load merge data if a data file was provided
+    let merge_data = load_watch_data(data_path.as_deref());
+
     // Initial full build
     eprintln!(
         "  {} {} → {}",
@@ -52,6 +56,7 @@ pub fn cmd_watch(
         inline_css,
         framework_css,
         components_dir.as_deref(),
+        merge_data.as_ref(),
     );
 
     eprintln!("  press {} to stop\n", "Ctrl+C".bold());
@@ -81,6 +86,29 @@ pub fn cmd_watch(
             std::process::exit(1);
         });
 
+    // Watch the data file for changes
+    if let Some(ref data_file) = data_path {
+        if let Some(parent) = data_file.parent() {
+            let canonical = std::fs::canonicalize(parent).unwrap_or(parent.to_path_buf());
+            eprintln!(
+                "  {} {} (data)",
+                "watching".cyan().bold(),
+                data_file.display()
+            );
+            debouncer
+                .watcher()
+                .watch(&canonical, notify::RecursiveMode::NonRecursive)
+                .unwrap_or_else(|e| {
+                    eprintln!(
+                        "  {} Failed to watch data file directory '{}': {}",
+                        "warning:".yellow().bold(),
+                        canonical.display(),
+                        e
+                    );
+                });
+        }
+    }
+
     // Also watch directories containing included partials
     let include_dirs = find_include_dirs(&input);
     for dir in &include_dirs {
@@ -101,15 +129,28 @@ pub fn cmd_watch(
     }
 
     // Event loop
+    let mut merge_data = merge_data;
     loop {
         match rx.recv() {
             Ok(Ok(events)) => {
                 // Collect unique changed template files
                 let mut changed_files: Vec<PathBuf> = Vec::new();
                 let mut needs_full_rebuild = false;
+                let mut data_changed = false;
 
                 for event in &events {
                     let path = &event.path;
+
+                    // Check if the data file changed
+                    if let Some(ref data_file) = data_path {
+                        let canonical_data =
+                            std::fs::canonicalize(data_file).unwrap_or(data_file.clone());
+                        let canonical_event = std::fs::canonicalize(path).unwrap_or(path.clone());
+                        if canonical_event == canonical_data {
+                            data_changed = true;
+                            continue;
+                        }
+                    }
 
                     // Only care about template files, ignore output directory
                     if !is_template_file(path) || path.starts_with(&output) {
@@ -137,6 +178,14 @@ pub fn cmd_watch(
                     }
                 }
 
+                // Reload data file if it changed
+                if data_changed {
+                    let timestamp = current_time();
+                    eprintln!("  [{}] data file changed, reloading...", timestamp);
+                    merge_data = load_watch_data(data_path.as_deref());
+                    needs_full_rebuild = true;
+                }
+
                 if needs_full_rebuild {
                     let timestamp = current_time();
                     eprintln!(
@@ -150,6 +199,7 @@ pub fn cmd_watch(
                         inline_css,
                         framework_css,
                         components_dir.as_deref(),
+                        merge_data.as_ref(),
                     );
                 } else {
                     for file in &changed_files {
@@ -161,6 +211,7 @@ pub fn cmd_watch(
                             inline_css,
                             framework_css,
                             components_dir.as_deref(),
+                            merge_data.as_ref(),
                         );
                     }
                 }
@@ -172,6 +223,33 @@ pub fn cmd_watch(
                 eprintln!("{} Watch channel closed: {}", "error:".red().bold(), e);
                 std::process::exit(1);
             }
+        }
+    }
+}
+
+fn load_watch_data(path: Option<&Path>) -> Option<serde_json::Value> {
+    let path = path?;
+    match std::fs::read_to_string(path) {
+        Ok(content) => match serde_json::from_str(&content) {
+            Ok(data) => Some(data),
+            Err(e) => {
+                eprintln!(
+                    "  {} Failed to parse data file {}: {}",
+                    "warning:".yellow().bold(),
+                    path.display(),
+                    e
+                );
+                None
+            }
+        },
+        Err(e) => {
+            eprintln!(
+                "  {} Failed to read data file {}: {}",
+                "warning:".yellow().bold(),
+                path.display(),
+                e
+            );
+            None
         }
     }
 }
@@ -205,6 +283,7 @@ fn do_full_build(
     inline_css: bool,
     framework_css: bool,
     components_dir: Option<&str>,
+    merge_data: Option<&serde_json::Value>,
 ) {
     let inky = Inky::with_config(config.clone());
     let files = find_template_files(input);
@@ -229,6 +308,7 @@ fn do_full_build(
             inline_css,
             framework_css,
             components_dir,
+            merge_data,
         ) {
             Ok(dest) => {
                 let timestamp = current_time();
@@ -250,6 +330,7 @@ fn do_full_build(
     eprintln!("  {} built {} file(s)\n", "done".green().bold(), built);
 }
 
+#[allow(clippy::too_many_arguments)]
 fn rebuild_single_file(
     file: &Path,
     input_dir: &Path,
@@ -258,6 +339,7 @@ fn rebuild_single_file(
     inline_css: bool,
     framework_css: bool,
     components_dir: Option<&str>,
+    merge_data: Option<&serde_json::Value>,
 ) {
     let inky = Inky::with_config(config.clone());
     let timestamp = current_time();
@@ -271,6 +353,7 @@ fn rebuild_single_file(
         inline_css,
         framework_css,
         components_dir,
+        merge_data,
     ) {
         Ok(dest) => {
             eprintln!(
@@ -303,6 +386,7 @@ fn build_file(
     inline_css: bool,
     framework_css: bool,
     components_dir: Option<&str>,
+    merge_data: Option<&serde_json::Value>,
 ) -> Result<PathBuf, String> {
     let html = std::fs::read_to_string(file).map_err(|e| format!("Failed to read: {}", e))?;
 
@@ -323,6 +407,7 @@ fn build_file(
         framework_css,
         file.parent(),
         components_dir,
+        merge_data,
         crate::build::ErrorMode::Continue,
     );
 

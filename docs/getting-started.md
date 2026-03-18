@@ -293,6 +293,24 @@ $title|My Email$     <!-- falls back to "My Email" -->
 $preheader|$         <!-- falls back to empty string -->
 ```
 
+## Data Merging
+
+Inky can merge JSON data into your templates using `--data`:
+
+```bash
+inky build email.inky --data data.json
+```
+
+```json
+{"user": {"name": "Alice"}, "cta_url": "https://example.com"}
+```
+
+```html
+<button href="{{ cta_url }}">Hello {{ user.name }}!</button>
+```
+
+This is off by default — without `--data`, merge tags pass through untouched. See the full [Data Merging](data-merging.md) guide.
+
 ## Template-Friendly
 
 Inky auto-detects and preserves common template syntaxes. No `<raw>` tags needed:
@@ -315,9 +333,12 @@ Place `inky.config.json` in your project root:
 {
   "src": "src/emails",
   "dist": "dist",
-  "columns": 12
+  "columns": 12,
+  "data": "data.json"
 }
 ```
+
+The `data` field is optional. When set, templates are merged with the JSON data during build. See [Data Merging](data-merging.md).
 
 With this in place, just run `inky build` or `inky watch` with no arguments.
 

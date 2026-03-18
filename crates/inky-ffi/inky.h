@@ -32,6 +32,18 @@ char *inky_transform_with_columns(const char *input, uint32_t column_count);
 char *inky_transform_inline(const char *input);
 
 /**
+ * Transform Inky HTML with MiniJinja data merge, then inline CSS.
+ *
+ * `data_json` must be a valid JSON C string with merge variables.
+ * Missing keys render as empty strings (lenient mode).
+ * Caller must free the returned string with inky_free().
+ *
+ * # Safety
+ * `input` and `data_json` must be valid, non-null, null-terminated C strings.
+ */
+char *inky_transform_with_data(const char *input, const char *data_json);
+
+/**
  * Migrate v1 Inky syntax to v2.
  * Returns the migrated HTML string.
  * Caller must free the returned string with inky_free().

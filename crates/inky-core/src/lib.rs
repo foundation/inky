@@ -5,6 +5,8 @@ pub mod include;
 #[cfg(feature = "css-inlining")]
 pub mod inline;
 pub mod migrate;
+#[cfg(feature = "templating")]
+pub mod templating;
 pub mod validate;
 
 use regex::Regex;

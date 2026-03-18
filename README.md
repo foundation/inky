@@ -87,6 +87,7 @@ inky watch
 - **SCSS framework** — responsive email styles with per-template variable overrides
 - **Layouts & includes** — `<layout>`, `<include>`, custom `<ink-*>` components, and template variables
 - **Validation** — catches missing alt text, Gmail clipping risks, Outlook issues
+- **Data merging** — optional Jinja2-compatible data merge via MiniJinja (`--data data.json`)
 - **Template friendly** — auto-preserves ERB, Jinja2, Handlebars, and other merge tag syntax
 - **Migration tool** — `inky migrate` converts v1 syntax to v2 automatically
 - **Language bindings** — Node.js, PHP, Python, Ruby, Go
@@ -96,6 +97,7 @@ inky watch
 - **[Getting Started](docs/getting-started.md)** — Installation, CLI usage, first template
 - **[Component Reference](docs/components.md)** — All 27 components with examples
 - **[Style Reference](docs/styles.md)** — SCSS variables for colors, typography, layout, and more
+- **[Data Merging](docs/data-merging.md)** — Merge JSON data into templates
 - **[Migration Guide](docs/migration.md)** — Upgrading from v1 to v2
 - **[Language Bindings](docs/bindings.md)** — Node.js, PHP, Python, Ruby, Go
 

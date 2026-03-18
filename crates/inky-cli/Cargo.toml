@@ -10,7 +10,7 @@ name = "inky"
 path = "src/main.rs"
 
 [dependencies]
-inky-core = { path = "../inky-core", features = ["css-inlining"] }
+inky-core = { path = "../inky-core", features = ["css-inlining", "templating"] }
 clap = { version = "4", features = ["derive"] }
 glob = "0.3"
 colored = "2"

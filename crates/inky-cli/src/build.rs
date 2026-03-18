@@ -23,7 +23,8 @@ fn handle_error(mode: ErrorMode, msg: &str) -> String {
     }
 }
 
-/// Full build pipeline: layout → custom components → includes → extract SCSS overrides → compile framework CSS → inject → transform → inline → cleanup.
+/// Full build pipeline: layout → custom components → includes → merge data → extract SCSS overrides → compile framework CSS → inject → transform → inline → cleanup.
+#[allow(clippy::too_many_arguments)]
 pub fn process_template(
     inky: &Inky,
     html: &str,
@@ -31,6 +32,7 @@ pub fn process_template(
     framework_css: bool,
     base_path: Option<&Path>,
     components_dir: Option<&str>,
+    merge_data: Option<&serde_json::Value>,
     error_mode: ErrorMode,
 ) -> String {
     // Resolve <layout> tag, then custom components, then <include> tags
@@ -48,6 +50,12 @@ pub fn process_template(
     } else {
         html.to_string()
     };
+
+    // MiniJinja template merge (after includes, before transform)
+    if let Some(data) = merge_data {
+        html = inky_core::templating::render_template(&html, data, false)
+            .unwrap_or_else(|e| handle_error(error_mode, &format!("Template merge failed: {}", e)));
+    }
 
     if framework_css {
         let (cleaned, overrides) = scss::extract_scss_overrides(&html, base_path);

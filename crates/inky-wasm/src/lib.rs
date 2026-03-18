@@ -28,6 +28,27 @@ pub fn transform_inline(html: &str) -> String {
     }
 }
 
+/// Transform Inky HTML with MiniJinja data merge, then inline CSS.
+///
+/// `data_json` is a JSON string with merge variables.
+/// Missing keys render as empty strings (lenient mode).
+/// Falls back to plain transform if CSS inlining fails.
+#[wasm_bindgen]
+pub fn transform_with_data(html: &str, data_json: &str) -> String {
+    let data: serde_json::Value = match serde_json::from_str(data_json) {
+        Ok(v) => v,
+        Err(e) => return format!("<!-- Data parse error: {} -->", e),
+    };
+    let merged = match inky_core::templating::render_template(html, &data, false) {
+        Ok(r) => r,
+        Err(e) => return format!("<!-- Template error: {} -->", e),
+    };
+    match Inky::new().transform_and_inline(&merged, None) {
+        Ok(r) => r,
+        Err(_) => Inky::new().transform(&merged),
+    }
+}
+
 /// Migrate v1 Inky syntax to v2.
 /// Returns the migrated HTML string.
 #[wasm_bindgen]

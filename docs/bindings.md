@@ -10,6 +10,7 @@ Every binding provides these functions:
 |----------|-------------|
 | `transform(html, columns?)` | Transform Inky HTML into email-safe table markup |
 | `transformInline(html)` | Transform and inline CSS from `<style>` blocks |
+| `transformWithData(html, dataJson)` | Transform with JSON data merge, then inline CSS |
 | `migrate(html)` | Migrate v1 syntax to v2 (returns HTML string) |
 | `migrateWithDetails(html)` | Migrate v1 syntax, returns `{html, changes[]}` |
 | `validate(html)` | Validate template, returns array of diagnostics |
@@ -45,6 +46,12 @@ const inlined = inky.transformInline(`
   <style>.button { background: blue; }</style>
   <button href="#">Click</button>
 `);
+
+// Transform with data merge
+const merged = inky.transformWithData(
+  '<button href="{{ url }}">{{ text }}</button>',
+  JSON.stringify({ url: "https://example.com", text: "Click" })
+);
 
 // Migrate v1 to v2
 const migrated = inky.migrate('<columns large="6">Content</columns>');
@@ -130,6 +137,12 @@ $html = Inky::transform('<row><column>Content</column></row>', columns: 16);
 // Transform + inline CSS
 $html = Inky::transformInline('<style>...</style><button href="#">Click</button>');
 
+// Transform with data merge
+$html = Inky::transformWithData(
+    '<button href="{{ url }}">{{ text }}</button>',
+    json_encode(['url' => 'https://example.com', 'text' => 'Click'])
+);
+
 // Migrate
 $html = Inky::migrate('<columns large="6">Content</columns>');
 
@@ -183,6 +196,12 @@ html = inky.transform('<row><column>Content</column></row>', columns=16)
 
 # Transform + inline CSS
 html = inky.transform_inline('<style>...</style><button href="#">Click</button>')
+
+# Transform with data merge
+html = inky.transform_with_data(
+    '<button href="{{ url }}">{{ text }}</button>',
+    '{"url": "https://example.com", "text": "Click"}'
+)
 
 # Migrate
 html = inky.migrate('<columns large="6">Content</columns>')
@@ -245,6 +264,12 @@ html = Inky.transform('<row><column>Content</column></row>', columns: 16)
 
 # Transform + inline CSS
 html = Inky.transform_inline('<style>...</style><button href="#">Click</button>')
+
+# Transform with data merge
+html = Inky.transform_with_data(
+    '<button href="{{ url }}">{{ text }}</button>',
+    '{"url": "https://example.com", "text": "Click"}'
+)
 
 # Migrate
 html = Inky.migrate('<columns large="6">Content</columns>')
