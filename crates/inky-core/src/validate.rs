@@ -1,6 +1,7 @@
 use regex::Regex;
 use scraper::{Html, Selector};
 
+use crate::color::{self, Color};
 use crate::config::Config;
 use crate::Inky;
 
@@ -67,6 +68,7 @@ pub fn validate_output(html: &str) -> Vec<Diagnostic> {
     diags.extend(check_style_block_too_large(html));
     diags.extend(check_img_no_width(html));
     diags.extend(check_deep_nesting(html));
+    diags.extend(check_low_contrast(html));
     diags
 }
 
@@ -390,6 +392,94 @@ fn find_max_table_depth(element: &scraper::ElementRef, current_depth: usize) -> 
     max
 }
 
+/// Check for low color contrast between text and background in inline styles.
+pub fn check_low_contrast(html: &str) -> Vec<Diagnostic> {
+    let doc = Html::parse_fragment(html);
+    let sel = Selector::parse("[style]").unwrap();
+    let mut diags = Vec::new();
+
+    for el in doc.select(&sel) {
+        let style = match el.value().attr("style") {
+            Some(s) => s,
+            None => continue,
+        };
+
+        let fg = color::extract_css_property(style, "color").and_then(|v| Color::parse(&v));
+        let bg = color::extract_css_property(style, "background-color")
+            .or_else(|| color::extract_css_property(style, "background"))
+            .and_then(|v| Color::parse(&v));
+
+        let (fg, bg) = match (fg, bg) {
+            (Some(f), Some(b)) => (f, b),
+            _ => continue,
+        };
+
+        let ratio = color::contrast_ratio(&fg, &bg);
+
+        // Determine if text is "large" per WCAG: >= 18px, or >= 14px and bold
+        let is_large = is_large_text(style);
+
+        let threshold = if is_large { 3.0 } else { 4.5 };
+
+        if ratio < threshold {
+            let text: String = el.text().collect();
+            let snippet = text.trim();
+            let snippet = if snippet.len() > 30 {
+                format!("{}...", &snippet[..30])
+            } else {
+                snippet.to_string()
+            };
+            diags.push(Diagnostic::warning(
+                "low-contrast",
+                format!(
+                    "Low contrast ratio {:.1}:1 (needs {:.1}:1) on text \"{}\": color vs background-color",
+                    ratio, threshold, snippet
+                ),
+            ));
+        }
+    }
+
+    diags
+}
+
+/// Determine if text is "large" per WCAG criteria based on inline style.
+/// Large text is >= 18px (any weight) or >= 14px and bold (font-weight >= 700 or "bold").
+fn is_large_text(style: &str) -> bool {
+    let font_size =
+        color::extract_css_property(style, "font-size").and_then(|v| parse_px_value(&v));
+
+    let font_size = match font_size {
+        Some(s) => s,
+        None => return false,
+    };
+
+    if font_size >= 18.0 {
+        return true;
+    }
+
+    if font_size >= 14.0 {
+        if let Some(weight) = color::extract_css_property(style, "font-weight") {
+            let w = weight.trim().to_lowercase();
+            if w == "bold" || w == "bolder" || w.parse::<u32>().is_ok_and(|n| n >= 700) {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
+/// Parse a px value from a CSS string like "18px" or "14.5px".
+fn parse_px_value(s: &str) -> Option<f64> {
+    let s = s.trim().to_lowercase();
+    if s.ends_with("px") {
+        s[..s.len() - 2].trim().parse().ok()
+    } else {
+        // Try parsing as bare number (some inline styles omit units)
+        s.parse().ok()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -574,5 +664,78 @@ mod tests {
         let html = "<table><tr><td><table><tr><td><table><tr><td><table><tr><td><table><tr><td><table><tr><td>deep</td></tr></table></td></tr></table></td></tr></table></td></tr></table></td></tr></table></td></tr></table>";
         let diags = validate_output(html);
         assert!(diags.iter().any(|d| d.rule == "deep-nesting"));
+    }
+
+    // --- Low contrast tests ---
+
+    #[test]
+    fn test_low_contrast_detected() {
+        // White text on white background — ratio 1:1, definitely low contrast
+        let html = r#"<p style="color: #ffffff; background-color: #ffffff;">invisible text</p>"#;
+        let diags = check_low_contrast(html);
+        assert!(diags.iter().any(|d| d.rule == "low-contrast"));
+    }
+
+    #[test]
+    fn test_good_contrast_passes() {
+        // Black text on white background — ratio 21:1
+        let html = r#"<p style="color: black; background-color: white;">readable text</p>"#;
+        let diags = check_low_contrast(html);
+        assert!(!diags.iter().any(|d| d.rule == "low-contrast"));
+    }
+
+    #[test]
+    fn test_low_contrast_light_gray_on_white() {
+        // Light gray (#ccc = 204,204,204) on white — ratio ~1.6:1
+        let html = r#"<span style="color: #cccccc; background-color: #ffffff;">faint</span>"#;
+        let diags = check_low_contrast(html);
+        assert!(diags.iter().any(|d| d.rule == "low-contrast"));
+    }
+
+    #[test]
+    fn test_no_contrast_check_without_both_colors() {
+        // Only foreground color, no background — should not flag
+        let html = r#"<p style="color: red;">text</p>"#;
+        let diags = check_low_contrast(html);
+        assert!(!diags.iter().any(|d| d.rule == "low-contrast"));
+    }
+
+    #[test]
+    fn test_large_text_lower_threshold() {
+        // Large text (18px) has a threshold of 3.0 instead of 4.5
+        // Gray #777 on white has ratio ~4.48:1 — fails normal but passes large
+        let html = r#"<p style="color: #767676; background-color: white; font-size: 18px;">large text</p>"#;
+        let diags = check_low_contrast(html);
+        assert!(
+            !diags.iter().any(|d| d.rule == "low-contrast"),
+            "Large text at 18px with ~4.5:1 ratio should pass the 3.0 threshold"
+        );
+    }
+
+    #[test]
+    fn test_bold_14px_is_large_text() {
+        // 14px bold text counts as "large" per WCAG
+        let html = r#"<p style="color: #767676; background-color: white; font-size: 14px; font-weight: bold;">bold text</p>"#;
+        let diags = check_low_contrast(html);
+        assert!(
+            !diags.iter().any(|d| d.rule == "low-contrast"),
+            "14px bold text with ~4.5:1 ratio should pass the 3.0 large-text threshold"
+        );
+    }
+
+    #[test]
+    fn test_background_shorthand() {
+        // Use "background" instead of "background-color"
+        let html = r#"<p style="color: #ffffff; background: #ffffff;">invisible</p>"#;
+        let diags = check_low_contrast(html);
+        assert!(diags.iter().any(|d| d.rule == "low-contrast"));
+    }
+
+    #[test]
+    fn test_low_contrast_in_validate_output() {
+        // Verify it's wired into validate_output
+        let html = r#"<p style="color: #ffffff; background-color: #fefefe;">barely visible</p>"#;
+        let diags = validate_output(html);
+        assert!(diags.iter().any(|d| d.rule == "low-contrast"));
     }
 }
