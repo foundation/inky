@@ -346,10 +346,15 @@ fn check_empty_link(html: &str) -> Vec<Diagnostic> {
     for (i, el) in doc.select(&sel).enumerate() {
         if let Some(href) = el.value().attr("href") {
             let trimmed = href.trim();
-            if trimmed.is_empty() || trimmed == "#" {
+            if trimmed.is_empty() {
                 diags.push(Diagnostic::error(
                     "empty-link",
-                    format!("Link #{} has an empty or placeholder href", i + 1),
+                    format!("Link #{} has an empty href", i + 1),
+                ));
+            } else if trimmed == "#" {
+                diags.push(Diagnostic::warning(
+                    "empty-link",
+                    format!("Link #{} has a placeholder href (#)", i + 1),
                 ));
             }
         }

@@ -144,7 +144,7 @@ inky validate src/
 | `missing-alt` | warning | Images without `alt` text |
 | `generic-alt` | warning | Generic alt text like "image", "logo", or single character |
 | `button-no-href` | error | Buttons without `href` |
-| `empty-link` | error | Links with empty or `#` href |
+| `empty-link` | error/warning | Empty href (error) or placeholder `#` href (warning) |
 | `insecure-link` | warning | Links using `http://` instead of `https://` |
 | `bad-shortlink` | warning | URL shorteners that get blocked (bit.ly, youtu.be, t.co, etc.) |
 | `mailto-in-button` | warning | `mailto:` href on a `<button>` component |
