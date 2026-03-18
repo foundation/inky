@@ -58,17 +58,40 @@ pub fn validate_source(html: &str, config: &Config) -> Vec<Diagnostic> {
     diags.extend(check_hero_no_background(html, config));
     diags.extend(check_social_link_no_platform(html, config));
     diags.extend(check_generic_link_text(html));
+    // Group 1: Link Validation
+    diags.extend(check_insecure_link(html));
+    diags.extend(check_empty_link(html));
+    diags.extend(check_bad_shortlink(html));
+    diags.extend(check_mailto_in_button(html, config));
+    // Group 2: Alt Text Quality
+    diags.extend(check_generic_alt(html));
     diags
 }
 
 /// Validate transformed/final HTML (post-transform).
 pub fn validate_output(html: &str) -> Vec<Diagnostic> {
     let mut diags = Vec::new();
-    diags.extend(check_email_too_large(html));
+    diags.extend(check_gmail_clipping(html));
     diags.extend(check_style_block_too_large(html));
     diags.extend(check_img_no_width(html));
     diags.extend(check_deep_nesting(html));
     diags.extend(check_low_contrast(html));
+    // Group 3: Rendering Quirk Warnings
+    diags.extend(check_outlook_unsupported_css(html));
+    diags.extend(check_gmail_strips_class(html));
+    // Group 5: Spam Score
+    diags.extend(validate_spam(html));
+    diags
+}
+
+/// Run only spam-related checks on the given HTML.
+pub fn validate_spam(html: &str) -> Vec<Diagnostic> {
+    let mut diags = Vec::new();
+    diags.extend(check_spam_all_caps(html));
+    diags.extend(check_spam_exclamation(html));
+    diags.extend(check_spam_image_heavy(html));
+    diags.extend(check_spam_missing_unsubscribe(html));
+    diags.extend(check_spam_suspicious_phrases(html));
     diags
 }
 
@@ -77,7 +100,7 @@ pub fn validate_output(html: &str) -> Vec<Diagnostic> {
 fn check_v1_syntax(html: &str) -> Vec<Diagnostic> {
     let mut diags = Vec::new();
 
-    // <columns> (plural) → should be <column> (singular)
+    // <columns> (plural) -> should be <column> (singular)
     if Regex::new(r"<columns[\s>]").unwrap().is_match(html) {
         diags.push(Diagnostic::warning(
             "v1-syntax",
@@ -85,7 +108,7 @@ fn check_v1_syntax(html: &str) -> Vec<Diagnostic> {
         ));
     }
 
-    // <h-line> → should be <divider>
+    // <h-line> -> should be <divider>
     if Regex::new(r"<h-line[\s>]").unwrap().is_match(html) {
         diags.push(Diagnostic::warning(
             "v1-syntax",
@@ -93,7 +116,7 @@ fn check_v1_syntax(html: &str) -> Vec<Diagnostic> {
         ));
     }
 
-    // large="..." on <column> → should be lg="..."
+    // large="..." on <column> -> should be lg="..."
     if Regex::new(r#"<column[^>]+\blarge\s*="#)
         .unwrap()
         .is_match(html)
@@ -104,7 +127,7 @@ fn check_v1_syntax(html: &str) -> Vec<Diagnostic> {
         ));
     }
 
-    // small="..." on <column> → should be sm="..."
+    // small="..." on <column> -> should be sm="..."
     if Regex::new(r#"<column[^>]+\bsmall\s*="#)
         .unwrap()
         .is_match(html)
@@ -115,7 +138,7 @@ fn check_v1_syntax(html: &str) -> Vec<Diagnostic> {
         ));
     }
 
-    // <spacer size="..."> → should be <spacer height="...">
+    // <spacer size="..."> -> should be <spacer height="...">
     if Regex::new(r#"<spacer[^>]+\bsize\s*="#)
         .unwrap()
         .is_match(html)
@@ -286,19 +309,174 @@ fn check_generic_link_text(html: &str) -> Vec<Diagnostic> {
     }
 }
 
+// --- Group 1: Link Validation ---
+
+fn check_insecure_link(html: &str) -> Vec<Diagnostic> {
+    let doc = Html::parse_fragment(html);
+    let sel = Selector::parse("[href]").unwrap();
+    let mut count = 0;
+    for el in doc.select(&sel) {
+        if let Some(href) = el.value().attr("href") {
+            let lower = href.to_lowercase();
+            if lower.starts_with("http://")
+                && !lower.starts_with("http://localhost")
+                && !lower.starts_with("http://127.0.0.1")
+            {
+                count += 1;
+            }
+        }
+    }
+    if count > 0 {
+        vec![Diagnostic::warning(
+            "insecure-link",
+            format!(
+                "{} link(s) use http:// — use https:// for security and deliverability",
+                count
+            ),
+        )]
+    } else {
+        vec![]
+    }
+}
+
+fn check_empty_link(html: &str) -> Vec<Diagnostic> {
+    let doc = Html::parse_fragment(html);
+    let sel = Selector::parse("[href]").unwrap();
+    let mut diags = Vec::new();
+    for (i, el) in doc.select(&sel).enumerate() {
+        if let Some(href) = el.value().attr("href") {
+            let trimmed = href.trim();
+            if trimmed.is_empty() || trimmed == "#" {
+                diags.push(Diagnostic::error(
+                    "empty-link",
+                    format!("Link #{} has an empty or placeholder href", i + 1),
+                ));
+            }
+        }
+    }
+    diags
+}
+
+fn check_bad_shortlink(html: &str) -> Vec<Diagnostic> {
+    let doc = Html::parse_fragment(html);
+    let sel = Selector::parse("[href]").unwrap();
+    let re = Regex::new(
+        r"(?i)https?://(www\.)?(youtu\.be|bit\.ly|t\.co|goo\.gl|tinyurl\.com|ow\.ly|is\.gd|buff\.ly)",
+    )
+    .unwrap();
+    let mut diags = Vec::new();
+    for (i, el) in doc.select(&sel).enumerate() {
+        if let Some(href) = el.value().attr("href") {
+            if let Some(caps) = re.captures(href) {
+                let domain = caps.get(2).unwrap().as_str();
+                diags.push(Diagnostic::warning(
+                    "bad-shortlink",
+                    format!(
+                        "Link #{} uses URL shortener {} — short links hurt deliverability and are often flagged as spam",
+                        i + 1,
+                        domain
+                    ),
+                ));
+            }
+        }
+    }
+    diags
+}
+
+fn check_mailto_in_button(html: &str, config: &Config) -> Vec<Diagnostic> {
+    let tag = &config.components.button;
+    let doc = Html::parse_fragment(html);
+    let mut diags = Vec::new();
+    if let Ok(sel) = Selector::parse(tag) {
+        for (i, el) in doc.select(&sel).enumerate() {
+            if let Some(href) = el.value().attr("href") {
+                if href.trim().to_lowercase().starts_with("mailto:") {
+                    diags.push(Diagnostic::warning(
+                        "mailto-in-button",
+                        format!(
+                            "Button #{} uses a mailto: link — this may not work well as a button in all email clients",
+                            i + 1
+                        ),
+                    ));
+                }
+            }
+        }
+    }
+    diags
+}
+
+// --- Group 2: Alt Text Quality ---
+
+fn check_generic_alt(html: &str) -> Vec<Diagnostic> {
+    let doc = Html::parse_fragment(html);
+    let sel = Selector::parse("img[alt]").unwrap();
+    let generic_terms = [
+        "image",
+        "img",
+        "logo",
+        "banner",
+        "photo",
+        "picture",
+        "icon",
+        "graphic",
+        "screenshot",
+    ];
+    let mut count = 0;
+    for el in doc.select(&sel) {
+        if let Some(alt) = el.value().attr("alt") {
+            let trimmed = alt.trim();
+            let lower = trimmed.to_lowercase();
+            if generic_terms.contains(&lower.as_str()) || trimmed.len() == 1 {
+                count += 1;
+            }
+        }
+    }
+    if count > 0 {
+        vec![Diagnostic::warning(
+            "generic-alt",
+            format!(
+                "{} image(s) have generic or single-character alt text — use descriptive alt text for accessibility",
+                count
+            ),
+        )]
+    } else {
+        vec![]
+    }
+}
+
 // --- Output-level checks ---
 
-const SIZE_WARNING_BYTES: usize = 90 * 1024;
+const GMAIL_CLIP_LIMIT: usize = 102 * 1024;
 
-fn check_email_too_large(html: &str) -> Vec<Diagnostic> {
+fn check_gmail_clipping(html: &str) -> Vec<Diagnostic> {
     let size = html.len();
-    if size > SIZE_WARNING_BYTES {
-        let kb = size / 1024;
-        vec![Diagnostic::warning(
-            "email-too-large",
+    let pct = (size as f64 / GMAIL_CLIP_LIMIT as f64 * 100.0) as usize;
+
+    if size > GMAIL_CLIP_LIMIT {
+        vec![Diagnostic::error(
+            "gmail-clipping",
             format!(
-                "Email is {}KB — Gmail clips emails over 102KB. Consider reducing content",
-                kb
+                "Email is {}KB ({}% of Gmail's 102KB limit) — Gmail WILL clip this email. Reduce content immediately",
+                size / 1024,
+                pct
+            ),
+        )]
+    } else if size > 90 * 1024 {
+        vec![Diagnostic::warning(
+            "gmail-clipping",
+            format!(
+                "Email is {}KB ({}% of Gmail's 102KB limit) — very close to being clipped. Reduce content urgently",
+                size / 1024,
+                pct
+            ),
+        )]
+    } else if size > 70 * 1024 {
+        vec![Diagnostic::warning(
+            "gmail-clipping",
+            format!(
+                "Email is {}KB ({}% of Gmail's 102KB limit) — consider reducing content to avoid clipping",
+                size / 1024,
+                pct
             ),
         )]
     } else {
@@ -480,6 +658,222 @@ fn parse_px_value(s: &str) -> Option<f64> {
     }
 }
 
+// --- Group 3: Rendering Quirk Warnings ---
+
+fn check_outlook_unsupported_css(html: &str) -> Vec<Diagnostic> {
+    let doc = Html::parse_fragment(html);
+    let sel = Selector::parse("[style]").unwrap();
+
+    let patterns: &[(&str, Regex)] = &[
+        ("display: grid", Regex::new(r"(?i)display:\s*grid").unwrap()),
+        ("grid-template", Regex::new(r"(?i)grid-template").unwrap()),
+        ("display: flex", Regex::new(r"(?i)display:\s*flex").unwrap()),
+        ("flex-direction", Regex::new(r"(?i)flex-direction").unwrap()),
+        ("flex-wrap", Regex::new(r"(?i)flex-wrap").unwrap()),
+        (
+            "justify-content",
+            Regex::new(r"(?i)justify-content").unwrap(),
+        ),
+        ("align-items", Regex::new(r"(?i)align-items").unwrap()),
+        ("border-radius", Regex::new(r"(?i)border-radius").unwrap()),
+    ];
+
+    let mut found_props: Vec<&str> = Vec::new();
+
+    for el in doc.select(&sel) {
+        if let Some(style) = el.value().attr("style") {
+            for (name, re) in patterns {
+                if re.is_match(style) && !found_props.contains(name) {
+                    found_props.push(name);
+                }
+            }
+        }
+    }
+
+    if found_props.is_empty() {
+        vec![]
+    } else {
+        vec![Diagnostic::warning(
+            "outlook-unsupported-css",
+            format!(
+                "Outlook does not support these CSS properties: {}",
+                found_props.join(", ")
+            ),
+        )]
+    }
+}
+
+fn check_gmail_strips_class(html: &str) -> Vec<Diagnostic> {
+    let doc = Html::parse_fragment(html);
+    let sel = Selector::parse("[class]").unwrap();
+    let mut offending: Vec<String> = Vec::new();
+
+    for el in doc.select(&sel) {
+        if let Some(class_attr) = el.value().attr("class") {
+            for class_name in class_attr.split_whitespace() {
+                if (class_name.contains('.') || class_name.contains(':'))
+                    && !offending.contains(&class_name.to_string())
+                {
+                    offending.push(class_name.to_string());
+                }
+            }
+        }
+    }
+
+    if offending.is_empty() {
+        vec![]
+    } else {
+        vec![Diagnostic::warning(
+            "gmail-strips-class",
+            format!(
+                "Gmail strips class names containing '.' or ':': {}",
+                offending.join(", ")
+            ),
+        )]
+    }
+}
+
+// --- Group 5: Spam Score ---
+
+/// Extract visible text from HTML, skipping style/script/head elements.
+fn extract_visible_text(html: &str) -> String {
+    let doc = Html::parse_fragment(html);
+    let mut text = String::new();
+    extract_text_recursive(&doc.root_element(), &mut text);
+    text
+}
+
+fn extract_text_recursive(element: &scraper::ElementRef, text: &mut String) {
+    for child in element.children() {
+        if let Some(child_el) = scraper::ElementRef::wrap(child) {
+            let tag = child_el.value().name().to_lowercase();
+            if tag == "style" || tag == "script" || tag == "head" {
+                continue;
+            }
+            extract_text_recursive(&child_el, text);
+        } else if let Some(t) = child.value().as_text() {
+            text.push_str(t);
+        }
+    }
+}
+
+fn check_spam_all_caps(html: &str) -> Vec<Diagnostic> {
+    let text = extract_visible_text(html);
+    let total_alpha: usize = text.chars().filter(|c| c.is_alphabetic()).count();
+    if total_alpha <= 50 {
+        return vec![];
+    }
+    let upper_alpha: usize = text.chars().filter(|c| c.is_uppercase()).count();
+    let pct = (upper_alpha as f64 / total_alpha as f64) * 100.0;
+    if pct > 20.0 {
+        vec![Diagnostic::warning(
+            "spam-all-caps",
+            format!(
+                "{:.0}% of text is uppercase — excessive caps can trigger spam filters",
+                pct
+            ),
+        )]
+    } else {
+        vec![]
+    }
+}
+
+fn check_spam_exclamation(html: &str) -> Vec<Diagnostic> {
+    let text = extract_visible_text(html);
+    let re = Regex::new(r"!{3,}").unwrap();
+    let count = re.find_iter(&text).count();
+    if count > 0 {
+        vec![Diagnostic::warning(
+            "spam-exclamation",
+            format!(
+                "{} occurrence(s) of 3+ consecutive exclamation marks — this can trigger spam filters",
+                count
+            ),
+        )]
+    } else {
+        vec![]
+    }
+}
+
+fn check_spam_image_heavy(html: &str) -> Vec<Diagnostic> {
+    let doc = Html::parse_fragment(html);
+    let sel = Selector::parse("img").unwrap();
+    let img_count = doc.select(&sel).count();
+    if img_count == 0 {
+        return vec![];
+    }
+    let text = extract_visible_text(html);
+    let text_len = text.trim().len();
+    let ratio = text_len as f64 / img_count as f64;
+    if ratio < 100.0 {
+        vec![Diagnostic::warning(
+            "spam-image-heavy",
+            format!(
+                "Only {} chars of text for {} image(s) — image-heavy emails are often flagged as spam",
+                text_len, img_count
+            ),
+        )]
+    } else {
+        vec![]
+    }
+}
+
+fn check_spam_missing_unsubscribe(html: &str) -> Vec<Diagnostic> {
+    let doc = Html::parse_fragment(html);
+    let sel = Selector::parse("a").unwrap();
+    for el in doc.select(&sel) {
+        let text: String = el.text().collect();
+        if text.to_lowercase().contains("unsubscribe") {
+            return vec![];
+        }
+        if let Some(href) = el.value().attr("href") {
+            if href.to_lowercase().contains("unsubscribe") {
+                return vec![];
+            }
+        }
+    }
+    vec![Diagnostic::warning(
+        "spam-missing-unsubscribe",
+        "No unsubscribe link found — most spam filters expect one and many jurisdictions require it",
+    )]
+}
+
+fn check_spam_suspicious_phrases(html: &str) -> Vec<Diagnostic> {
+    let text = extract_visible_text(html).to_lowercase();
+    let phrases = [
+        "act now",
+        "limited time",
+        "click here",
+        "free",
+        "winner",
+        "congratulations",
+        "no obligation",
+        "risk free",
+        "buy now",
+        "order now",
+        "don't delete",
+        "urgent",
+    ];
+    let mut found: Vec<&str> = Vec::new();
+    for phrase in &phrases {
+        if text.contains(phrase) {
+            found.push(phrase);
+        }
+    }
+    if found.len() >= 3 {
+        vec![Diagnostic::warning(
+            "spam-suspicious-phrases",
+            format!(
+                "{} suspicious phrases found: {} — this combination may trigger spam filters",
+                found.len(),
+                found.join(", ")
+            ),
+        )]
+    } else {
+        vec![]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -545,17 +939,37 @@ mod tests {
     }
 
     #[test]
-    fn test_email_size_ok() {
+    fn test_gmail_clipping_under_limit() {
         let html = "<table><tr><td>Small email</td></tr></table>";
         let diags = validate_output(html);
-        assert!(!diags.iter().any(|d| d.rule == "email-too-large"));
+        assert!(!diags.iter().any(|d| d.rule == "gmail-clipping"));
     }
 
     #[test]
-    fn test_email_too_large() {
-        let html = "x".repeat(100 * 1024);
+    fn test_gmail_clipping_over_limit() {
+        let html = "x".repeat(110 * 1024);
         let diags = validate_output(&html);
-        assert!(diags.iter().any(|d| d.rule == "email-too-large"));
+        assert!(diags.iter().any(|d| d.rule == "gmail-clipping"));
+        let d = diags.iter().find(|d| d.rule == "gmail-clipping").unwrap();
+        assert_eq!(d.severity, Severity::Error);
+    }
+
+    #[test]
+    fn test_gmail_clipping_warning_zone() {
+        let html = "x".repeat(80 * 1024);
+        let diags = validate_output(&html);
+        assert!(diags.iter().any(|d| d.rule == "gmail-clipping"));
+        let d = diags.iter().find(|d| d.rule == "gmail-clipping").unwrap();
+        assert_eq!(d.severity, Severity::Warning);
+    }
+
+    #[test]
+    fn test_gmail_clipping_urgent_zone() {
+        let html = "x".repeat(95 * 1024);
+        let diags = validate_output(&html);
+        assert!(diags.iter().any(|d| d.rule == "gmail-clipping"));
+        let d = diags.iter().find(|d| d.rule == "gmail-clipping").unwrap();
+        assert_eq!(d.severity, Severity::Warning);
     }
 
     #[test]
@@ -670,7 +1084,6 @@ mod tests {
 
     #[test]
     fn test_low_contrast_detected() {
-        // White text on white background — ratio 1:1, definitely low contrast
         let html = r#"<p style="color: #ffffff; background-color: #ffffff;">invisible text</p>"#;
         let diags = check_low_contrast(html);
         assert!(diags.iter().any(|d| d.rule == "low-contrast"));
@@ -678,7 +1091,6 @@ mod tests {
 
     #[test]
     fn test_good_contrast_passes() {
-        // Black text on white background — ratio 21:1
         let html = r#"<p style="color: black; background-color: white;">readable text</p>"#;
         let diags = check_low_contrast(html);
         assert!(!diags.iter().any(|d| d.rule == "low-contrast"));
@@ -686,7 +1098,6 @@ mod tests {
 
     #[test]
     fn test_low_contrast_light_gray_on_white() {
-        // Light gray (#ccc = 204,204,204) on white — ratio ~1.6:1
         let html = r#"<span style="color: #cccccc; background-color: #ffffff;">faint</span>"#;
         let diags = check_low_contrast(html);
         assert!(diags.iter().any(|d| d.rule == "low-contrast"));
@@ -694,7 +1105,6 @@ mod tests {
 
     #[test]
     fn test_no_contrast_check_without_both_colors() {
-        // Only foreground color, no background — should not flag
         let html = r#"<p style="color: red;">text</p>"#;
         let diags = check_low_contrast(html);
         assert!(!diags.iter().any(|d| d.rule == "low-contrast"));
@@ -702,8 +1112,6 @@ mod tests {
 
     #[test]
     fn test_large_text_lower_threshold() {
-        // Large text (18px) has a threshold of 3.0 instead of 4.5
-        // Gray #777 on white has ratio ~4.48:1 — fails normal but passes large
         let html = r#"<p style="color: #767676; background-color: white; font-size: 18px;">large text</p>"#;
         let diags = check_low_contrast(html);
         assert!(
@@ -714,7 +1122,6 @@ mod tests {
 
     #[test]
     fn test_bold_14px_is_large_text() {
-        // 14px bold text counts as "large" per WCAG
         let html = r#"<p style="color: #767676; background-color: white; font-size: 14px; font-weight: bold;">bold text</p>"#;
         let diags = check_low_contrast(html);
         assert!(
@@ -725,7 +1132,6 @@ mod tests {
 
     #[test]
     fn test_background_shorthand() {
-        // Use "background" instead of "background-color"
         let html = r#"<p style="color: #ffffff; background: #ffffff;">invisible</p>"#;
         let diags = check_low_contrast(html);
         assert!(diags.iter().any(|d| d.rule == "low-contrast"));
@@ -733,9 +1139,285 @@ mod tests {
 
     #[test]
     fn test_low_contrast_in_validate_output() {
-        // Verify it's wired into validate_output
         let html = r#"<p style="color: #ffffff; background-color: #fefefe;">barely visible</p>"#;
         let diags = validate_output(html);
         assert!(diags.iter().any(|d| d.rule == "low-contrast"));
+    }
+
+    // --- Group 1: Link Validation tests ---
+
+    #[test]
+    fn test_insecure_link() {
+        let html = r#"<a href="http://example.com">Link</a>"#;
+        let diags = check_insecure_link(html);
+        assert!(diags.iter().any(|d| d.rule == "insecure-link"));
+    }
+
+    #[test]
+    fn test_secure_link_ok() {
+        let html = r#"<a href="https://example.com">Link</a>"#;
+        let diags = check_insecure_link(html);
+        assert!(!diags.iter().any(|d| d.rule == "insecure-link"));
+    }
+
+    #[test]
+    fn test_insecure_link_localhost_excluded() {
+        let html = r#"<a href="http://localhost:3000">Dev</a>"#;
+        let diags = check_insecure_link(html);
+        assert!(!diags.iter().any(|d| d.rule == "insecure-link"));
+    }
+
+    #[test]
+    fn test_insecure_link_127_excluded() {
+        let html = r#"<a href="http://127.0.0.1:8080">Dev</a>"#;
+        let diags = check_insecure_link(html);
+        assert!(!diags.iter().any(|d| d.rule == "insecure-link"));
+    }
+
+    #[test]
+    fn test_empty_link_hash() {
+        let html = r##"<a href="#">Link</a>"##;
+        let diags = check_empty_link(html);
+        assert!(diags.iter().any(|d| d.rule == "empty-link"));
+    }
+
+    #[test]
+    fn test_empty_link_empty_string() {
+        let html = r#"<a href="">Link</a>"#;
+        let diags = check_empty_link(html);
+        assert!(diags.iter().any(|d| d.rule == "empty-link"));
+    }
+
+    #[test]
+    fn test_normal_link_ok() {
+        let html = r#"<a href="https://example.com">Link</a>"#;
+        let diags = check_empty_link(html);
+        assert!(!diags.iter().any(|d| d.rule == "empty-link"));
+    }
+
+    #[test]
+    fn test_bad_shortlink_youtube() {
+        let html = r#"<a href="https://youtu.be/abc123">Video</a>"#;
+        let diags = check_bad_shortlink(html);
+        assert!(diags.iter().any(|d| d.rule == "bad-shortlink"));
+    }
+
+    #[test]
+    fn test_bad_shortlink_bitly() {
+        let html = r#"<a href="https://bit.ly/abc123">Link</a>"#;
+        let diags = check_bad_shortlink(html);
+        assert!(diags.iter().any(|d| d.rule == "bad-shortlink"));
+    }
+
+    #[test]
+    fn test_normal_link_not_short() {
+        let html = r#"<a href="https://www.youtube.com/watch?v=abc123">Video</a>"#;
+        let diags = check_bad_shortlink(html);
+        assert!(!diags.iter().any(|d| d.rule == "bad-shortlink"));
+    }
+
+    #[test]
+    fn test_mailto_in_button() {
+        let html =
+            r#"<container><button href="mailto:test@example.com">Email Us</button></container>"#;
+        let diags = check_mailto_in_button(html, &default_config());
+        assert!(diags.iter().any(|d| d.rule == "mailto-in-button"));
+    }
+
+    #[test]
+    fn test_button_normal_href_no_mailto() {
+        let html = r#"<container><button href="https://example.com">Click</button></container>"#;
+        let diags = check_mailto_in_button(html, &default_config());
+        assert!(!diags.iter().any(|d| d.rule == "mailto-in-button"));
+    }
+
+    // --- Group 2: Alt Text Quality tests ---
+
+    #[test]
+    fn test_generic_alt_image() {
+        let html = r#"<img src="photo.jpg" alt="image">"#;
+        let diags = check_generic_alt(html);
+        assert!(diags.iter().any(|d| d.rule == "generic-alt"));
+    }
+
+    #[test]
+    fn test_generic_alt_logo() {
+        let html = r#"<img src="logo.png" alt="Logo">"#;
+        let diags = check_generic_alt(html);
+        assert!(diags.iter().any(|d| d.rule == "generic-alt"));
+    }
+
+    #[test]
+    fn test_generic_alt_single_char() {
+        let html = r#"<img src="photo.jpg" alt="x">"#;
+        let diags = check_generic_alt(html);
+        assert!(diags.iter().any(|d| d.rule == "generic-alt"));
+    }
+
+    #[test]
+    fn test_descriptive_alt_ok() {
+        let html = r#"<img src="photo.jpg" alt="A golden retriever playing in the park">"#;
+        let diags = check_generic_alt(html);
+        assert!(!diags.iter().any(|d| d.rule == "generic-alt"));
+    }
+
+    // --- Group 3: Rendering Quirk tests ---
+
+    #[test]
+    fn test_outlook_css_grid() {
+        let html = r#"<div style="display: grid; grid-template-columns: 1fr 1fr;">content</div>"#;
+        let diags = check_outlook_unsupported_css(html);
+        assert!(diags.iter().any(|d| d.rule == "outlook-unsupported-css"));
+    }
+
+    #[test]
+    fn test_outlook_css_flex() {
+        let html = r#"<div style="display: flex; justify-content: center;">content</div>"#;
+        let diags = check_outlook_unsupported_css(html);
+        assert!(diags.iter().any(|d| d.rule == "outlook-unsupported-css"));
+    }
+
+    #[test]
+    fn test_outlook_css_border_radius() {
+        let html = r#"<div style="border-radius: 5px;">content</div>"#;
+        let diags = check_outlook_unsupported_css(html);
+        assert!(diags.iter().any(|d| d.rule == "outlook-unsupported-css"));
+    }
+
+    #[test]
+    fn test_normal_css_ok() {
+        let html = r#"<div style="color: red; padding: 10px;">content</div>"#;
+        let diags = check_outlook_unsupported_css(html);
+        assert!(!diags.iter().any(|d| d.rule == "outlook-unsupported-css"));
+    }
+
+    #[test]
+    fn test_gmail_strips_class_dot() {
+        let html = r#"<div class="sm.hidden">content</div>"#;
+        let diags = check_gmail_strips_class(html);
+        assert!(diags.iter().any(|d| d.rule == "gmail-strips-class"));
+    }
+
+    #[test]
+    fn test_gmail_strips_class_colon() {
+        let html = r#"<div class="hover:underline">content</div>"#;
+        let diags = check_gmail_strips_class(html);
+        assert!(diags.iter().any(|d| d.rule == "gmail-strips-class"));
+    }
+
+    #[test]
+    fn test_gmail_normal_class_ok() {
+        let html = r#"<div class="container main-content">content</div>"#;
+        let diags = check_gmail_strips_class(html);
+        assert!(!diags.iter().any(|d| d.rule == "gmail-strips-class"));
+    }
+
+    // --- Group 5: Spam Score tests ---
+
+    #[test]
+    fn test_spam_all_caps() {
+        let html =
+            r#"<p>THIS IS ALL UPPERCASE TEXT AND IT KEEPS GOING ON AND ON TO BE LONG ENOUGH</p>"#;
+        let diags = check_spam_all_caps(html);
+        assert!(diags.iter().any(|d| d.rule == "spam-all-caps"));
+    }
+
+    #[test]
+    fn test_spam_normal_case() {
+        let html = r#"<p>This is a normal sentence with proper capitalization and enough text to pass the threshold easily.</p>"#;
+        let diags = check_spam_all_caps(html);
+        assert!(!diags.iter().any(|d| d.rule == "spam-all-caps"));
+    }
+
+    #[test]
+    fn test_spam_all_caps_short_text_ok() {
+        // Short text should not trigger even if all caps
+        let html = "<p>ABC</p>";
+        let diags = check_spam_all_caps(html);
+        assert!(!diags.iter().any(|d| d.rule == "spam-all-caps"));
+    }
+
+    #[test]
+    fn test_spam_exclamation() {
+        let html = "<p>Buy now!!! Amazing deal!!!</p>";
+        let diags = check_spam_exclamation(html);
+        assert!(diags.iter().any(|d| d.rule == "spam-exclamation"));
+    }
+
+    #[test]
+    fn test_spam_exclamation_ok() {
+        let html = "<p>Great product! Love it!</p>";
+        let diags = check_spam_exclamation(html);
+        assert!(!diags.iter().any(|d| d.rule == "spam-exclamation"));
+    }
+
+    #[test]
+    fn test_spam_image_heavy() {
+        let html = r#"<img src="a.jpg"><img src="b.jpg"><img src="c.jpg"><p>Hi</p>"#;
+        let diags = check_spam_image_heavy(html);
+        assert!(diags.iter().any(|d| d.rule == "spam-image-heavy"));
+    }
+
+    #[test]
+    fn test_spam_image_with_text_ok() {
+        let long_text = "a".repeat(500);
+        let html = format!(r#"<img src="a.jpg"><p>{}</p>"#, long_text);
+        let diags = check_spam_image_heavy(&html);
+        assert!(!diags.iter().any(|d| d.rule == "spam-image-heavy"));
+    }
+
+    #[test]
+    fn test_spam_missing_unsubscribe() {
+        let html = "<p>Hello world</p><a href=\"https://example.com\">Visit us</a>";
+        let diags = check_spam_missing_unsubscribe(html);
+        assert!(diags.iter().any(|d| d.rule == "spam-missing-unsubscribe"));
+    }
+
+    #[test]
+    fn test_spam_has_unsubscribe() {
+        let html = "<p>Hello world</p><a href=\"https://example.com/unsubscribe\">Unsubscribe</a>";
+        let diags = check_spam_missing_unsubscribe(html);
+        assert!(!diags.iter().any(|d| d.rule == "spam-missing-unsubscribe"));
+    }
+
+    #[test]
+    fn test_spam_has_unsubscribe_in_href() {
+        let html = "<p>Hello world</p><a href=\"https://example.com/unsubscribe\">Click here</a>";
+        let diags = check_spam_missing_unsubscribe(html);
+        assert!(!diags.iter().any(|d| d.rule == "spam-missing-unsubscribe"));
+    }
+
+    #[test]
+    fn test_spam_suspicious_phrases() {
+        let html = "<p>Act now! This is a limited time offer! Click here to get your free gift! You are a winner!</p>";
+        let diags = check_spam_suspicious_phrases(html);
+        assert!(diags.iter().any(|d| d.rule == "spam-suspicious-phrases"));
+    }
+
+    #[test]
+    fn test_spam_clean_copy() {
+        let html =
+            "<p>We wanted to share our latest product updates with you. Check out our new features.</p>";
+        let diags = check_spam_suspicious_phrases(html);
+        assert!(!diags.iter().any(|d| d.rule == "spam-suspicious-phrases"));
+    }
+
+    #[test]
+    fn test_spam_two_phrases_ok() {
+        // Only 2 phrases should not trigger (need 3+)
+        let html = "<p>Act now and get it free.</p>";
+        let diags = check_spam_suspicious_phrases(html);
+        assert!(!diags.iter().any(|d| d.rule == "spam-suspicious-phrases"));
+    }
+
+    #[test]
+    fn test_validate_spam_function() {
+        let html = "<p>ACT NOW!!! LIMITED TIME OFFER!!! CLICK HERE TO GET YOUR FREE GIFT!!! YOU ARE A WINNER!!! CONGRATULATIONS!!!</p>";
+        let diags = validate_spam(html);
+        // Should have multiple findings
+        assert!(!diags.is_empty());
+        // Should include at least exclamation and suspicious phrases
+        assert!(diags.iter().any(|d| d.rule == "spam-exclamation"));
+        assert!(diags.iter().any(|d| d.rule == "spam-suspicious-phrases"));
     }
 }
