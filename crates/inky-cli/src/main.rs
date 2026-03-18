@@ -60,6 +60,14 @@ enum Commands {
         /// Use hybrid output mode (div + MSO ghost tables instead of pure tables)
         #[arg(long)]
         hybrid: bool,
+
+        /// Also generate a plain text version (.txt) alongside each HTML file
+        #[arg(long)]
+        plain_text: bool,
+
+        /// Directory containing per-template JSON data files
+        #[arg(long)]
+        data_dir: Option<PathBuf>,
     },
 
     /// Validate Inky templates for common issues
@@ -116,6 +124,14 @@ enum Commands {
         /// Use hybrid output mode (div + MSO ghost tables instead of pure tables)
         #[arg(long)]
         hybrid: bool,
+
+        /// Also generate a plain text version (.txt) alongside each HTML file
+        #[arg(long)]
+        plain_text: bool,
+
+        /// Directory containing per-template JSON data files
+        #[arg(long)]
+        data_dir: Option<PathBuf>,
     },
 
     /// Start a live preview dev server
@@ -147,6 +163,12 @@ enum Commands {
         #[arg(long)]
         hybrid: bool,
     },
+
+    /// Check templates for common spam triggers
+    SpamCheck {
+        /// Input file or directory
+        input: PathBuf,
+    },
 }
 
 fn main() {
@@ -162,9 +184,19 @@ fn main() {
             strict,
             data,
             hybrid,
+            plain_text,
+            data_dir,
         } => {
-            let (input, output, columns, components, cfg_data, cfg_hybrid) =
-                resolve_config(input, output, columns);
+            let (
+                input,
+                output,
+                columns,
+                components,
+                cfg_data,
+                cfg_hybrid,
+                cfg_data_dir,
+                cfg_plain_text,
+            ) = resolve_config(input, output, columns);
             let data = data.or(cfg_data);
             let merge_data = load_merge_data(data.as_deref());
             let output_mode = if hybrid || cfg_hybrid {
@@ -172,6 +204,8 @@ fn main() {
             } else {
                 OutputMode::Table
             };
+            let data_dir = data_dir.or(cfg_data_dir);
+            let plain_text = plain_text || cfg_plain_text;
             cmd_build(
                 input,
                 output,
@@ -182,6 +216,8 @@ fn main() {
                 components,
                 merge_data.as_ref(),
                 output_mode,
+                plain_text,
+                data_dir.as_deref(),
             )
         }
         Commands::Validate { input } => cmd_validate(input),
@@ -199,15 +235,27 @@ fn main() {
             no_framework_css,
             data,
             hybrid,
+            plain_text,
+            data_dir,
         } => {
-            let (input, output, columns, components, cfg_data, cfg_hybrid) =
-                resolve_config(input, output, columns);
+            let (
+                input,
+                output,
+                columns,
+                components,
+                cfg_data,
+                cfg_hybrid,
+                cfg_data_dir,
+                cfg_plain_text,
+            ) = resolve_config(input, output, columns);
             let data = data.or(cfg_data);
             let output_mode = if hybrid || cfg_hybrid {
                 OutputMode::Hybrid
             } else {
                 OutputMode::Table
             };
+            let data_dir = data_dir.or(cfg_data_dir);
+            let plain_text = plain_text || cfg_plain_text;
             let input = input.unwrap_or_else(|| {
                 eprintln!("{} No input directory specified. Use `inky watch <dir>` or set \"src\" in inky.config.json", "error:".red().bold());
                 process::exit(1);
@@ -225,6 +273,8 @@ fn main() {
                 components,
                 data,
                 output_mode,
+                plain_text,
+                data_dir,
             )
         }
         Commands::Serve {
@@ -236,8 +286,16 @@ fn main() {
             data,
             hybrid,
         } => {
-            let (input, _output, columns, components, cfg_data, cfg_hybrid) =
-                resolve_config(input, None, columns);
+            let (
+                input,
+                _output,
+                columns,
+                components,
+                cfg_data,
+                cfg_hybrid,
+                _cfg_data_dir,
+                _cfg_plain_text,
+            ) = resolve_config(input, None, columns);
             let data = data.or(cfg_data);
             let output_mode = if hybrid || cfg_hybrid {
                 OutputMode::Hybrid
@@ -259,6 +317,7 @@ fn main() {
                 output_mode,
             )
         }
+        Commands::SpamCheck { input } => cmd_spam_check(input),
     }
 }
 
@@ -289,6 +348,7 @@ fn find_project_config(input: Option<&Path>) -> Option<(config::ProjectConfig, P
 ///
 /// When the input points to a project directory (containing inky.config.json),
 /// the config's `src` and `dist` are resolved relative to that directory.
+#[allow(clippy::type_complexity)]
 fn resolve_config(
     input: Option<PathBuf>,
     output: Option<PathBuf>,
@@ -300,27 +360,39 @@ fn resolve_config(
     Option<String>,
     Option<PathBuf>,
     bool,
+    Option<PathBuf>,
+    bool,
 ) {
     let project_config = find_project_config(input.as_deref());
 
-    let (cfg_src, cfg_dist, cfg_columns, cfg_components, cfg_data, cfg_hybrid) =
-        match &project_config {
-            Some((cfg, base_dir)) => (
-                cfg.src.as_ref().map(|s| base_dir.join(s)),
-                cfg.dist.as_ref().map(|d| base_dir.join(d)),
-                cfg.columns,
-                cfg.components.as_ref().map(|c| {
-                    let p = base_dir.join(c);
-                    std::fs::canonicalize(&p)
-                        .unwrap_or(p)
-                        .to_string_lossy()
-                        .to_string()
-                }),
-                cfg.data.as_ref().map(|d| base_dir.join(d)),
-                cfg.hybrid.unwrap_or(false),
-            ),
-            None => (None, None, None, None, None, false),
-        };
+    let (
+        cfg_src,
+        cfg_dist,
+        cfg_columns,
+        cfg_components,
+        cfg_data,
+        cfg_hybrid,
+        cfg_data_dir,
+        cfg_plain_text,
+    ) = match &project_config {
+        Some((cfg, base_dir)) => (
+            cfg.src.as_ref().map(|s| base_dir.join(s)),
+            cfg.dist.as_ref().map(|d| base_dir.join(d)),
+            cfg.columns,
+            cfg.components.as_ref().map(|c| {
+                let p = base_dir.join(c);
+                std::fs::canonicalize(&p)
+                    .unwrap_or(p)
+                    .to_string_lossy()
+                    .to_string()
+            }),
+            cfg.data.as_ref().map(|d| base_dir.join(d)),
+            cfg.hybrid.unwrap_or(false),
+            cfg.data_dir.as_ref().map(|d| base_dir.join(d)),
+            cfg.plain_text.unwrap_or(false),
+        ),
+        None => (None, None, None, None, None, false, None, false),
+    };
 
     // If input points to a project root (has config), use config's src
     // If input points to a specific file/dir, use it directly
@@ -339,7 +411,16 @@ fn resolve_config(
     let output = output.or(cfg_dist);
     let columns = columns.or(cfg_columns).unwrap_or(12);
 
-    (input, output, columns, cfg_components, cfg_data, cfg_hybrid)
+    (
+        input,
+        output,
+        columns,
+        cfg_components,
+        cfg_data,
+        cfg_hybrid,
+        cfg_data_dir,
+        cfg_plain_text,
+    )
 }
 
 /// Load and parse a JSON data file for template merging.
@@ -377,6 +458,8 @@ fn cmd_build(
     components_dir: Option<String>,
     merge_data: Option<&serde_json::Value>,
     output_mode: OutputMode,
+    plain_text: bool,
+    data_dir: Option<&Path>,
 ) {
     let config = Config {
         column_count: columns,
@@ -397,11 +480,19 @@ fn cmd_build(
                     &config,
                     components_dir.as_deref(),
                     merge_data,
+                    plain_text,
+                    data_dir,
                 )
             } else {
                 let base = path.parent().map(Path::to_path_buf);
                 let html = read_file(&path);
                 let warnings = print_validation_warnings(&html, &config, &path);
+                let file_data = resolve_merge_data_for_file(
+                    &path,
+                    path.parent().unwrap_or(Path::new(".")),
+                    data_dir,
+                    merge_data,
+                );
                 let result = build::process_template(
                     &inky,
                     &html,
@@ -409,7 +500,7 @@ fn cmd_build(
                     framework_css,
                     base.as_deref(),
                     components_dir.as_deref(),
-                    merge_data,
+                    file_data.as_ref().or(merge_data),
                     build::ErrorMode::Exit,
                 );
                 // If no output specified and input is .inky, write to .html
@@ -421,6 +512,13 @@ fn cmd_build(
                     }
                 });
                 write_output(&result, out.as_deref());
+                if plain_text {
+                    if let Some(ref out_path) = out {
+                        let txt = inky_core::plaintext::html_to_plain_text(&result);
+                        let txt_path = out_path.with_extension("txt");
+                        write_output(&txt, Some(&txt_path));
+                    }
+                }
                 warnings
             }
         }
@@ -476,6 +574,8 @@ fn build_directory(
     config: &Config,
     components_dir: Option<&str>,
     merge_data: Option<&serde_json::Value>,
+    plain_text: bool,
+    data_dir: Option<&Path>,
 ) -> bool {
     let files = find_template_files(input_dir);
     let mut has_warnings = false;
@@ -494,6 +594,7 @@ fn build_directory(
         if print_validation_warnings(&html, config, file) {
             has_warnings = true;
         }
+        let file_data = resolve_merge_data_for_file(file, input_dir, data_dir, merge_data);
         let base = file.parent().map(Path::to_path_buf);
         let result = build::process_template(
             inky,
@@ -502,7 +603,7 @@ fn build_directory(
             framework_css,
             base.as_deref(),
             components_dir,
-            merge_data,
+            file_data.as_ref().or(merge_data),
             build::ErrorMode::Exit,
         );
 
@@ -542,6 +643,18 @@ fn build_directory(
                     file.display(),
                     dest.display()
                 );
+                if plain_text {
+                    let txt = inky_core::plaintext::html_to_plain_text(&result);
+                    let txt_path = dest.with_extension("txt");
+                    fs::write(&txt_path, &txt).unwrap_or_else(|e| {
+                        eprintln!(
+                            "{} Failed to write {}: {}",
+                            "error:".red().bold(),
+                            txt_path.display(),
+                            e
+                        );
+                    });
+                }
             }
             None => {
                 println!("<!-- {} -->\n{}\n", file.display(), result);
@@ -629,6 +742,75 @@ fn read_file(path: &std::path::Path) -> String {
         );
         process::exit(1);
     })
+}
+
+/// Resolve merge data for a specific template file.
+/// Checks for a per-template JSON file in data_dir first, falls back to global data.
+fn resolve_merge_data_for_file(
+    file: &Path,
+    input_dir: &Path,
+    data_dir: Option<&Path>,
+    _global_data: Option<&serde_json::Value>,
+) -> Option<serde_json::Value> {
+    let data_dir = data_dir?;
+    let relative = file.strip_prefix(input_dir).ok()?;
+    let json_path = data_dir.join(relative).with_extension("json");
+    if json_path.is_file() {
+        let content = fs::read_to_string(&json_path).ok()?;
+        serde_json::from_str(&content).ok()
+    } else {
+        None
+    }
+}
+
+fn cmd_spam_check(input: PathBuf) {
+    let config = Config::default();
+    let inky = Inky::with_config(config.clone());
+    let mut has_issues = false;
+
+    let files = if input.is_dir() {
+        find_template_files(&input)
+    } else {
+        vec![input]
+    };
+
+    if files.is_empty() {
+        eprintln!("{} No template files found", "warning:".yellow().bold());
+        return;
+    }
+
+    for file in &files {
+        let html = read_file(file);
+        let base = file.parent().map(Path::to_path_buf);
+        let result = build::process_template(
+            &inky,
+            &html,
+            true,
+            true,
+            base.as_deref(),
+            None,
+            None,
+            build::ErrorMode::Continue,
+        );
+        let diagnostics = validate::validate_spam(&result);
+
+        if diagnostics.is_empty() {
+            eprintln!("  {} {}", "ok".green().bold(), file.display());
+        } else {
+            has_issues = true;
+            for d in &diagnostics {
+                let label = match d.severity {
+                    Severity::Warning => "warn".yellow().bold(),
+                    Severity::Error => "error".red().bold(),
+                };
+                eprintln!("  {} {} [{}] {}", label, file.display(), d.rule, d.message);
+            }
+        }
+    }
+
+    if has_issues {
+        process::exit(1);
+    }
 }
 
 fn write_output(content: &str, path: Option<&std::path::Path>) {

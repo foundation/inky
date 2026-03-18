@@ -19,6 +19,8 @@ pub fn cmd_watch(
     components_dir: Option<String>,
     data_path: Option<PathBuf>,
     output_mode: OutputMode,
+    _plain_text: bool,
+    _data_dir: Option<PathBuf>,
 ) {
     if !input.is_dir() {
         eprintln!(
