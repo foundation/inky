@@ -2,27 +2,21 @@
 
 All design, component reference, migration guide, CLI usage, bindings docs, and API reference have moved to `docs/`.
 
-## Stage 5: Ship It
+## Ship It
 
-| Step | Task | Status |
-|------|------|--------|
-| 40 | Set up CI (`.github/workflows/ci.yml`) | Done |
-| 41 | Set up release pipeline (`.github/workflows/release.yml`) | Done |
-| 42 | Create `foundation/homebrew-inky` tap repo | Done |
-| 43 | Automate Homebrew formula updates on release | Done (in release workflow) |
-| 44 | Write documentation and migration guide (`docs/`) | Done |
-| 44a | Create Go bindings (`foundation/inky-go` — 21 tests) | Done |
-| 45 | Publish v2.0.0 to npm, crates.io, Packagist, PyPI, RubyGems, Homebrew | TODO |
-| 46 | Archive `foundation/inky-rb` with pointer to new gem | TODO |
-| 47 | Archive `foundation/foundation-emails` with pointer to `inky` | TODO |
-| 48 | Submit formula to `homebrew-core` (once project is established) | TODO |
-| 49 | Re-enable Dependabot | TODO |
+| Task | Status |
+|------|--------|
+| Publish v2.0.0 to npm, crates.io, Packagist, PyPI, RubyGems, Homebrew | TODO |
+| Archive `foundation/inky-rb` with pointer to new gem | TODO |
+| Archive `foundation/foundation-emails` with pointer to `inky` | TODO |
+| Submit formula to `homebrew-core` (once project is established) | TODO |
+| Re-enable Dependabot | TODO |
 
-## Completed (v2.x)
+## Future (v2.x / v3.0)
 
 | Feature | Description |
 |---------|-------------|
-| Data merging | MiniJinja template merge via `--data data.json` |
-| Hybrid output mode | `--hybrid` flag for `<div>` layout with Outlook MSO ghost table fallbacks |
-| Contrast checker | WCAG AA color contrast validation (`low-contrast` rule) |
-| Live preview | `inky serve` with browser preview and live reload |
+| Email previews | Validation warnings for common client rendering quirks (expand beyond Outlook/Gmail) |
+| i18n / RTL support | Auto `dir="rtl"` and mirrored layouts for right-to-left locales |
+| ESP integration | Push templates to SendGrid, Mailchimp, Postmark APIs (`inky upload`) |
+| S3/CDN image upload | `inky build --upload-images s3://bucket/` to host images and rewrite URLs |
