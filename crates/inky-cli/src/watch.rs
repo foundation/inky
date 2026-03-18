@@ -7,8 +7,9 @@ use colored::Colorize;
 use notify_debouncer_mini::{new_debouncer, DebouncedEventKind};
 use regex::Regex;
 
-use inky_core::{Config, Inky};
+use inky_core::{Config, Inky, OutputMode};
 
+#[allow(clippy::too_many_arguments)]
 pub fn cmd_watch(
     input: PathBuf,
     output: PathBuf,
@@ -17,6 +18,7 @@ pub fn cmd_watch(
     framework_css: bool,
     components_dir: Option<String>,
     data_path: Option<PathBuf>,
+    output_mode: OutputMode,
 ) {
     if !input.is_dir() {
         eprintln!(
@@ -35,6 +37,7 @@ pub fn cmd_watch(
 
     let config = Config {
         column_count: columns,
+        output_mode,
         ..Config::default()
     };
 

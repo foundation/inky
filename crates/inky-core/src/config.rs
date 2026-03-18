@@ -1,8 +1,19 @@
+/// Output mode for generated HTML.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum OutputMode {
+    /// Pure table-based layout (maximum email client compatibility).
+    #[default]
+    Table,
+    /// Hybrid: `<div>` layout for modern clients with MSO ghost table fallbacks for Outlook.
+    Hybrid,
+}
+
 /// Configuration for the Inky parser.
 #[derive(Debug, Clone)]
 pub struct Config {
     pub column_count: u32,
     pub components: ComponentNames,
+    pub output_mode: OutputMode,
 }
 
 /// Customizable tag names for each Inky component.
@@ -43,6 +54,7 @@ impl Default for Config {
         Self {
             column_count: 12,
             components: ComponentNames::default(),
+            output_mode: OutputMode::default(),
         }
     }
 }

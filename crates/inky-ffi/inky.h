@@ -44,6 +44,15 @@ char *inky_transform_inline(const char *input);
 char *inky_transform_with_data(const char *input, const char *data_json);
 
 /**
+ * Transform using hybrid output mode (div + MSO ghost tables).
+ * Caller must free the returned string with inky_free().
+ *
+ * # Safety
+ * `input` must be a valid, non-null, null-terminated C string.
+ */
+char *inky_transform_hybrid(const char *input);
+
+/**
  * Migrate v1 Inky syntax to v2.
  * Returns the migrated HTML string.
  * Caller must free the returned string with inky_free().

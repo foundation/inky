@@ -1,5 +1,5 @@
 use inky_core::validate::{self, Severity};
-use inky_core::{Config, Inky};
+use inky_core::{Config, Inky, OutputMode};
 use wasm_bindgen::prelude::*;
 
 /// Transform Inky HTML into email-safe table markup.
@@ -13,6 +13,16 @@ pub fn transform(html: &str) -> String {
 pub fn transform_with_config(html: &str, column_count: u32) -> String {
     let config = Config {
         column_count,
+        ..Default::default()
+    };
+    Inky::with_config(config).transform(html)
+}
+
+/// Transform using hybrid output mode (div + MSO ghost tables).
+#[wasm_bindgen]
+pub fn transform_hybrid(html: &str) -> String {
+    let config = Config {
+        output_mode: OutputMode::Hybrid,
         ..Default::default()
     };
     Inky::with_config(config).transform(html)

@@ -15,6 +15,8 @@ pub struct ProjectConfig {
     pub components: Option<String>,
     /// Path to a JSON file with template merge data
     pub data: Option<String>,
+    /// Use hybrid output mode (div + MSO ghost tables)
+    pub hybrid: Option<bool>,
 }
 
 /// Search for `inky.config.json` starting from `start_dir` and walking up to the filesystem root.

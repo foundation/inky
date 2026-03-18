@@ -1,6 +1,6 @@
 use inky_core::migrate;
 use inky_core::validate::{self, Severity};
-use inky_core::{Config, Inky};
+use inky_core::{Config, Inky, OutputMode};
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 
@@ -78,6 +78,23 @@ pub unsafe extern "C" fn inky_transform_with_data(
         Ok(r) => r,
         Err(_) => Inky::new().transform(&merged),
     };
+    CString::new(result).unwrap_or_default().into_raw()
+}
+
+/// Transform using hybrid output mode (div + MSO ghost tables).
+/// Caller must free the returned string with inky_free().
+///
+/// # Safety
+/// `input` must be a valid, non-null, null-terminated C string.
+#[no_mangle]
+pub unsafe extern "C" fn inky_transform_hybrid(input: *const c_char) -> *mut c_char {
+    let c_str = unsafe { CStr::from_ptr(input) };
+    let html = c_str.to_str().unwrap_or("");
+    let config = Config {
+        output_mode: OutputMode::Hybrid,
+        ..Default::default()
+    };
+    let result = Inky::with_config(config).transform(html);
     CString::new(result).unwrap_or_default().into_raw()
 }
 

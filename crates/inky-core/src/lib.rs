@@ -1,4 +1,5 @@
 pub mod attrs;
+pub mod color;
 pub mod components;
 pub mod config;
 pub mod include;
@@ -13,7 +14,7 @@ use regex::Regex;
 use scraper::{Html, Selector};
 
 use components::transform_component;
-pub use config::{ComponentNames, Config};
+pub use config::{ComponentNames, Config, OutputMode};
 
 /// The Inky parser. Converts simple HTML tags into email-safe table markup.
 pub struct Inky {

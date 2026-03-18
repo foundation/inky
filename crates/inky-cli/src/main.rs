@@ -3,13 +3,14 @@ mod config;
 mod init;
 mod migrate;
 mod scss;
+mod serve;
 pub mod util;
 mod watch;
 
 use clap::{Parser, Subcommand};
 use colored::Colorize;
 use inky_core::validate::{self, Severity};
-use inky_core::{Config, Inky};
+use inky_core::{Config, Inky, OutputMode};
 use std::ffi::OsStr;
 use std::fs;
 use std::io::{self, Read};
@@ -55,6 +56,10 @@ enum Commands {
         /// Path to a JSON file with template merge data
         #[arg(long)]
         data: Option<PathBuf>,
+
+        /// Use hybrid output mode (div + MSO ghost tables instead of pure tables)
+        #[arg(long)]
+        hybrid: bool,
     },
 
     /// Validate Inky templates for common issues
@@ -107,6 +112,40 @@ enum Commands {
         /// Path to a JSON file with template merge data
         #[arg(long)]
         data: Option<PathBuf>,
+
+        /// Use hybrid output mode (div + MSO ghost tables instead of pure tables)
+        #[arg(long)]
+        hybrid: bool,
+    },
+
+    /// Start a live preview dev server
+    Serve {
+        /// Input directory containing templates
+        input: Option<PathBuf>,
+
+        /// Port to serve on (default: 3000)
+        #[arg(short, long, default_value_t = 3000)]
+        port: u16,
+
+        /// Number of columns in the grid (default: 12)
+        #[arg(long)]
+        columns: Option<u32>,
+
+        /// Skip CSS inlining
+        #[arg(long)]
+        no_inline_css: bool,
+
+        /// Skip injecting framework CSS
+        #[arg(long)]
+        no_framework_css: bool,
+
+        /// Path to a JSON file with template merge data
+        #[arg(long)]
+        data: Option<PathBuf>,
+
+        /// Use hybrid output mode (div + MSO ghost tables instead of pure tables)
+        #[arg(long)]
+        hybrid: bool,
     },
 }
 
@@ -122,11 +161,17 @@ fn main() {
             no_framework_css,
             strict,
             data,
+            hybrid,
         } => {
-            let (input, output, columns, components, cfg_data) =
+            let (input, output, columns, components, cfg_data, cfg_hybrid) =
                 resolve_config(input, output, columns);
             let data = data.or(cfg_data);
             let merge_data = load_merge_data(data.as_deref());
+            let output_mode = if hybrid || cfg_hybrid {
+                OutputMode::Hybrid
+            } else {
+                OutputMode::Table
+            };
             cmd_build(
                 input,
                 output,
@@ -136,6 +181,7 @@ fn main() {
                 strict,
                 components,
                 merge_data.as_ref(),
+                output_mode,
             )
         }
         Commands::Validate { input } => cmd_validate(input),
@@ -152,10 +198,16 @@ fn main() {
             no_inline_css,
             no_framework_css,
             data,
+            hybrid,
         } => {
-            let (input, output, columns, components, cfg_data) =
+            let (input, output, columns, components, cfg_data, cfg_hybrid) =
                 resolve_config(input, output, columns);
             let data = data.or(cfg_data);
+            let output_mode = if hybrid || cfg_hybrid {
+                OutputMode::Hybrid
+            } else {
+                OutputMode::Table
+            };
             let input = input.unwrap_or_else(|| {
                 eprintln!("{} No input directory specified. Use `inky watch <dir>` or set \"src\" in inky.config.json", "error:".red().bold());
                 process::exit(1);
@@ -172,6 +224,39 @@ fn main() {
                 !no_framework_css,
                 components,
                 data,
+                output_mode,
+            )
+        }
+        Commands::Serve {
+            input,
+            port,
+            columns,
+            no_inline_css,
+            no_framework_css,
+            data,
+            hybrid,
+        } => {
+            let (input, _output, columns, components, cfg_data, cfg_hybrid) =
+                resolve_config(input, None, columns);
+            let data = data.or(cfg_data);
+            let output_mode = if hybrid || cfg_hybrid {
+                OutputMode::Hybrid
+            } else {
+                OutputMode::Table
+            };
+            let input = input.unwrap_or_else(|| {
+                eprintln!("{} No input directory specified. Use `inky serve <dir>` or set \"src\" in inky.config.json", "error:".red().bold());
+                process::exit(1);
+            });
+            serve::cmd_serve(
+                input,
+                columns,
+                !no_inline_css,
+                !no_framework_css,
+                components,
+                data,
+                port,
+                output_mode,
             )
         }
     }
@@ -214,25 +299,28 @@ fn resolve_config(
     u32,
     Option<String>,
     Option<PathBuf>,
+    bool,
 ) {
     let project_config = find_project_config(input.as_deref());
 
-    let (cfg_src, cfg_dist, cfg_columns, cfg_components, cfg_data) = match &project_config {
-        Some((cfg, base_dir)) => (
-            cfg.src.as_ref().map(|s| base_dir.join(s)),
-            cfg.dist.as_ref().map(|d| base_dir.join(d)),
-            cfg.columns,
-            cfg.components.as_ref().map(|c| {
-                let p = base_dir.join(c);
-                std::fs::canonicalize(&p)
-                    .unwrap_or(p)
-                    .to_string_lossy()
-                    .to_string()
-            }),
-            cfg.data.as_ref().map(|d| base_dir.join(d)),
-        ),
-        None => (None, None, None, None, None),
-    };
+    let (cfg_src, cfg_dist, cfg_columns, cfg_components, cfg_data, cfg_hybrid) =
+        match &project_config {
+            Some((cfg, base_dir)) => (
+                cfg.src.as_ref().map(|s| base_dir.join(s)),
+                cfg.dist.as_ref().map(|d| base_dir.join(d)),
+                cfg.columns,
+                cfg.components.as_ref().map(|c| {
+                    let p = base_dir.join(c);
+                    std::fs::canonicalize(&p)
+                        .unwrap_or(p)
+                        .to_string_lossy()
+                        .to_string()
+                }),
+                cfg.data.as_ref().map(|d| base_dir.join(d)),
+                cfg.hybrid.unwrap_or(false),
+            ),
+            None => (None, None, None, None, None, false),
+        };
 
     // If input points to a project root (has config), use config's src
     // If input points to a specific file/dir, use it directly
@@ -251,7 +339,7 @@ fn resolve_config(
     let output = output.or(cfg_dist);
     let columns = columns.or(cfg_columns).unwrap_or(12);
 
-    (input, output, columns, cfg_components, cfg_data)
+    (input, output, columns, cfg_components, cfg_data, cfg_hybrid)
 }
 
 /// Load and parse a JSON data file for template merging.
@@ -288,9 +376,11 @@ fn cmd_build(
     strict: bool,
     components_dir: Option<String>,
     merge_data: Option<&serde_json::Value>,
+    output_mode: OutputMode,
 ) {
     let config = Config {
         column_count: columns,
+        output_mode,
         ..Config::default()
     };
     let inky = Inky::with_config(config.clone());

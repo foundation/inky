@@ -39,15 +39,15 @@ pub fn transform_component(element: &ElementRef, config: &Config) -> Option<Stri
     } else if tag == comps.columns || tag == "columns" {
         Some(column::make_column(element, config))
     } else if tag == comps.row {
-        Some(row::make_row(element))
+        Some(row::make_row(element, config))
     } else if tag == comps.button {
         Some(button::make_button(element))
     } else if tag == comps.container {
-        Some(container::make_container(element))
+        Some(container::make_container(element, config))
     } else if tag == comps.inky {
         Some(inky::make_inky())
     } else if tag == comps.block_grid {
-        Some(block_grid::make_block_grid(element))
+        Some(block_grid::make_block_grid(element, config))
     } else if tag == comps.menu {
         Some(menu::make_menu(element))
     } else if tag == comps.menu_item {
@@ -59,7 +59,7 @@ pub fn transform_component(element: &ElementRef, config: &Config) -> Option<Stri
     } else if tag == comps.spacer {
         Some(spacer::make_spacer(element))
     } else if tag == comps.wrapper {
-        Some(wrapper::make_wrapper(element))
+        Some(wrapper::make_wrapper(element, config))
     } else if tag == comps.divider {
         Some(divider::make_divider(element))
     } else if tag == comps.outlook {

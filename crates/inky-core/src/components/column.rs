@@ -2,7 +2,7 @@ use scraper::ElementRef;
 
 use super::helpers::inner_html;
 use crate::attrs::{get_attr, get_attrs, get_classes, has_class};
-use crate::config::Config;
+use crate::config::{Config, OutputMode};
 
 /// Transform a column with explicit position info (used for batch column processing).
 pub fn transform_column_with_position(
@@ -42,31 +42,52 @@ pub fn transform_column_with_position(
         classes.push("last".to_string());
     }
 
-    let no_expander = get_attr(element, "no-expander");
-    let has_nested_row = inner.contains("class=\"row") || inner.contains("<row");
-    let needs_expander = large_size == config.column_count
-        && !has_nested_row
-        && (no_expander.is_none() || no_expander.as_deref() == Some("false"));
-
-    let expander = if needs_expander {
-        "\n<th class=\"expander\" aria-hidden=\"true\"></th>"
-    } else {
-        ""
-    };
-
     let attrs_str = if attrs.is_empty() {
         String::new()
     } else {
         attrs
     };
 
-    format!(
-        r#"<th class="{}"{}><table role="presentation"><tbody><tr><th>{}</th>{}</tr></tbody></table></th>"#,
-        classes.join(" "),
-        attrs_str,
-        inner,
-        expander
-    )
+    match config.output_mode {
+        OutputMode::Table => {
+            let no_expander = get_attr(element, "no-expander");
+            let has_nested_row = inner.contains("class=\"row") || inner.contains("<row");
+            let needs_expander = large_size == config.column_count
+                && !has_nested_row
+                && (no_expander.is_none() || no_expander.as_deref() == Some("false"));
+
+            let expander = if needs_expander {
+                "\n<th class=\"expander\" aria-hidden=\"true\"></th>"
+            } else {
+                ""
+            };
+
+            format!(
+                r#"<th class="{}"{}><table role="presentation"><tbody><tr><th>{}</th>{}</tr></tbody></table></th>"#,
+                classes.join(" "),
+                attrs_str,
+                inner,
+                expander
+            )
+        }
+        OutputMode::Hybrid => {
+            let width_pct = (large_size as f64 / config.column_count as f64) * 100.0;
+            let width_pct_str = format!("{:.4}", width_pct)
+                .trim_end_matches('0')
+                .trim_end_matches('.')
+                .to_string();
+            let mso_width_pct = width_pct_str.clone();
+
+            format!(
+                r#"<!--[if mso]><td width="{mso_width_pct}%" valign="top"><![endif]--><div class="{classes}"{attrs} style="display:inline-block;width:100%;max-width:{width_pct}%;vertical-align:top;">{inner}</div><!--[if mso]></td><![endif]-->"#,
+                mso_width_pct = mso_width_pct,
+                classes = classes.join(" "),
+                attrs = attrs_str,
+                width_pct = width_pct_str,
+                inner = inner,
+            )
+        }
+    }
 }
 
 /// Single column fallback (used when not batch-processed via row).
@@ -103,31 +124,51 @@ pub fn make_column(element: &ElementRef, config: &Config) -> String {
         classes.push("last".to_string());
     }
 
-    let no_expander = get_attr(element, "no-expander");
-    let has_nested_row = inner.contains("class=\"row") || inner.contains("<row");
-    let needs_expander = large_size == config.column_count
-        && !has_nested_row
-        && (no_expander.is_none() || no_expander.as_deref() == Some("false"));
-
-    let expander = if needs_expander {
-        "\n<th class=\"expander\" aria-hidden=\"true\"></th>"
-    } else {
-        ""
-    };
-
     let attrs_str = if attrs.is_empty() {
         String::new()
     } else {
         attrs
     };
 
-    format!(
-        r#"<th class="{}"{}><table role="presentation"><tbody><tr><th>{}</th>{}</tr></tbody></table></th>"#,
-        classes.join(" "),
-        attrs_str,
-        inner,
-        expander
-    )
+    match config.output_mode {
+        OutputMode::Table => {
+            let no_expander = get_attr(element, "no-expander");
+            let has_nested_row = inner.contains("class=\"row") || inner.contains("<row");
+            let needs_expander = large_size == config.column_count
+                && !has_nested_row
+                && (no_expander.is_none() || no_expander.as_deref() == Some("false"));
+
+            let expander = if needs_expander {
+                "\n<th class=\"expander\" aria-hidden=\"true\"></th>"
+            } else {
+                ""
+            };
+
+            format!(
+                r#"<th class="{}"{}><table role="presentation"><tbody><tr><th>{}</th>{}</tr></tbody></table></th>"#,
+                classes.join(" "),
+                attrs_str,
+                inner,
+                expander
+            )
+        }
+        OutputMode::Hybrid => {
+            let width_pct = (large_size as f64 / config.column_count as f64) * 100.0;
+            let width_pct_str = format!("{:.4}", width_pct)
+                .trim_end_matches('0')
+                .trim_end_matches('.')
+                .to_string();
+
+            format!(
+                r#"<!--[if mso]><td width="{}%" valign="top"><![endif]--><div class="{}"{} style="display:inline-block;width:100%;max-width:{}%;vertical-align:top;">{}</div><!--[if mso]></td><![endif]-->"#,
+                width_pct_str,
+                classes.join(" "),
+                attrs_str,
+                width_pct_str,
+                inner,
+            )
+        }
+    }
 }
 
 /// Check if an element is a column.
