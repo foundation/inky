@@ -38,6 +38,7 @@ pub fn cmd_init(name: Option<String>) {
         "src/components",
         "src/styles",
         "src/emails",
+        "data",
         "dist",
     ];
 
@@ -63,6 +64,7 @@ pub fn cmd_init(name: Option<String>) {
         ("src/partials/footer.inky", PARTIAL_FOOTER),
         ("src/components/cta.inky", COMPONENT_CTA),
         ("src/emails/welcome.inky", EMAIL_WELCOME),
+        ("data/welcome.json", DATA_WELCOME),
     ];
 
     for (rel_path, content) in &files {
@@ -96,6 +98,9 @@ pub fn cmd_init(name: Option<String>) {
     eprintln!("    inky build");
     eprintln!("    inky watch");
     eprintln!();
+    eprintln!("  {}:", "Preview with sample data".bold());
+    eprintln!("    inky build --data data");
+    eprintln!();
 }
 
 fn print_created(path: &str) {
@@ -110,6 +115,10 @@ const CONFIG_JSON: &str = r#"{
 }
 "#;
 
+// Note: "data" is not included in the default config so merge tags
+// pass through untouched. Users can add "data": "data" to merge
+// per-template data, or use: inky build --data data
+
 const LAYOUT_DEFAULT: &str = r#"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -119,7 +128,7 @@ const LAYOUT_DEFAULT: &str = r#"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Tra
   <link rel="stylesheet" href="../styles/theme.scss">
   <!-- You can also use inline SCSS overrides instead of a linked file:
   <style type="text/scss">
-  $primary-color: #2199e8;
+  $primary-color: #1a73b5;
   $global-font-family: Helvetica, Arial, sans-serif;
   $global-width: 580px;
   $body-background: #f3f3f3;
@@ -148,7 +157,7 @@ const STYLES_THEME: &str = r#"// Inky Theme
 // See all available variables: https://github.com/foundation/inky/blob/develop/docs/styles.md
 
 // Colors
-// $primary-color: #2199e8;
+// $primary-color: #1a73b5;
 // $secondary-color: #777777;
 // $success-color: #3adb76;
 // $warning-color: #ffae00;
@@ -183,7 +192,7 @@ const PARTIAL_HEADER: &str = r#"<wrapper class="header">
   <container>
     <row>
       <column sm="12" lg="12">
-        <img src="https://placehold.co/200x50?text=Logo" alt="Logo">
+        <img src="https://placehold.co/200x50?text=Logo" alt="Company logo" width="200">
       </column>
     </row>
   </container>
@@ -194,7 +203,7 @@ const PARTIAL_FOOTER: &str = r##"<wrapper class="footer">
   <container>
     <row>
       <column sm="12" lg="12">
-        <p class="text-center"><small>You're receiving this because you signed up. <a href="#">Unsubscribe</a></small></p>
+        <p class="text-center"><small>You're receiving this because you signed up. <a href="{{ unsubscribe_url }}">Unsubscribe</a></small></p>
       </column>
     </row>
   </container>
@@ -217,17 +226,24 @@ const EMAIL_WELCOME: &str = r#"<layout src="../layouts/default.html" title="Welc
 <container>
   <row>
     <column sm="12" lg="12">
-      <h1>Welcome!</h1>
+      <h1>Welcome, {{ user_name }}!</h1>
       <p>Thanks for signing up. We're excited to have you on board.</p>
     </column>
   </row>
 
-  <!-- Custom component: resolves to src/components/cta.html -->
-  <ink-cta href="https://example.com" text="Get Started">
+  <!-- Custom component: resolves to src/components/cta.inky -->
+  <ink-cta href="{{ cta_url }}" text="Get Started">
     <spacer height="16"></spacer>
     <p class="text-center"><small>Questions? Just reply to this email.</small></p>
   </ink-cta>
 </container>
 
 <include src="../partials/footer.inky">
+"#;
+
+const DATA_WELCOME: &str = r#"{
+  "user_name": "Alice",
+  "cta_url": "https://example.com/get-started",
+  "unsubscribe_url": "https://example.com/unsubscribe"
+}
 "#;
