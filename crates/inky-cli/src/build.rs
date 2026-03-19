@@ -87,7 +87,48 @@ pub fn process_template(
         inky.transform(&html)
     };
 
+    let result = break_long_lines(&result);
+    let result = strip_leading_whitespace(&result);
+    let result = collapse_closing_tags(&result);
     collapse_blank_lines(&result)
+}
+
+/// Insert newlines before and after table structure tags to prevent lines
+/// exceeding RFC 2822's 998-character limit. Whitespace between table
+/// elements (<table>, <tbody>, <tr>, <td>, <th>) is ignored by email clients,
+/// so this is safe and does not affect rendering.
+fn break_long_lines(html: &str) -> String {
+    let re = Regex::new(r"(?i)(</?(table|tbody|tr|td|th)[\s>])").unwrap();
+    re.replace_all(html, |caps: &regex::Captures| {
+        let tag = &caps[0];
+        if tag.starts_with("</") {
+            // Closing tag: newline before it
+            format!("\n{}", tag)
+        } else {
+            // Opening tag: newline before it
+            format!("\n{}", tag)
+        }
+    })
+    .to_string()
+}
+
+/// Collapse consecutive lines that contain only closing table tags into a single line.
+/// e.g., `</th>\n</tr>\n</tbody>\n</table>\n` becomes `</th></tr></tbody></table>\n`
+fn collapse_closing_tags(html: &str) -> String {
+    let re = Regex::new(r"(?m)(^</(?:table|tbody|tr|td|th)>\n){2,}").unwrap();
+    re.replace_all(html, |caps: &regex::Captures| {
+        let s = &caps[0];
+        // Join all closing tags, keep one trailing newline
+        let joined: String = s.lines().collect::<Vec<_>>().join("");
+        format!("{}\n", joined)
+    })
+    .to_string()
+}
+
+/// Strip leading whitespace from lines that start with an HTML tag.
+fn strip_leading_whitespace(html: &str) -> String {
+    let re = Regex::new(r"(?m)^\s+<").unwrap();
+    re.replace_all(html, "<").to_string()
 }
 
 /// Inject `<meta name="color-scheme">` and `<meta name="supported-color-schemes">`
