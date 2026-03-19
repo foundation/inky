@@ -17,7 +17,7 @@ pub fn make_container(element: &ElementRef, config: &Config) -> String {
                 " align=\"center\""
             };
             format!(
-                r#"<table role="presentation"{}{} class="{}"><tbody><tr><td>{}</td></tr></tbody></table>"#,
+                r#"<table role="presentation"{}{} class="{}"><tbody><tr><td class="container-inner">{}</td></tr></tbody></table>"#,
                 attrs, align, classes, inner
             )
         }

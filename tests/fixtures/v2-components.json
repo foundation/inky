@@ -158,7 +158,7 @@
     {
       "name": "container: basic container",
       "input": "<container>Content</container>",
-      "expected": "<table role=\"presentation\" align=\"center\" class=\"container\"><tbody><tr><td>Content</td></tr></tbody></table>"
+      "expected": "<table role=\"presentation\" align=\"center\" class=\"container\"><tbody><tr><td class=\"container-inner\">Content</td></tr></tbody></table>"
     },
     {
       "name": "row: basic row",

@@ -3,7 +3,7 @@
     {
       "name": "container: creates a container table",
       "input": "<container></container>",
-      "expected": "<table align=\"center\" class=\"container\"><tbody><tr><td></td></tr></tbody></table>"
+      "expected": "<table align=\"center\" class=\"container\"><tbody><tr><td class=\"container-inner\"></td></tr></tbody></table>"
     },
     {
       "name": "grid: creates a row",
