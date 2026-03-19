@@ -116,7 +116,10 @@ inky build email.inky --hybrid
 inky build src/ -o dist/ --plain-text
 
 # Use per-template data files (data/welcome.json for src/welcome.inky)
-inky build src/ -o dist/ --data-dir data/
+inky build src/ -o dist/ --data data/
+
+# VML bulletproof buttons for Outlook
+inky build email.inky --bulletproof-buttons
 ```
 
 ### `inky watch`
@@ -382,7 +385,8 @@ Place `inky.config.json` in your project root:
   "data": "data.json",
   "data_dir": "data",
   "hybrid": false,
-  "plain_text": false
+  "plain_text": false,
+  "bulletproof_buttons": false
 }
 ```
 
@@ -391,6 +395,7 @@ Optional fields:
 - `data_dir` — directory of per-template JSON data files (`data/welcome.json` pairs with `src/welcome.inky`)
 - `hybrid` — use hybrid `<div>` + MSO ghost table output (see [Hybrid Output](hybrid-output.md))
 - `plain_text` — generate `.txt` plain text version alongside each HTML file
+- `bulletproof_buttons` — generate VML bulletproof buttons for Outlook on all `<button>` components
 
 With this in place, just run `inky build` or `inky watch` with no arguments.
 

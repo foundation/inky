@@ -1,5 +1,94 @@
 use inky_core::{Config, Inky, OutputMode};
 
+// --- Bulletproof button tests ---
+
+fn bulletproof_inky() -> Inky {
+    Inky::with_config(Config {
+        bulletproof_buttons: true,
+        ..Config::default()
+    })
+}
+
+#[test]
+fn test_bulletproof_button_per_attribute() {
+    let input = r#"<button href="https://example.com" bulletproof>Click</button>"#;
+    let result = Inky::new().transform(input);
+    assert!(result.contains("<!--[if mso]>"));
+    assert!(result.contains("<v:roundrect"));
+    assert!(result.contains("https://example.com"));
+    assert!(result.contains("<!--[if !mso]><!-->"));
+    assert!(result.contains("class=\"button\""));
+}
+
+#[test]
+fn test_bulletproof_button_global_config() {
+    let input = r#"<button href="https://example.com">Click</button>"#;
+    let result = bulletproof_inky().transform(input);
+    assert!(result.contains("<v:roundrect"));
+    assert!(result.contains("<!--[if mso]>"));
+}
+
+#[test]
+fn test_bulletproof_button_not_triggered_by_default() {
+    let input = r#"<button href="https://example.com">Click</button>"#;
+    let result = Inky::new().transform(input);
+    assert!(!result.contains("<v:roundrect"));
+    assert!(!result.contains("<!--[if mso]>"));
+}
+
+#[test]
+fn test_bulletproof_button_custom_colors() {
+    let input = r##"<button href="https://example.com" bulletproof bg-color="#ff0000" text-color="#000000">Go</button>"##;
+    let result = Inky::new().transform(input);
+    assert!(result.contains(r##"fillcolor="#ff0000""##));
+    assert!(result.contains(r##"strokecolor="#ff0000""##));
+    assert!(result.contains("color:#000000"));
+}
+
+#[test]
+fn test_bulletproof_button_custom_dimensions() {
+    let input =
+        r#"<button href="https://example.com" bulletproof width="300" height="60">Big</button>"#;
+    let result = Inky::new().transform(input);
+    assert!(result.contains("width:300px"));
+    assert!(result.contains("height:60px"));
+}
+
+#[test]
+fn test_bulletproof_button_custom_radius() {
+    let input =
+        r#"<button href="https://example.com" bulletproof radius="10" height="40">Round</button>"#;
+    let result = Inky::new().transform(input);
+    // arcsize = 10 / (40/2) * 100 = 50%
+    assert!(result.contains("arcsize=\"50%\""));
+}
+
+#[test]
+fn test_bulletproof_button_no_href_skips_vml() {
+    // No href means no bulletproof VML, just normal output
+    let input = r#"<button bulletproof>No link</button>"#;
+    let result = Inky::new().transform(input);
+    assert!(!result.contains("<v:roundrect"));
+}
+
+#[test]
+fn test_bulletproof_button_no_leaked_attributes() {
+    let input = r##"<button href="https://example.com" bulletproof bg-color="#ff0000" radius="5">Go</button>"##;
+    let result = Inky::new().transform(input);
+    // These attributes should not appear in the non-MSO <a> tag
+    assert!(!result.contains(r#"bulletproof="""#));
+    assert!(!result.contains("bg-color="));
+    assert!(!result.contains(r#"radius="5""#));
+}
+
+#[test]
+fn test_bulletproof_button_works_in_hybrid_mode() {
+    let input = r#"<button href="https://example.com" bulletproof>Click</button>"#;
+    let result = hybrid_inky().transform(input);
+    assert!(result.contains("<v:roundrect"));
+    assert!(result.contains("class=\"button\""));
+}
+
 fn hybrid_inky() -> Inky {
     Inky::with_config(Config {
         output_mode: OutputMode::Hybrid,

@@ -41,7 +41,7 @@ pub fn transform_component(element: &ElementRef, config: &Config) -> Option<Stri
     } else if tag == comps.row {
         Some(row::make_row(element, config))
     } else if tag == comps.button {
-        Some(button::make_button(element))
+        Some(button::make_button(element, config))
     } else if tag == comps.container {
         Some(container::make_container(element, config))
     } else if tag == comps.inky {

@@ -157,6 +157,11 @@ A bulletproof email button.
 | `radius` | -- | Rounded corners (bare attribute) |
 | `rounded` | -- | Pill-shaped (bare attribute) |
 | `hollow` | -- | Outline style (bare attribute) |
+| `bulletproof` | -- | Generate VML for Outlook (bare attribute) |
+| `bg-color` | `#1a73b5` | Background color (bulletproof mode) |
+| `text-color` | `#ffffff` | Text color (bulletproof mode) |
+| `width` | `200` | Button width in pixels (bulletproof mode) |
+| `height` | `40` | Button height in pixels (bulletproof mode) |
 | `class` | -- | Additional CSS classes |
 
 ```html
@@ -177,6 +182,35 @@ Output:
     </td></tr></tbody></table>
   </td></tr></tbody>
 </table>
+```
+
+#### Bulletproof Buttons (Outlook)
+
+Outlook ignores CSS-styled buttons. Add the `bulletproof` attribute to generate VML `<v:roundrect>` fallbacks wrapped in MSO conditional comments:
+
+```html
+<button href="https://example.com" bulletproof>Get Started</button>
+
+<!-- With custom styling -->
+<button href="https://example.com" bulletproof
+  bg-color="#e74c3c" text-color="#ffffff"
+  width="250" height="50" radius="8">
+  Sign Up Now
+</button>
+```
+
+Outlook sees the VML button with correct colors and rounded corners. All other email clients see the standard CSS-styled button.
+
+To enable bulletproof buttons for all buttons in your project, add to `inky.config.json`:
+
+```json
+{"bulletproof_buttons": true}
+```
+
+Or use the CLI flag:
+
+```bash
+inky build --bulletproof-buttons
 ```
 
 ---

@@ -89,6 +89,7 @@ inky watch
 - **Validation** — catches missing alt text, Gmail clipping risks, Outlook issues
 - **Data merging** — optional Jinja2-compatible data merge via MiniJinja (`--data data.json`)
 - **Hybrid output** — `--hybrid` mode emits `<div>` layout with Outlook MSO ghost table fallbacks
+- **Bulletproof buttons** — VML `<v:roundrect>` fallbacks for styled buttons in Outlook
 - **Live preview** — `inky serve` starts a local dev server with auto-reload
 - **Template friendly** — auto-preserves ERB, Jinja2, Handlebars, and other merge tag syntax
 - **Plain text generation** — auto-generate `.txt` multipart email version (`--plain-text`)

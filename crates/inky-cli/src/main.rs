@@ -64,6 +64,10 @@ enum Commands {
         /// Also generate a plain text version (.txt) alongside each HTML file
         #[arg(long)]
         plain_text: bool,
+
+        /// Generate VML bulletproof buttons for Outlook
+        #[arg(long)]
+        bulletproof_buttons: bool,
     },
 
     /// Validate Inky templates for common issues
@@ -124,6 +128,10 @@ enum Commands {
         /// Also generate a plain text version (.txt) alongside each HTML file
         #[arg(long)]
         plain_text: bool,
+
+        /// Generate VML bulletproof buttons for Outlook
+        #[arg(long)]
+        bulletproof_buttons: bool,
     },
 
     /// Start a live preview dev server
@@ -154,6 +162,10 @@ enum Commands {
         /// Use hybrid output mode (div + MSO ghost tables instead of pure tables)
         #[arg(long)]
         hybrid: bool,
+
+        /// Generate VML bulletproof buttons for Outlook
+        #[arg(long)]
+        bulletproof_buttons: bool,
     },
 
     /// Check templates for common spam triggers
@@ -177,28 +189,30 @@ fn main() {
             data,
             hybrid,
             plain_text,
+            bulletproof_buttons,
         } => {
-            let (input, output, columns, components, cfg_data, cfg_hybrid, cfg_plain_text) =
-                resolve_config(input, output, columns);
-            let data_path = data.or(cfg_data);
+            let cfg = resolve_config(input, output, columns);
+            let data_path = data.or(cfg.data);
             let data_source = resolve_data_source(data_path.as_deref());
-            let output_mode = if hybrid || cfg_hybrid {
+            let output_mode = if hybrid || cfg.hybrid {
                 OutputMode::Hybrid
             } else {
                 OutputMode::Table
             };
-            let plain_text = plain_text || cfg_plain_text;
+            let plain_text = plain_text || cfg.plain_text;
+            let bulletproof_buttons = bulletproof_buttons || cfg.bulletproof_buttons;
             cmd_build(
-                input,
-                output,
-                columns,
+                cfg.input,
+                cfg.output,
+                cfg.columns,
                 !no_inline_css,
                 !no_framework_css,
                 strict,
-                components,
+                cfg.components,
                 &data_source,
                 output_mode,
                 plain_text,
+                bulletproof_buttons,
             )
         }
         Commands::Validate { input } => cmd_validate(input),
@@ -217,31 +231,32 @@ fn main() {
             data,
             hybrid,
             plain_text,
+            bulletproof_buttons,
         } => {
-            let (input, output, columns, components, cfg_data, cfg_hybrid, cfg_plain_text) =
-                resolve_config(input, output, columns);
-            let data = data.or(cfg_data);
-            let output_mode = if hybrid || cfg_hybrid {
+            let cfg = resolve_config(input, output, columns);
+            let data = data.or(cfg.data);
+            let output_mode = if hybrid || cfg.hybrid {
                 OutputMode::Hybrid
             } else {
                 OutputMode::Table
             };
-            let _plain_text = plain_text || cfg_plain_text;
-            let input = input.unwrap_or_else(|| {
+            let _plain_text = plain_text || cfg.plain_text;
+            let _bulletproof_buttons = bulletproof_buttons || cfg.bulletproof_buttons;
+            let input = cfg.input.unwrap_or_else(|| {
                 eprintln!("{} No input directory specified. Use `inky watch <dir>` or set \"src\" in inky.config.json", "error:".red().bold());
                 process::exit(1);
             });
-            let output = output.unwrap_or_else(|| {
+            let output = cfg.output.unwrap_or_else(|| {
                 eprintln!("{} No output directory specified. Use `-o <dir>` or set \"dist\" in inky.config.json", "error:".red().bold());
                 process::exit(1);
             });
             watch::cmd_watch(
                 input,
                 output,
-                columns,
+                cfg.columns,
                 !no_inline_css,
                 !no_framework_css,
-                components,
+                cfg.components,
                 data,
                 output_mode,
                 _plain_text,
@@ -255,25 +270,26 @@ fn main() {
             no_framework_css,
             data,
             hybrid,
+            bulletproof_buttons,
         } => {
-            let (input, _output, columns, components, cfg_data, cfg_hybrid, _cfg_plain_text) =
-                resolve_config(input, None, columns);
-            let data = data.or(cfg_data);
-            let output_mode = if hybrid || cfg_hybrid {
+            let cfg = resolve_config(input, None, columns);
+            let data = data.or(cfg.data);
+            let output_mode = if hybrid || cfg.hybrid {
                 OutputMode::Hybrid
             } else {
                 OutputMode::Table
             };
-            let input = input.unwrap_or_else(|| {
+            let _bulletproof_buttons = bulletproof_buttons || cfg.bulletproof_buttons;
+            let input = cfg.input.unwrap_or_else(|| {
                 eprintln!("{} No input directory specified. Use `inky serve <dir>` or set \"src\" in inky.config.json", "error:".red().bold());
                 process::exit(1);
             });
             serve::cmd_serve(
                 input,
-                columns,
+                cfg.columns,
                 !no_inline_css,
                 !no_framework_css,
-                components,
+                cfg.components,
                 data,
                 port,
                 output_mode,
@@ -306,72 +322,80 @@ fn find_project_config(input: Option<&Path>) -> Option<(config::ProjectConfig, P
 }
 
 /// Resolve CLI arguments with fallbacks from inky.config.json.
+/// Resolved configuration from CLI args + inky.config.json.
+struct ResolvedConfig {
+    input: Option<PathBuf>,
+    output: Option<PathBuf>,
+    columns: u32,
+    components: Option<String>,
+    data: Option<PathBuf>,
+    hybrid: bool,
+    plain_text: bool,
+    bulletproof_buttons: bool,
+}
+
 /// CLI flags take priority over config file values.
 ///
 /// When the input points to a project directory (containing inky.config.json),
 /// the config's `src` and `dist` are resolved relative to that directory.
-#[allow(clippy::type_complexity)]
 fn resolve_config(
     input: Option<PathBuf>,
     output: Option<PathBuf>,
     columns: Option<u32>,
-) -> (
-    Option<PathBuf>,
-    Option<PathBuf>,
-    u32,
-    Option<String>,
-    Option<PathBuf>,
-    bool,
-    bool,
-) {
+) -> ResolvedConfig {
     let project_config = find_project_config(input.as_deref());
 
-    let (cfg_src, cfg_dist, cfg_columns, cfg_components, cfg_data, cfg_hybrid, cfg_plain_text) =
-        match &project_config {
-            Some((cfg, base_dir)) => (
-                cfg.src.as_ref().map(|s| base_dir.join(s)),
-                cfg.dist.as_ref().map(|d| base_dir.join(d)),
-                cfg.columns,
-                cfg.components.as_ref().map(|c| {
-                    let p = base_dir.join(c);
-                    std::fs::canonicalize(&p)
-                        .unwrap_or(p)
-                        .to_string_lossy()
-                        .to_string()
-                }),
-                cfg.data.as_ref().map(|d| base_dir.join(d)),
-                cfg.hybrid.unwrap_or(false),
-                cfg.plain_text.unwrap_or(false),
-            ),
-            None => (None, None, None, None, None, false, false),
-        };
+    let (
+        cfg_src,
+        cfg_dist,
+        cfg_columns,
+        cfg_components,
+        cfg_data,
+        cfg_hybrid,
+        cfg_plain_text,
+        cfg_bulletproof,
+    ) = match &project_config {
+        Some((cfg, base_dir)) => (
+            cfg.src.as_ref().map(|s| base_dir.join(s)),
+            cfg.dist.as_ref().map(|d| base_dir.join(d)),
+            cfg.columns,
+            cfg.components.as_ref().map(|c| {
+                let p = base_dir.join(c);
+                std::fs::canonicalize(&p)
+                    .unwrap_or(p)
+                    .to_string_lossy()
+                    .to_string()
+            }),
+            cfg.data.as_ref().map(|d| base_dir.join(d)),
+            cfg.hybrid.unwrap_or(false),
+            cfg.plain_text.unwrap_or(false),
+            cfg.bulletproof_buttons.unwrap_or(false),
+        ),
+        None => (None, None, None, None, None, false, false, false),
+    };
 
     // If input points to a project root (has config), use config's src
     // If input points to a specific file/dir, use it directly
     let input = if let (Some(ref path), Some((_, ref base_dir))) = (&input, &project_config) {
         if path == base_dir.as_path() {
-            // User passed the project root — use config's src
             cfg_src
         } else {
-            // User passed a specific path — use it directly
             input
         }
     } else {
         input.or(cfg_src)
     };
 
-    let output = output.or(cfg_dist);
-    let columns = columns.or(cfg_columns).unwrap_or(12);
-
-    (
+    ResolvedConfig {
         input,
-        output,
-        columns,
-        cfg_components,
-        cfg_data,
-        cfg_hybrid,
-        cfg_plain_text,
-    )
+        output: output.or(cfg_dist),
+        columns: columns.or(cfg_columns).unwrap_or(12),
+        components: cfg_components,
+        data: cfg_data,
+        hybrid: cfg_hybrid,
+        plain_text: cfg_plain_text,
+        bulletproof_buttons: cfg_bulletproof,
+    }
 }
 
 /// Resolved data source for template merging.
@@ -442,10 +466,12 @@ fn cmd_build(
     data_source: &DataSource,
     output_mode: OutputMode,
     plain_text: bool,
+    bulletproof_buttons: bool,
 ) {
     let config = Config {
         column_count: columns,
         output_mode,
+        bulletproof_buttons,
         ..Config::default()
     };
     let inky = Inky::with_config(config.clone());
@@ -662,21 +688,21 @@ fn build_directory(
 }
 
 fn cmd_validate(input: PathBuf) {
-    let (resolved_input, _output, columns, components, cfg_data, cfg_hybrid, _cfg_plain_text) =
-        resolve_config(Some(input.clone()), None, None);
-    let data_source = resolve_data_source(cfg_data.as_deref());
-    let output_mode = if cfg_hybrid {
+    let cfg = resolve_config(Some(input.clone()), None, None);
+    let data_source = resolve_data_source(cfg.data.as_deref());
+    let output_mode = if cfg.hybrid {
         OutputMode::Hybrid
     } else {
         OutputMode::Table
     };
     let config = Config {
-        column_count: columns,
+        column_count: cfg.columns,
         output_mode,
+        bulletproof_buttons: cfg.bulletproof_buttons,
         ..Config::default()
     };
     let inky = Inky::with_config(config.clone());
-    let input_path = resolved_input.unwrap_or(input);
+    let input_path = cfg.input.unwrap_or(input);
 
     let files = if input_path.is_dir() {
         find_template_files(&input_path)
@@ -710,7 +736,7 @@ fn cmd_validate(input: PathBuf) {
             true,
             true,
             base.as_deref(),
-            components.as_deref(),
+            cfg.components.as_deref(),
             file_data.as_ref(),
             build::ErrorMode::Continue,
         );

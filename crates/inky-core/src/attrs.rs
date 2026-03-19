@@ -34,6 +34,10 @@ const IGNORED_ATTRIBUTES: &[&str] = &[
     "cite",
     "text-color",
     "type",
+    // bulletproof button attributes
+    "bulletproof",
+    "bg-color",
+    "radius",
 ];
 
 /// Extract passthrough attributes from an element, excluding ignored ones.

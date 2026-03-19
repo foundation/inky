@@ -19,6 +19,8 @@ pub struct ProjectConfig {
     pub hybrid: Option<bool>,
     /// Also generate plain text versions (.txt)
     pub plain_text: Option<bool>,
+    /// Generate VML bulletproof buttons for Outlook
+    pub bulletproof_buttons: Option<bool>,
 }
 
 /// Search for `inky.config.json` starting from `start_dir` and walking up to the filesystem root.

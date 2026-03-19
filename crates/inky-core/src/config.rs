@@ -14,6 +14,8 @@ pub struct Config {
     pub column_count: u32,
     pub components: ComponentNames,
     pub output_mode: OutputMode,
+    /// Generate VML bulletproof buttons for Outlook compatibility.
+    pub bulletproof_buttons: bool,
 }
 
 /// Customizable tag names for each Inky component.
@@ -55,6 +57,7 @@ impl Default for Config {
             column_count: 12,
             components: ComponentNames::default(),
             output_mode: OutputMode::default(),
+            bulletproof_buttons: false,
         }
     }
 }
