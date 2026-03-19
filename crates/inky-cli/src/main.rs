@@ -53,7 +53,7 @@ enum Commands {
         #[arg(long)]
         strict: bool,
 
-        /// Path to a JSON file with template merge data
+        /// JSON file or directory for template merge data (file = global, directory = per-template)
         #[arg(long)]
         data: Option<PathBuf>,
 
@@ -64,10 +64,6 @@ enum Commands {
         /// Also generate a plain text version (.txt) alongside each HTML file
         #[arg(long)]
         plain_text: bool,
-
-        /// Directory containing per-template JSON data files
-        #[arg(long)]
-        data_dir: Option<PathBuf>,
     },
 
     /// Validate Inky templates for common issues
@@ -117,7 +113,7 @@ enum Commands {
         #[arg(long)]
         no_framework_css: bool,
 
-        /// Path to a JSON file with template merge data
+        /// JSON file or directory for template merge data (file = global, directory = per-template)
         #[arg(long)]
         data: Option<PathBuf>,
 
@@ -128,10 +124,6 @@ enum Commands {
         /// Also generate a plain text version (.txt) alongside each HTML file
         #[arg(long)]
         plain_text: bool,
-
-        /// Directory containing per-template JSON data files
-        #[arg(long)]
-        data_dir: Option<PathBuf>,
     },
 
     /// Start a live preview dev server
@@ -155,7 +147,7 @@ enum Commands {
         #[arg(long)]
         no_framework_css: bool,
 
-        /// Path to a JSON file with template merge data
+        /// JSON file or directory for template merge data (file = global, directory = per-template)
         #[arg(long)]
         data: Option<PathBuf>,
 
@@ -185,26 +177,16 @@ fn main() {
             data,
             hybrid,
             plain_text,
-            data_dir,
         } => {
-            let (
-                input,
-                output,
-                columns,
-                components,
-                cfg_data,
-                cfg_hybrid,
-                cfg_data_dir,
-                cfg_plain_text,
-            ) = resolve_config(input, output, columns);
-            let data = data.or(cfg_data);
-            let merge_data = load_merge_data(data.as_deref());
+            let (input, output, columns, components, cfg_data, cfg_hybrid, cfg_plain_text) =
+                resolve_config(input, output, columns);
+            let data_path = data.or(cfg_data);
+            let data_source = resolve_data_source(data_path.as_deref());
             let output_mode = if hybrid || cfg_hybrid {
                 OutputMode::Hybrid
             } else {
                 OutputMode::Table
             };
-            let data_dir = data_dir.or(cfg_data_dir);
             let plain_text = plain_text || cfg_plain_text;
             cmd_build(
                 input,
@@ -214,10 +196,9 @@ fn main() {
                 !no_framework_css,
                 strict,
                 components,
-                merge_data.as_ref(),
+                &data_source,
                 output_mode,
                 plain_text,
-                data_dir.as_deref(),
             )
         }
         Commands::Validate { input } => cmd_validate(input),
@@ -236,26 +217,16 @@ fn main() {
             data,
             hybrid,
             plain_text,
-            data_dir,
         } => {
-            let (
-                input,
-                output,
-                columns,
-                components,
-                cfg_data,
-                cfg_hybrid,
-                cfg_data_dir,
-                cfg_plain_text,
-            ) = resolve_config(input, output, columns);
+            let (input, output, columns, components, cfg_data, cfg_hybrid, cfg_plain_text) =
+                resolve_config(input, output, columns);
             let data = data.or(cfg_data);
             let output_mode = if hybrid || cfg_hybrid {
                 OutputMode::Hybrid
             } else {
                 OutputMode::Table
             };
-            let data_dir = data_dir.or(cfg_data_dir);
-            let plain_text = plain_text || cfg_plain_text;
+            let _plain_text = plain_text || cfg_plain_text;
             let input = input.unwrap_or_else(|| {
                 eprintln!("{} No input directory specified. Use `inky watch <dir>` or set \"src\" in inky.config.json", "error:".red().bold());
                 process::exit(1);
@@ -273,8 +244,7 @@ fn main() {
                 components,
                 data,
                 output_mode,
-                plain_text,
-                data_dir,
+                _plain_text,
             )
         }
         Commands::Serve {
@@ -286,16 +256,8 @@ fn main() {
             data,
             hybrid,
         } => {
-            let (
-                input,
-                _output,
-                columns,
-                components,
-                cfg_data,
-                cfg_hybrid,
-                _cfg_data_dir,
-                _cfg_plain_text,
-            ) = resolve_config(input, None, columns);
+            let (input, _output, columns, components, cfg_data, cfg_hybrid, _cfg_plain_text) =
+                resolve_config(input, None, columns);
             let data = data.or(cfg_data);
             let output_mode = if hybrid || cfg_hybrid {
                 OutputMode::Hybrid
@@ -360,39 +322,29 @@ fn resolve_config(
     Option<String>,
     Option<PathBuf>,
     bool,
-    Option<PathBuf>,
     bool,
 ) {
     let project_config = find_project_config(input.as_deref());
 
-    let (
-        cfg_src,
-        cfg_dist,
-        cfg_columns,
-        cfg_components,
-        cfg_data,
-        cfg_hybrid,
-        cfg_data_dir,
-        cfg_plain_text,
-    ) = match &project_config {
-        Some((cfg, base_dir)) => (
-            cfg.src.as_ref().map(|s| base_dir.join(s)),
-            cfg.dist.as_ref().map(|d| base_dir.join(d)),
-            cfg.columns,
-            cfg.components.as_ref().map(|c| {
-                let p = base_dir.join(c);
-                std::fs::canonicalize(&p)
-                    .unwrap_or(p)
-                    .to_string_lossy()
-                    .to_string()
-            }),
-            cfg.data.as_ref().map(|d| base_dir.join(d)),
-            cfg.hybrid.unwrap_or(false),
-            cfg.data_dir.as_ref().map(|d| base_dir.join(d)),
-            cfg.plain_text.unwrap_or(false),
-        ),
-        None => (None, None, None, None, None, false, None, false),
-    };
+    let (cfg_src, cfg_dist, cfg_columns, cfg_components, cfg_data, cfg_hybrid, cfg_plain_text) =
+        match &project_config {
+            Some((cfg, base_dir)) => (
+                cfg.src.as_ref().map(|s| base_dir.join(s)),
+                cfg.dist.as_ref().map(|d| base_dir.join(d)),
+                cfg.columns,
+                cfg.components.as_ref().map(|c| {
+                    let p = base_dir.join(c);
+                    std::fs::canonicalize(&p)
+                        .unwrap_or(p)
+                        .to_string_lossy()
+                        .to_string()
+                }),
+                cfg.data.as_ref().map(|d| base_dir.join(d)),
+                cfg.hybrid.unwrap_or(false),
+                cfg.plain_text.unwrap_or(false),
+            ),
+            None => (None, None, None, None, None, false, false),
+        };
 
     // If input points to a project root (has config), use config's src
     // If input points to a specific file/dir, use it directly
@@ -418,9 +370,40 @@ fn resolve_config(
         cfg_components,
         cfg_data,
         cfg_hybrid,
-        cfg_data_dir,
         cfg_plain_text,
     )
+}
+
+/// Resolved data source for template merging.
+enum DataSource {
+    /// No data — merge tags pass through untouched.
+    None,
+    /// Single JSON file applied to all templates.
+    File(serde_json::Value),
+    /// Directory of per-template JSON files (e.g., data/welcome.json for welcome.inky).
+    Directory(PathBuf),
+}
+
+/// Detect whether a data path is a file or directory and return the appropriate source.
+fn resolve_data_source(path: Option<&Path>) -> DataSource {
+    let Some(path) = path else {
+        return DataSource::None;
+    };
+    if path.is_dir() {
+        DataSource::Directory(path.to_path_buf())
+    } else if path.is_file() {
+        match load_merge_data(Some(path)) {
+            Some(data) => DataSource::File(data),
+            std::option::Option::None => DataSource::None,
+        }
+    } else {
+        eprintln!(
+            "{} Data path '{}' does not exist",
+            "error:".red().bold(),
+            path.display()
+        );
+        process::exit(1);
+    }
 }
 
 /// Load and parse a JSON data file for template merging.
@@ -456,10 +439,9 @@ fn cmd_build(
     framework_css: bool,
     strict: bool,
     components_dir: Option<String>,
-    merge_data: Option<&serde_json::Value>,
+    data_source: &DataSource,
     output_mode: OutputMode,
     plain_text: bool,
-    data_dir: Option<&Path>,
 ) {
     let config = Config {
         column_count: columns,
@@ -479,19 +461,16 @@ fn cmd_build(
                     framework_css,
                     &config,
                     components_dir.as_deref(),
-                    merge_data,
+                    data_source,
                     plain_text,
-                    data_dir,
                 )
             } else {
                 let base = path.parent().map(Path::to_path_buf);
                 let html = read_file(&path);
-                let warnings = print_validation_warnings(&html, &config, &path);
-                let file_data = resolve_merge_data_for_file(
+                let file_data = resolve_data_for_file(
                     &path,
                     path.parent().unwrap_or(Path::new(".")),
-                    data_dir,
-                    merge_data,
+                    data_source,
                 );
                 let result = build::process_template(
                     &inky,
@@ -500,9 +479,10 @@ fn cmd_build(
                     framework_css,
                     base.as_deref(),
                     components_dir.as_deref(),
-                    file_data.as_ref().or(merge_data),
+                    file_data.as_ref(),
                     build::ErrorMode::Exit,
                 );
+                let warnings = print_validation_warnings(&html, &result, &config, &path);
                 // If no output specified and input is .inky, write to .html
                 let out = output.clone().or_else(|| {
                     if path.extension().and_then(OsStr::to_str) == Some("inky") {
@@ -529,8 +509,11 @@ fn cmd_build(
                 eprintln!("{} Failed to read stdin: {}", "error:".red().bold(), e);
                 process::exit(1);
             });
-            let warnings = print_validation_warnings(&html, &config, Path::new("stdin"));
             let cwd = std::env::current_dir().ok();
+            let global_data = match data_source {
+                DataSource::File(ref d) => Some(d),
+                _ => None,
+            };
             let result = build::process_template(
                 &inky,
                 &html,
@@ -538,9 +521,10 @@ fn cmd_build(
                 framework_css,
                 cwd.as_deref(),
                 components_dir.as_deref(),
-                merge_data,
+                global_data,
                 build::ErrorMode::Exit,
             );
+            let warnings = print_validation_warnings(&html, &result, &config, Path::new("stdin"));
             write_output(&result, output.as_deref());
             warnings
         }
@@ -551,9 +535,16 @@ fn cmd_build(
     }
 }
 
-/// Run validation and print any warnings to stderr. Returns true if any diagnostics were found.
-fn print_validation_warnings(html: &str, config: &Config, path: &Path) -> bool {
-    let diagnostics = validate::validate(html, config);
+/// Run validation on source and output HTML, print any warnings to stderr.
+/// Returns true if any diagnostics were found.
+fn print_validation_warnings(
+    source_html: &str,
+    output_html: &str,
+    config: &Config,
+    path: &Path,
+) -> bool {
+    let mut diagnostics = validate::validate_source(source_html, config);
+    diagnostics.extend(validate::validate_output(output_html));
     for d in &diagnostics {
         let label = match d.severity {
             Severity::Warning => "warn".yellow().bold(),
@@ -573,9 +564,8 @@ fn build_directory(
     framework_css: bool,
     config: &Config,
     components_dir: Option<&str>,
-    merge_data: Option<&serde_json::Value>,
+    data_source: &DataSource,
     plain_text: bool,
-    data_dir: Option<&Path>,
 ) -> bool {
     let files = find_template_files(input_dir);
     let mut has_warnings = false;
@@ -591,10 +581,7 @@ fn build_directory(
 
     for file in &files {
         let html = read_file(file);
-        if print_validation_warnings(&html, config, file) {
-            has_warnings = true;
-        }
-        let file_data = resolve_merge_data_for_file(file, input_dir, data_dir, merge_data);
+        let file_data = resolve_data_for_file(file, input_dir, data_source);
         let base = file.parent().map(Path::to_path_buf);
         let result = build::process_template(
             inky,
@@ -603,7 +590,7 @@ fn build_directory(
             framework_css,
             base.as_deref(),
             components_dir,
-            file_data.as_ref().or(merge_data),
+            file_data.as_ref(),
             build::ErrorMode::Exit,
         );
 
@@ -637,6 +624,9 @@ fn build_directory(
                     );
                     process::exit(1);
                 });
+                if print_validation_warnings(&html, &result, config, &dest) {
+                    has_warnings = true;
+                }
                 eprintln!(
                     "  {} {} → {}",
                     "built".green().bold(),
@@ -672,56 +662,70 @@ fn build_directory(
 }
 
 fn cmd_validate(input: PathBuf) {
-    let config = Config::default();
-    let mut has_errors = false;
-
-    if input.is_dir() {
-        let files = find_template_files(&input);
-
-        if files.is_empty() {
-            eprintln!(
-                "{} No .inky or .html files found in {}",
-                "warning:".yellow().bold(),
-                input.display()
-            );
-            return;
-        }
-
-        for file in &files {
-            if validate_file(file, &config) {
-                has_errors = true;
-            }
-        }
-
-        let total = files.len();
-        eprintln!("\n  Validated {} file(s)", total);
+    let (resolved_input, _output, columns, components, cfg_data, cfg_hybrid, _cfg_plain_text) =
+        resolve_config(Some(input.clone()), None, None);
+    let data_source = resolve_data_source(cfg_data.as_deref());
+    let output_mode = if cfg_hybrid {
+        OutputMode::Hybrid
     } else {
-        has_errors = validate_file(&input, &config);
+        OutputMode::Table
+    };
+    let config = Config {
+        column_count: columns,
+        output_mode,
+        ..Config::default()
+    };
+    let inky = Inky::with_config(config.clone());
+    let input_path = resolved_input.unwrap_or(input);
+
+    let files = if input_path.is_dir() {
+        find_template_files(&input_path)
+    } else {
+        vec![input_path.clone()]
+    };
+
+    if files.is_empty() {
+        eprintln!(
+            "{} No .inky or .html files found in {}",
+            "warning:".yellow().bold(),
+            input_path.display()
+        );
+        return;
     }
+
+    let input_dir = if input_path.is_dir() {
+        &input_path
+    } else {
+        input_path.parent().unwrap_or(Path::new("."))
+    };
+
+    let mut has_errors = false;
+    for file in &files {
+        let source_html = read_file(file);
+        let file_data = resolve_data_for_file(file, input_dir, &data_source);
+        let base = file.parent().map(Path::to_path_buf);
+        let output_html = build::process_template(
+            &inky,
+            &source_html,
+            true,
+            true,
+            base.as_deref(),
+            components.as_deref(),
+            file_data.as_ref(),
+            build::ErrorMode::Continue,
+        );
+        if print_validation_warnings(&source_html, &output_html, &config, file) {
+            has_errors = true;
+        } else {
+            eprintln!("  {} {}", "ok".green().bold(), file.display());
+        }
+    }
+
+    eprintln!("\n  Validated {} file(s)", files.len());
 
     if has_errors {
         process::exit(1);
     }
-}
-
-fn validate_file(path: &std::path::Path, config: &Config) -> bool {
-    let html = read_file(path);
-    let diagnostics = validate::validate(&html, config);
-
-    if diagnostics.is_empty() {
-        eprintln!("  {} {}", "ok".green().bold(), path.display());
-        return false;
-    }
-
-    for d in &diagnostics {
-        let label = match d.severity {
-            Severity::Warning => "warn".yellow().bold(),
-            Severity::Error => "error".red().bold(),
-        };
-        eprintln!("  {} {} [{}] {}", label, path.display(), d.rule, d.message);
-    }
-
-    true
 }
 
 fn find_template_files(dir: &Path) -> Vec<PathBuf> {
@@ -744,22 +748,25 @@ fn read_file(path: &std::path::Path) -> String {
     })
 }
 
-/// Resolve merge data for a specific template file.
-/// Checks for a per-template JSON file in data_dir first, falls back to global data.
-fn resolve_merge_data_for_file(
+/// Resolve merge data for a specific template file based on the data source.
+fn resolve_data_for_file(
     file: &Path,
     input_dir: &Path,
-    data_dir: Option<&Path>,
-    _global_data: Option<&serde_json::Value>,
+    data_source: &DataSource,
 ) -> Option<serde_json::Value> {
-    let data_dir = data_dir?;
-    let relative = file.strip_prefix(input_dir).ok()?;
-    let json_path = data_dir.join(relative).with_extension("json");
-    if json_path.is_file() {
-        let content = fs::read_to_string(&json_path).ok()?;
-        serde_json::from_str(&content).ok()
-    } else {
-        None
+    match data_source {
+        DataSource::None => None,
+        DataSource::File(data) => Some(data.clone()),
+        DataSource::Directory(dir) => {
+            let relative = file.strip_prefix(input_dir).ok()?;
+            let json_path = dir.join(relative).with_extension("json");
+            if json_path.is_file() {
+                let content = fs::read_to_string(&json_path).ok()?;
+                serde_json::from_str(&content).ok()
+            } else {
+                None
+            }
+        }
     }
 }
 

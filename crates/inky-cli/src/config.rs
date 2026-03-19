@@ -17,8 +17,6 @@ pub struct ProjectConfig {
     pub data: Option<String>,
     /// Use hybrid output mode (div + MSO ghost tables)
     pub hybrid: Option<bool>,
-    /// Directory containing per-template JSON data files
-    pub data_dir: Option<String>,
     /// Also generate plain text versions (.txt)
     pub plain_text: Option<bool>,
 }

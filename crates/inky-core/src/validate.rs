@@ -39,6 +39,7 @@ impl Diagnostic {
 }
 
 /// Run all validation checks: source-level on the input, output-level on the transformed result.
+/// For best results, pass the fully assembled HTML (after layout/include/component resolution).
 pub fn validate(html: &str, config: &Config) -> Vec<Diagnostic> {
     let mut diags = validate_source(html, config);
     let transformed = Inky::with_config(config.clone()).transform(html);
@@ -58,13 +59,12 @@ pub fn validate_source(html: &str, config: &Config) -> Vec<Diagnostic> {
     diags.extend(check_hero_no_background(html, config));
     diags.extend(check_social_link_no_platform(html, config));
     diags.extend(check_generic_link_text(html));
-    // Group 1: Link Validation
     diags.extend(check_insecure_link(html));
     diags.extend(check_empty_link(html));
     diags.extend(check_bad_shortlink(html));
     diags.extend(check_mailto_in_button(html, config));
-    // Group 2: Alt Text Quality
     diags.extend(check_generic_alt(html));
+    diags.extend(check_img_no_width(html));
     diags
 }
 
@@ -73,13 +73,10 @@ pub fn validate_output(html: &str) -> Vec<Diagnostic> {
     let mut diags = Vec::new();
     diags.extend(check_gmail_clipping(html));
     diags.extend(check_style_block_too_large(html));
-    diags.extend(check_img_no_width(html));
     diags.extend(check_deep_nesting(html));
     diags.extend(check_low_contrast(html));
-    // Group 3: Rendering Quirk Warnings
     diags.extend(check_outlook_unsupported_css(html));
     diags.extend(check_gmail_strips_class(html));
-    // Group 5: Spam Score
     diags.extend(validate_spam(html));
     diags
 }
@@ -516,13 +513,7 @@ fn check_img_no_width(html: &str) -> Vec<Diagnostic> {
     let sel = Selector::parse("img").unwrap();
     let mut count = 0;
     for el in doc.select(&sel) {
-        let has_width = el.value().attr("width").is_some();
-        let has_style_width = el
-            .value()
-            .attr("style")
-            .map(|s| s.contains("width"))
-            .unwrap_or(false);
-        if !has_width && !has_style_width {
+        if el.value().attr("width").is_none() {
             count += 1;
         }
     }
@@ -539,7 +530,7 @@ fn check_img_no_width(html: &str) -> Vec<Diagnostic> {
     }
 }
 
-const MAX_TABLE_DEPTH: usize = 5;
+const MAX_TABLE_DEPTH: usize = 8;
 
 fn check_deep_nesting(html: &str) -> Vec<Diagnostic> {
     let doc = Html::parse_fragment(html);
@@ -1002,7 +993,7 @@ mod tests {
     #[test]
     fn test_img_no_width() {
         let html = r#"<img src="photo.jpg" alt="test">"#;
-        let diags = validate_output(html);
+        let diags = validate_source(html, &default_config());
         assert!(diags.iter().any(|d| d.rule == "img-no-width"));
     }
 
@@ -1080,7 +1071,8 @@ mod tests {
 
     #[test]
     fn test_deep_nesting() {
-        let html = "<table><tr><td><table><tr><td><table><tr><td><table><tr><td><table><tr><td><table><tr><td>deep</td></tr></table></td></tr></table></td></tr></table></td></tr></table></td></tr></table></td></tr></table>";
+        // 9 levels of nesting (threshold is 8)
+        let html = "<table><tr><td><table><tr><td><table><tr><td><table><tr><td><table><tr><td><table><tr><td><table><tr><td><table><tr><td><table><tr><td>deep</td></tr></table></td></tr></table></td></tr></table></td></tr></table></td></tr></table></td></tr></table></td></tr></table></td></tr></table></td></tr></table>";
         let diags = validate_output(html);
         assert!(diags.iter().any(|d| d.rule == "deep-nesting"));
     }
