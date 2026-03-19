@@ -109,6 +109,16 @@ inky watch
 - **[Migration Guide](docs/migration.md)** — Upgrading from v1 to v2
 - **[Language Bindings](docs/bindings.md)** — Node.js, PHP, Python, Ruby, Go
 
+## Examples
+
+| Language | Repository |
+|----------|------------|
+| Node.js | [inky-example-node](https://github.com/foundation/inky-example-node) |
+| PHP | [inky-example-php](https://github.com/foundation/inky-example-php) |
+| Python | [inky-example-python](https://github.com/foundation/inky-example-python) |
+| Ruby | [inky-example-ruby](https://github.com/foundation/inky-example-ruby) |
+| Go | [inky-example-go](https://github.com/foundation/inky-example-go) |
+
 ## Building from Source
 
 ```bash

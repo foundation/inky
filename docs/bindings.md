@@ -2,6 +2,13 @@
 
 Inky provides official bindings for Node.js, PHP, Python, and Ruby. All bindings expose the same core API surface.
 
+For complete working examples with build scripts and email sending, see:
+[Node.js](https://github.com/foundation/inky-example-node) |
+[PHP](https://github.com/foundation/inky-example-php) |
+[Python](https://github.com/foundation/inky-example-python) |
+[Ruby](https://github.com/foundation/inky-example-ruby) |
+[Go](https://github.com/foundation/inky-example-go)
+
 ## Common API
 
 Every binding provides these functions:
