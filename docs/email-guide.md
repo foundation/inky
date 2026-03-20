@@ -66,6 +66,15 @@ Inky uses a **12-column responsive grid**. Columns stack on mobile (below 596px)
 
 `float`, `position`, `display: flex`, `display: grid`, `calc()`, `var()`, `@keyframes`, `box-shadow` (Outlook), `object-fit`
 
+### CSS selector rules
+
+When writing custom CSS for emails:
+
+- Apply classes and IDs to `<table>` and `<td>`/`<th>` elements, **not** `<tr>` elements — many clients ignore styles on `<tr>`.
+- Apply `padding` only to `<td>`/`<th>` cells, not to `<table>` or `<tr>`.
+- Keep selectors simple — some clients strip complex selectors. Single class selectors (`.my-class`) are safest.
+- Gmail prefixes all class names (e.g., `.button` becomes `.m_button`), so avoid overly generic names that might collide.
+
 ---
 
 ## Outlook Quirks
@@ -73,7 +82,12 @@ Inky uses a **12-column responsive grid**. Columns stack on mobile (below 596px)
 Outlook 2007–2019 on Windows uses the **Microsoft Word rendering engine**, which has severe HTML/CSS limitations. Key issues:
 
 ### Margin and padding
-- Outlook ignores `margin` on many elements. Use `padding` on table cells.
+- Outlook desktop ignores `margin` on many elements. Use `padding` on table cells.
+- **Outlook.com** has a separate quirk: it strips lowercase `margin` but respects capitalized `Margin`. If you write custom CSS for Outlook.com compatibility, include both:
+  ```css
+  margin: 10px;
+  Margin: 10px;
+  ```
 - For vertical spacing, use the `<spacer>` component — it generates a table row with a fixed height, which is reliable everywhere.
 
 ### Conditional comments
@@ -102,6 +116,28 @@ Explicit `width` and `height` prevent layout shifts and Outlook scaling issues.
 
 ### Always include alt text
 Alt text displays when images are blocked (many corporate email clients block images by default). Inky's validator catches missing `alt` attributes.
+
+### Style your alt text
+When images are blocked, you can make alt text more visually appealing by adding inline styles directly to the `<img>` tag:
+
+```html
+<img src="hero.jpg" alt="Spring Collection"
+  width="600" height="200"
+  style="font-size: 24px; font-family: Georgia, serif; font-weight: bold; color: #1a73b5;" />
+```
+
+This way, even with images blocked, readers see styled text rather than plain alt text.
+
+### Use absolute image URLs
+Always use full URLs for images, not relative paths. Email clients load images from your server — relative paths won't resolve. Host images on your own server or CDN:
+
+```html
+<!-- Good -->
+<image src="https://cdn.example.com/hero.jpg" alt="Hero" width="600" />
+
+<!-- Bad — won't work in email clients -->
+<image src="images/hero.jpg" alt="Hero" width="600" />
+```
 
 ### Retina images
 For sharp images on high-DPI screens, use images that are **2x** the display dimensions and constrain with `width`:
@@ -153,9 +189,28 @@ Use `line-height` as a unitless multiplier or pixel value. Percentage-based line
 
 ## Colors
 
-- Use **6-digit hex** codes: `#ff6600`, not `#f60`.
+- Use **6-digit hex** codes: `#ff6600`, not `#f60`. Shorthand hex (`#f60`) fails in some older clients.
 - `rgb()` works in most clients.
 - `rgba()` and `hsla()` are **not supported in Outlook desktop**. Use solid colors with hex fallbacks.
+
+---
+
+## iOS Auto-Detected Links
+
+iOS Mail automatically detects dates, times, addresses, and phone numbers and turns them into blue, underlined links. This can clash with your email's design (e.g., a white date on a dark background suddenly turns blue).
+
+Inky's SCSS framework includes a fix for this — the `$remove-ios-blue` variable (default: `true`) generates CSS that strips the auto-link styling. If you need to customize the behavior, override it in your SCSS:
+
+```scss
+// Disable the iOS blue link fix
+$remove-ios-blue: false;
+```
+
+If you're writing custom CSS, the workaround is to wrap the text in an `<a>` tag styled to match the surrounding text:
+
+```html
+<a href="#" style="color: #ffffff; text-decoration: none;">March 25, 2026</a>
+```
 
 ---
 
@@ -167,7 +222,64 @@ Inky uses a **desktop-first** approach: the base layout is for large screens, an
 - Columns stack to full width automatically.
 - Font sizes can be adjusted with responsive classes.
 - `<spacer>` supports responsive heights: `<spacer sm="10" lg="20">`.
-- Visibility classes show/hide content per breakpoint.
+- Visibility classes show/hide content per breakpoint (see below).
+
+### Visibility classes
+
+Show or hide content based on screen size:
+
+| Class | Behavior |
+|-------|----------|
+| `.show-for-large` | Visible on desktop only, hidden on mobile |
+| `.hide-for-large` | Visible on mobile only, hidden on desktop |
+
+```html
+<row>
+  <column lg="12">
+    <!-- Desktop-only image -->
+    <div class="show-for-large">
+      <image src="banner-wide.jpg" alt="Banner" width="580" />
+    </div>
+    <!-- Mobile-only image -->
+    <div class="hide-for-large">
+      <image src="banner-narrow.jpg" alt="Banner" width="300" />
+    </div>
+  </column>
+</row>
+```
+
+**Outlook warning:** Outlook desktop does not support the CSS media queries that power visibility classes. Content hidden with `.show-for-large` or `.hide-for-large` may still appear in Outlook. To properly hide content from Outlook, wrap it in conditional comments using the `<not-outlook>` component:
+
+```html
+<not-outlook>
+  <div class="hide-for-large">
+    Mobile-only content (also hidden from Outlook)
+  </div>
+</not-outlook>
+```
+
+**Important:** Apply visibility classes to a wrapper element (`<div>`, `<td>`), not directly to an `<img>` tag — some clients ignore classes on images.
+
+### Text alignment classes
+
+Responsive text alignment utilities:
+
+| Class | Behavior |
+|-------|----------|
+| `.text-left` | Left-align at all sizes |
+| `.text-center` | Center at all sizes |
+| `.text-right` | Right-align at all sizes |
+| `.small-text-left` | Left-align on mobile only |
+| `.small-text-center` | Center on mobile only |
+| `.small-text-right` | Right-align on mobile only |
+
+Combine them for responsive alignment:
+
+```html
+<column lg="12" class="text-center small-text-left">
+  Centered on desktop, left-aligned on mobile
+</column>
+```
 
 ### Clients that ignore media queries
 - **Gmail app on Android** (renders the desktop/large breakpoint)
@@ -175,6 +287,16 @@ Inky uses a **desktop-first** approach: the base layout is for large screens, an
 - **Outlook desktop**
 
 For these clients, the desktop layout is what users see. Design your large breakpoint to be readable at narrow widths too.
+
+### Progressive enhancement
+
+Design for your most constrained client first (usually Outlook), then layer on enhancements for capable clients. This means:
+
+1. Ensure the **table-based layout** looks correct without media queries
+2. Add **responsive behavior** via `@media` queries for clients that support them
+3. Add **visual enhancements** (border-radius, background images, web fonts) for modern clients
+
+If you have analytics on your audience's email clients, prioritize testing for the clients your readers actually use.
 
 ---
 
@@ -267,6 +389,33 @@ At a minimum, test in:
 - **Sufficient color contrast** — 4.5:1 ratio minimum for body text.
 - **Link text** — avoid "click here." Use descriptive link text: "View your order" instead.
 - **Language attribute** — include `lang="en"` (or appropriate language) on the root `<html>` element.
+
+---
+
+## Design Tips
+
+### Think above the fold
+Put your most important content — the key message, primary CTA — near the top of the email. Many readers scan the preview pane without scrolling.
+
+### Keep it simple
+- Stick to **one or two fonts** throughout the email. Mixing many typefaces looks cluttered.
+- Use a clear visual hierarchy: one primary call-to-action, with secondary actions clearly subordinate.
+- Single-column layouts are more reliable across clients and easier to read on mobile.
+
+### Footer best practices
+Every email footer should include:
+- Physical mailing address (required by CAN-SPAM)
+- Unsubscribe link (required)
+- A brief reminder of why the reader is receiving the email ("You're receiving this because you signed up at...")
+- Contact information or support links
+- Social media links (use the `<social>` component)
+
+### External resources
+
+- **[Campaign Monitor CSS Support](https://www.campaignmonitor.com/css/)** — comprehensive, regularly updated guide to which CSS properties work in which email clients
+- **[Can I Email](https://www.caniemail.com/)** — "Can I Use" but for email clients
+- **[Litmus](https://litmus.com)** — cross-client rendering tests
+- **[Email on Acid](https://emailonacid.com)** — cross-client rendering with accessibility checks
 
 ---
 

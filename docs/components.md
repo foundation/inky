@@ -35,7 +35,21 @@ Output:
 
 Creates a horizontal row of columns.
 
-**Attributes:** `class`
+**Attributes:**
+
+| Attribute | Default | Description |
+|-----------|---------|-------------|
+| `collapse` | -- | Remove gutters between columns (bare attribute) |
+| `class` | -- | Additional CSS classes |
+
+Use `collapse` when you need columns to touch edge-to-edge (e.g., side-by-side images with no gap):
+
+```html
+<row collapse>
+  <column lg="6"><image src="left.jpg" alt="Left" width="290" /></column>
+  <column lg="6"><image src="right.jpg" alt="Right" width="290" /></column>
+</row>
+```
 
 ```html
 <row>
@@ -71,6 +85,8 @@ A grid column inside a `<row>`. Based on a 12-column grid (configurable).
 |-----------|---------|-------------|
 | `sm` | `12` | Small screen column span |
 | `lg` | auto | Large screen column span (auto-calculated from sibling count) |
+| `offset` | -- | Number of columns to offset from left (e.g., `offset="2"`) |
+| `valign` | `top` | Vertical alignment: `top`, `middle`, `bottom` |
 | `no-expander` | -- | Suppress the expander element on full-width columns |
 | `class` | -- | Additional CSS classes |
 
@@ -89,11 +105,23 @@ A grid column inside a `<row>`. Based on a 12-column grid (configurable).
 </row>
 ```
 
+#### Column Offsets
+
+Push a column to the right by a number of grid columns:
+
+```html
+<row>
+  <column lg="8" offset="2">Centered 8-column content</column>
+</row>
+```
+
+This adds a `large-offset-2` class to the column, shifting it 2 columns from the left.
+
 ---
 
 ### `<wrapper>`
 
-Wraps content in a full-width background section.
+Wraps content in a full-width background section. The wrapper expands to the full width of the email client viewport, while content inside remains bounded by the container width. This is the standard pattern for full-width headers, footers, and colored sections.
 
 **Attributes:** `class`
 
@@ -108,6 +136,53 @@ Output:
   <tbody><tr><td class="wrapper-inner">Content</td></tr></tbody>
 </table>
 ```
+
+#### Full-width header/footer pattern
+
+Use a wrapper around a container to get a full-width background with bounded content:
+
+```html
+<!-- Full-width dark header -->
+<wrapper class="header" style="background-color: #2d2d2d;">
+  <container>
+    <row>
+      <column lg="6">
+        <image src="logo.png" alt="Logo" width="150" />
+      </column>
+      <column lg="6">
+        <menu align="right">
+          <item href="/about">About</item>
+          <item href="/contact">Contact</item>
+        </menu>
+      </column>
+    </row>
+  </container>
+</wrapper>
+
+<!-- Email body -->
+<container>
+  <row>
+    <column>Main content here</column>
+  </row>
+</container>
+
+<!-- Full-width footer -->
+<wrapper class="footer" style="background-color: #f3f3f3;">
+  <container>
+    <row>
+      <column lg="12" align="center">
+        <p>123 Main St, City, ST 12345</p>
+        <menu align="center">
+          <item href="/unsubscribe">Unsubscribe</item>
+          <item href="/preferences">Preferences</item>
+        </menu>
+      </column>
+    </row>
+  </container>
+</wrapper>
+```
+
+**Tip:** For older clients that don't support CSS `background-color`, you can add the `bgcolor` HTML attribute as a fallback: `<wrapper class="header" bgcolor="#2d2d2d">`.
 
 ---
 
