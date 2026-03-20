@@ -104,10 +104,13 @@ inky watch
 - **[Getting Started](docs/getting-started.md)** — Installation, CLI usage, first template
 - **[Component Reference](docs/components.md)** — All 27 components with examples
 - **[Style Reference](docs/styles.md)** — SCSS variables for colors, typography, layout, and more
+- **[Email Development Guide](docs/email-guide.md)** — CSS support, Outlook quirks, images, testing, and best practices
+- **[Email Client Compatibility](docs/compatibility.md)** — Support matrix across desktop, webmail, and mobile
 - **[Data Merging](docs/data-merging.md)** — Merge JSON data into templates
 - **[Hybrid Output](docs/hybrid-output.md)** — `<div>` layout with Outlook fallbacks
 - **[Migration Guide](docs/migration.md)** — Upgrading from v1 to v2
 - **[Language Bindings](docs/bindings.md)** — Node.js, PHP, Python, Ruby, Go
+- **[Troubleshooting](docs/troubleshooting.md)** — Common issues and how to fix them
 
 ## Examples
 
