@@ -10,8 +10,7 @@ title: "Getting Started"
 ### Homebrew (macOS/Linux)
 
 ```bash
-brew tap foundation/inky
-brew install inky
+brew install foundation/inky/inky
 ```
 
 ### npm

@@ -1,20 +1,5 @@
 # Inky
 
-> **Pre-release:** v2 is not yet published. To test the CLI, build from source:
->
-> ```bash
-> # Requires Rust — https://rustup.rs
-> git clone https://github.com/foundation/inky.git
-> cd inky
-> git checkout feature/2.0-rust
-> cargo build -p inky-cli --release
->
-> # Copy the binary somewhere on your PATH
-> cp target/release/inky /usr/local/bin/
-> ```
->
-> Then run `inky --version` to verify. Report issues on the `feature/2.0-rust` branch.
-
 Inky is a complete email framework that converts simple HTML into complex, responsive email-ready HTML. It includes a templating engine, built-in responsive CSS, CSS inlining, validation, and a CLI toolchain.
 
 Written in Rust. Distributed as a CLI binary, WASM module, native shared library, and Rust crate — with official bindings for Node.js, PHP, Python, Ruby, and Go.
@@ -55,7 +40,7 @@ And get email-ready HTML like this:
 
 ```bash
 # Homebrew
-brew tap foundation/inky && brew install inky
+brew install foundation/inky/inky
 
 # Cargo
 cargo install inky-cli
