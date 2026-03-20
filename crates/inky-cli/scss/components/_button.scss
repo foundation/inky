@@ -1,0 +1,328 @@
+// Inky Email Framework
+// get.foundation/inky/
+// Licensed under MIT Open Source
+@use "sass:color";
+@use "sass:map";
+@use '../settings' as *;
+
+////
+/// @group button
+////
+
+// Hover color variables (derived from settings)
+$button-background-hover: color.adjust($button-background, $lightness: -10%) !default;
+$button-secondary-background-hover: color.adjust($secondary-color, $lightness: +10%) !default;
+$button-success-background-hover: color.adjust($success-color, $lightness: -10%) !default;
+$button-alert-background-hover: color.adjust($alert-color, $lightness: -10%) !default;
+$button-warning-background-hover: color.adjust($warning-color, $lightness: -10%) !default;
+
+table.button {
+  width: auto;
+  margin: $button-margin;
+  Margin: $button-margin;
+
+  table {
+
+    td {
+      text-align: left;
+      color: $button-color;
+      background: $button-background;
+      border: $button-border;
+
+      a {
+        font-family: $body-font-family;
+        font-size: map.get($button-font-size, default);
+        font-weight: $button-font-weight;
+        color: $button-color;
+        text-decoration: none;
+        text-align: left;
+        display: inline-block;
+        padding: map.get($button-padding, default);
+        border: 0 solid $button-background;
+        border-radius: $button-radius;
+      }
+    }
+  }
+
+  &.radius table td {
+    border-radius: $button-radius;
+    border: none;
+  }
+
+  &.rounded table td {
+    border-radius: $button-rounded;
+    border: none;
+  }
+}
+
+table.button:not(.expand):not(.expanded) table {
+  width: auto;
+}
+
+table.button:hover table tr td a,
+table.button:active table tr td a,
+table.button table tr td a:visited,
+table.button.tiny:hover table tr td a,
+table.button.tiny:active table tr td a,
+table.button.tiny table tr td a:visited,
+table.button.small:hover table tr td a,
+table.button.small:active table tr td a,
+table.button.small table tr td a:visited,
+table.button.large:hover table tr td a,
+table.button.large:active table tr td a,
+table.button.large table tr td a:visited {
+  color: $button-color;
+}
+
+table.button.tiny {
+  table {
+    a {
+      padding: map.get($button-padding, tiny);
+      font-size: map.get($button-font-size, tiny);
+      font-weight: normal;
+    }
+  }
+}
+
+table.button.small {
+  table {
+    a {
+      padding: map.get($button-padding, small);
+      font-size: map.get($button-font-size, small);
+    }
+  }
+}
+
+table.button.large {
+  table {
+    a {
+      padding: map.get($button-padding, large);
+      font-size: map.get($button-font-size, large);
+    }
+  }
+}
+
+table.button.expand,
+table.button.expanded {
+  width: 100%;
+
+  table {
+    width: 100%;
+
+    a {
+      text-align: center;
+      width: 100%;
+      padding-left: 0;
+      padding-right: 0;
+    }
+  }
+
+  center {
+    min-width: 0;
+  }
+}
+
+table.button:hover,
+table.button:visited,
+table.button:active {
+  table {
+    td {
+      background: $button-background-hover;
+      border-color: $button-background-hover;
+      color: $button-color;
+    }
+  }
+}
+
+table.button:hover,
+table.button:visited,
+table.button:active {
+  table {
+    a {
+      border: 0 solid $button-background-hover;
+    }
+  }
+}
+
+table.button.secondary {
+  table {
+    td {
+      background: $secondary-color;
+      color: $button-color;
+      border: 0px solid $secondary-color;
+    }
+
+    a {
+      color: $button-color;
+      border: 0 solid $secondary-color;
+    }
+  }
+}
+
+table.button.secondary:hover {
+  table {
+    td {
+      background: $button-secondary-background-hover;
+      border-color: $button-secondary-background-hover;
+      color: $button-color;
+    }
+
+    a {
+      border: 0 solid $button-secondary-background-hover;
+    }
+  }
+}
+
+table.button.secondary:hover {
+  table {
+    td a {
+      color: $button-color;
+    }
+  }
+}
+
+table.button.secondary:active {
+  table {
+    td a {
+      color: $button-color;
+    }
+  }
+}
+
+table.button.secondary {
+  table {
+    td a:visited {
+      color: $button-color;
+    }
+  }
+}
+
+table.button.success {
+  table {
+    td {
+      background: $success-color;
+      border: 0px solid $success-color;
+    }
+
+    a {
+      border: 0 solid $success-color;
+    }
+  }
+}
+
+table.button.success:hover {
+  table {
+    td {
+      background: $button-success-background-hover;
+      border-color: $button-success-background-hover;
+    }
+
+    a {
+      border: 0 solid $button-success-background-hover;
+    }
+  }
+}
+
+table.button.alert {
+  table {
+    td {
+      background: $alert-color;
+      border: 0px solid $alert-color;
+    }
+
+    a {
+      border: 0 solid $alert-color;
+    }
+  }
+}
+
+table.button.alert:hover {
+  table {
+    td {
+      background: $button-alert-background-hover;
+      border-color: $button-alert-background-hover;
+    }
+
+    a {
+      border: 0 solid $button-alert-background-hover;
+    }
+  }
+}
+
+table.button.warning {
+  table {
+    td {
+      background: $warning-color;
+      border: 0px solid $warning-color;
+    }
+
+    a {
+      border: 0px solid $warning-color;
+    }
+  }
+}
+
+table.button.warning:hover {
+  table {
+    td {
+      background: $button-warning-background-hover;
+      border-color: $button-warning-background-hover;
+    }
+
+    a {
+      border: 0 solid $button-warning-background-hover;
+    }
+  }
+}
+
+// Hollow Buttons
+@mixin hollow-button($color, $class: false) {
+  // If this mixin is called with a class, then a class will be added
+  // Then the mixin calls itself with just the color to obtain the color styles
+  @if $class {
+    &.#{$class} {
+        @include hollow-button($color);
+    }
+  } @else {
+    table tr td a {
+      border: 1px solid $color;
+      color: $color;
+
+      &:visited {
+        color: $color;
+      }
+
+      &:hover {
+        border-color: color.adjust($color, $lightness: -10%);
+        color: color.adjust($color, $lightness: -10%);
+      }
+    }
+  }
+}
+
+table.button.hollow {
+  table td,
+  &:hover table td {
+    border: none !important;
+    border-radius: 0;
+    background: transparent !important;
+  }
+
+  table a {
+    border-radius: 0;
+  }
+
+  &.radius {
+    table a { border-radius: $global-radius; }
+  }
+
+  &.rounded {
+    table a { border-radius: $global-rounded; }
+  }
+
+  @include hollow-button($primary-color);
+  @include hollow-button($secondary-color, 'secondary');
+  @include hollow-button($alert-color, 'alert');
+  @include hollow-button($warning-color, 'warning');
+  @include hollow-button($success-color, 'success');
+}

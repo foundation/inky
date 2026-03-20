@@ -5,79 +5,79 @@ use std::path::{Path, PathBuf};
 
 // Embed all SCSS files into the binary
 const SCSS_FILES: &[(&str, &str)] = &[
-    ("inky.scss", include_str!("../../../scss/inky.scss")),
+    ("inky.scss", include_str!("../scss/inky.scss")),
     (
         "settings/_index.scss",
-        include_str!("../../../scss/settings/_index.scss"),
+        include_str!("../scss/settings/_index.scss"),
     ),
     (
         "settings/_settings.scss",
-        include_str!("../../../scss/settings/_settings.scss"),
+        include_str!("../scss/settings/_settings.scss"),
     ),
     (
         "util/_index.scss",
-        include_str!("../../../scss/util/_index.scss"),
+        include_str!("../scss/util/_index.scss"),
     ),
     (
         "util/_util.scss",
-        include_str!("../../../scss/util/_util.scss"),
+        include_str!("../scss/util/_util.scss"),
     ),
-    ("_global.scss", include_str!("../../../scss/_global.scss")),
+    ("_global.scss", include_str!("../scss/_global.scss")),
     (
         "components/_normalize.scss",
-        include_str!("../../../scss/components/_normalize.scss"),
+        include_str!("../scss/components/_normalize.scss"),
     ),
     (
         "components/_alignment.scss",
-        include_str!("../../../scss/components/_alignment.scss"),
+        include_str!("../scss/components/_alignment.scss"),
     ),
     (
         "components/_visibility.scss",
-        include_str!("../../../scss/components/_visibility.scss"),
+        include_str!("../scss/components/_visibility.scss"),
     ),
     (
         "components/_typography.scss",
-        include_str!("../../../scss/components/_typography.scss"),
+        include_str!("../scss/components/_typography.scss"),
     ),
     (
         "components/_button.scss",
-        include_str!("../../../scss/components/_button.scss"),
+        include_str!("../scss/components/_button.scss"),
     ),
     (
         "components/_callout.scss",
-        include_str!("../../../scss/components/_callout.scss"),
+        include_str!("../scss/components/_callout.scss"),
     ),
     (
         "components/_thumbnail.scss",
-        include_str!("../../../scss/components/_thumbnail.scss"),
+        include_str!("../scss/components/_thumbnail.scss"),
     ),
     (
         "components/_menu.scss",
-        include_str!("../../../scss/components/_menu.scss"),
+        include_str!("../scss/components/_menu.scss"),
     ),
     (
         "components/_outlook-first.scss",
-        include_str!("../../../scss/components/_outlook-first.scss"),
+        include_str!("../scss/components/_outlook-first.scss"),
     ),
     (
         "components/_media-query.scss",
-        include_str!("../../../scss/components/_media-query.scss"),
+        include_str!("../scss/components/_media-query.scss"),
     ),
     (
         "components/_divider.scss",
-        include_str!("../../../scss/components/_divider.scss"),
+        include_str!("../scss/components/_divider.scss"),
     ),
     (
         "components/_dark-mode.scss",
-        include_str!("../../../scss/components/_dark-mode.scss"),
+        include_str!("../scss/components/_dark-mode.scss"),
     ),
     (
         "grid/_grid.scss",
-        include_str!("../../../scss/grid/_grid.scss"),
+        include_str!("../scss/grid/_grid.scss"),
     ),
     (
         "grid/_block-grid.scss",
-        include_str!("../../../scss/grid/_block-grid.scss"),
+        include_str!("../scss/grid/_block-grid.scss"),
     ),
 ];
 

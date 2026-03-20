@@ -4,6 +4,7 @@ version = "2.0.0-beta.1"
 edition = "2021"
 description = "Inky CLI — transform, migrate, and validate email templates"
 license = "MIT"
+include = ["src/**/*", "scss/**/*", "Cargo.toml"]
 
 [[bin]]
 name = "inky"

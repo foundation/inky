@@ -1,0 +1,155 @@
+@use 'sass:math';
+@use 'sass:color';
+
+//  Inky Email Framework Settings
+//  ------------------------------
+//
+//  Table of Contents:
+//
+//   1. Global
+//   2. Grid
+//   3. Block Grid
+//   4. Typography
+//   5. Button
+//   6. Callout
+//   7. Menu
+//   8. Thumbnail
+
+
+// 1. Global
+// ---------
+
+$primary-color: #1a73b5 !default;
+$secondary-color: #777777 !default;
+$success-color: #3adb76 !default;
+$warning-color: #ffae00 !default;
+$alert-color: #ec5840 !default;
+$light-gray: #f3f3f3 !default;
+$medium-gray: #cacaca !default;
+$dark-gray: #8a8a8a !default;
+$black: #0a0a0a !default;
+$white: #fefefe !default;
+$pre-color: #ff6908 !default;
+$global-width: 580px !default;
+$global-width-small: 95% !default;
+$global-gutter: 16px !default;
+$global-gutter-small: $global-gutter !default;
+$body-background: $light-gray !default;
+$container-background: $white !default;
+$global-padding: 16px !default;
+$global-margin: 16px !default;
+$global-radius: 3px !default;
+$global-rounded: 500px !default;
+$global-breakpoint: $global-width + $global-gutter !default;
+
+// 2. Grid
+// -------
+
+$grid-column-count: 12 !default;
+$column-padding-bottom: $global-padding !default;
+$container-radius: 0 !default;
+
+// 3. Block Grid
+// -------------
+
+$block-grid-max: 8 !default;
+$block-grid-gutter: $global-gutter !default;
+
+// 4. Typography
+// -------------
+
+$global-font-color: $black !default;
+$body-font-family: Helvetica, Arial, sans-serif !default;
+$global-font-weight: normal !default;
+$header-color: inherit !default;
+$global-line-height: 130% !default;
+$global-font-size: 16px !default;
+$body-line-height: $global-line-height !default;
+$header-font-family: $body-font-family !default;
+$header-font-weight: $global-font-weight !default;
+$h1-font-size: math.floor($global-font-size * 2.125) !default;
+$h2-font-size: math.floor($global-font-size * 1.875) !default;
+$h3-font-size: math.floor($global-font-size * 1.75) !default;
+$h4-font-size: math.floor($global-font-size * 1.5) !default;
+$h5-font-size: math.floor($global-font-size * 1.2) !default;
+$h6-font-size: math.floor($global-font-size * 1.125) !default;
+$header-margin-bottom: 10px !default;
+$paragraph-margin-bottom: 10px !default;
+$small-font-size: 80% !default;
+$small-font-color: $medium-gray !default;
+$lead-font-size: $global-font-size * 1.25 !default;
+$lead-line-height: 160% !default;
+$text-padding: 10px !default;
+$subheader-lineheight: 1.4 !default;
+$subheader-color: $dark-gray !default;
+$subheader-font-weight: $global-font-weight !default;
+$subheader-margin-top: 4px !default;
+$subheader-margin-bottom: 8px !default;
+$hr-width: $global-width !default;
+$hr-border: 1px solid $black !default;
+$hr-margin: 20px !default;
+$hr-align: center !default;
+$anchor-text-decoration: none !default;
+$anchor-color: $primary-color !default;
+$anchor-color-visited: $anchor-color !default;
+$anchor-color-hover: color.adjust($primary-color, $lightness: -10%) !default;
+$anchor-color-active: $anchor-color-hover !default;
+$font-scale: 1.2 !default;
+$stat-font-size: 40px !default;
+$remove-ios-blue: true !default;
+
+// 5. Button
+// ---------
+
+$button-padding: (
+  tiny: 4px 8px 4px 8px,
+  small: 5px 10px 5px 10px,
+  default: 8px 16px 8px 16px,
+  large: 10px 20px 10px 20px,
+) !default;
+$button-font-size: (
+  tiny: 10px,
+  small: 12px,
+  default: 16px,
+  large: 20px,
+) !default;
+$button-color: $white !default;
+$button-color-alt: $medium-gray !default;
+$button-font-weight: bold !default;
+$button-margin: 0 0 $global-margin 0 !default;
+$button-background: $primary-color !default;
+$button-border: 2px solid $button-background !default;
+$button-radius: $global-radius !default;
+$button-rounded: $global-rounded !default;
+
+// 6. Callout
+// ----------
+
+$callout-background: $white !default;
+$callout-background-fade: 85% !default;
+$callout-padding: 10px !default;
+$callout-padding-small: $callout-padding !default;
+$callout-margin-bottom: $global-margin !default;
+$callout-border: 1px solid color.adjust($callout-background, $lightness: -20%) !default;
+$callout-border-primary: 1px solid color.adjust($primary-color, $lightness: -20%) !default;
+$callout-border-secondary: 1px solid color.adjust($secondary-color, $lightness: -20%) !default;
+$callout-border-success: 1px solid color.adjust($success-color, $lightness: -20%) !default;
+$callout-border-warning: 1px solid color.adjust($warning-color, $lightness: -20%) !default;
+$callout-border-alert: 1px solid color.adjust($alert-color, $lightness: -20%) !default;
+
+// 7. Menu
+// -------
+
+$menu-item-padding: 10px !default;
+$menu-item-gutter: 10px !default;
+$menu-item-color: $primary-color !default;
+
+// 8. Thumbnail
+// ------------
+
+$thumbnail-border: solid 4px $white !default;
+$thumbnail-margin-bottom: $global-margin !default;
+$thumbnail-shadow: 0 0 0 1px rgba($black, 0.2) !default;
+$thumbnail-shadow-hover: 0 0 6px 1px rgba($primary-color, 0.5) !default;
+$thumbnail-transition: box-shadow 200ms ease-out !default;
+$thumbnail-radius: $global-radius !default;
