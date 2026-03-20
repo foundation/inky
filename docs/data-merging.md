@@ -1,3 +1,8 @@
+---
+raw: true
+title: "Data Merging"
+---
+
 # Data Merging
 
 Inky can merge JSON data into your templates using [MiniJinja](https://github.com/mitsuhiko/minijinja), a Jinja2-compatible template engine. This is useful for previewing emails with real data or generating final output with variables filled in.

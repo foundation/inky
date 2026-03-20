@@ -1,3 +1,8 @@
+---
+raw: true
+title: "Hybrid Output Mode"
+---
+
 # Hybrid Output Mode
 
 Hybrid mode generates `<div>`-based layouts for modern email clients with Outlook-specific `<table>` fallbacks wrapped in MSO conditional comments. This produces cleaner HTML, better accessibility, and smaller file sizes compared to pure table-based output.

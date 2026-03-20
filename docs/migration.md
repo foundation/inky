@@ -1,3 +1,8 @@
+---
+raw: true
+title: "Migration Guide: v1 to v2"
+---
+
 # Migration Guide: v1 to v2
 
 ## Why Migrate

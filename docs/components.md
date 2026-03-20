@@ -1,3 +1,8 @@
+---
+raw: true
+title: "Component Reference"
+---
+
 # Component Reference
 
 Every Inky component transforms simple HTML into email-safe table markup. All layout tables include `role="presentation"` for accessibility.
