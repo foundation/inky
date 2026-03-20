@@ -1,0 +1,354 @@
+{
+  "tests": [
+    {
+      "name": "button: simple button",
+      "input": "<button href=\"http://example.com\">Click</button>",
+      "expected": "<table role=\"presentation\" class=\"button\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><td><a href=\"http://example.com\">Click</a></td></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "button: with target attribute",
+      "input": "<button href=\"http://example.com\" target=\"_blank\">Click</button>",
+      "expected": "<table role=\"presentation\" class=\"button\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><td><a href=\"http://example.com\" target=_blank>Click</a></td></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "button: with size attribute",
+      "input": "<button href=\"#\" size=\"small\">Click</button>",
+      "expected": "<table role=\"presentation\" class=\"button small\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><td><a href=\"#\">Click</a></td></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "button: with color attribute",
+      "input": "<button href=\"#\" color=\"alert\">Click</button>",
+      "expected": "<table role=\"presentation\" class=\"button alert\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><td><a href=\"#\">Click</a></td></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "button: with size and color attributes",
+      "input": "<button href=\"#\" size=\"large\" color=\"success\">Click</button>",
+      "expected": "<table role=\"presentation\" class=\"button large success\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><td><a href=\"#\">Click</a></td></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "button: expanded button",
+      "input": "<button href=\"#\" class=\"expand\">Click</button>",
+      "expected": "<table role=\"presentation\" class=\"button expand\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><td><center><a href=\"#\" align=\"center\" class=\"float-center\">Click</a></center></td></tr></tbody></table></td>\n<td class=\"expander\" aria-hidden=\"true\"></td></tr></tbody></table>"
+    },
+    {
+      "name": "button: with no href",
+      "input": "<button>Click</button>",
+      "expected": "<table role=\"presentation\" class=\"button\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><td>Click</td></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "divider: basic divider",
+      "input": "<divider></divider>",
+      "expected": "<table role=\"presentation\" class=\"divider\" aria-hidden=\"true\"><tbody><tr><th>&nbsp;</th></tr></tbody></table>"
+    },
+    {
+      "name": "divider: with classes",
+      "input": "<divider class=\"dotted\"></divider>",
+      "expected": "<table role=\"presentation\" class=\"divider dotted\" aria-hidden=\"true\"><tbody><tr><th>&nbsp;</th></tr></tbody></table>"
+    },
+    {
+      "name": "spacer: with height attribute (v2 syntax)",
+      "input": "<spacer height=\"20\"></spacer>",
+      "expected": "<table role=\"presentation\" class=\"spacer\" aria-hidden=\"true\"><tbody><tr><td height=\"20\" style=\"font-size:20px;line-height:20px;\">&nbsp;</td></tr></tbody></table>"
+    },
+    {
+      "name": "spacer: default height",
+      "input": "<spacer></spacer>",
+      "expected": "<table role=\"presentation\" class=\"spacer\" aria-hidden=\"true\"><tbody><tr><td height=\"16\" style=\"font-size:16px;line-height:16px;\">&nbsp;</td></tr></tbody></table>"
+    },
+    {
+      "name": "spacer: with sm attribute (v2 syntax)",
+      "input": "<spacer sm=\"10\"></spacer>",
+      "expected": "<table role=\"presentation\" class=\"spacer hide-for-large\" aria-hidden=\"true\"><tbody><tr><td height=\"10\" style=\"font-size:10px;line-height:10px;\">&nbsp;</td></tr></tbody></table>"
+    },
+    {
+      "name": "spacer: with lg attribute (v2 syntax)",
+      "input": "<spacer lg=\"20\"></spacer>",
+      "expected": "<table role=\"presentation\" class=\"spacer show-for-large\" aria-hidden=\"true\"><tbody><tr><td height=\"20\" style=\"font-size:20px;line-height:20px;\">&nbsp;</td></tr></tbody></table>"
+    },
+    {
+      "name": "spacer: with sm and lg attributes (v2 syntax)",
+      "input": "<spacer sm=\"10\" lg=\"20\"></spacer>",
+      "expected": "<table role=\"presentation\" class=\"spacer hide-for-large\" aria-hidden=\"true\"><tbody><tr><td height=\"10\" style=\"font-size:10px;line-height:10px;\">&nbsp;</td></tr></tbody></table><table role=\"presentation\" class=\"spacer show-for-large\" aria-hidden=\"true\"><tbody><tr><td height=\"20\" style=\"font-size:20px;line-height:20px;\">&nbsp;</td></tr></tbody></table>"
+    },
+    {
+      "name": "spacer: with class",
+      "input": "<spacer height=\"10\" class=\"bgcolor\"></spacer>",
+      "expected": "<table role=\"presentation\" class=\"spacer bgcolor\" aria-hidden=\"true\"><tbody><tr><td height=\"10\" style=\"font-size:10px;line-height:10px;\">&nbsp;</td></tr></tbody></table>"
+    },
+    {
+      "name": "callout: basic callout",
+      "input": "<callout>Important</callout>",
+      "expected": "<table role=\"presentation\" class=\"callout\"><tbody><tr><th class=\"callout-inner\">Important</th><th class=\"expander\" aria-hidden=\"true\"></th></tr></tbody></table>"
+    },
+    {
+      "name": "callout: with color attribute (v2 syntax)",
+      "input": "<callout color=\"primary\">Important</callout>",
+      "expected": "<table role=\"presentation\" class=\"callout\"><tbody><tr><th class=\"callout-inner primary\">Important</th><th class=\"expander\" aria-hidden=\"true\"></th></tr></tbody></table>"
+    },
+    {
+      "name": "callout: with class (still works)",
+      "input": "<callout class=\"secondary\">Important</callout>",
+      "expected": "<table role=\"presentation\" class=\"callout\"><tbody><tr><th class=\"callout-inner secondary\">Important</th><th class=\"expander\" aria-hidden=\"true\"></th></tr></tbody></table>"
+    },
+    {
+      "name": "menu: basic menu with items",
+      "input": "<menu><item href=\"#\">Link</item></menu>",
+      "expected": "<table role=\"presentation\" class=\"menu\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><th class=\"menu-item\"><a href=\"#\">Link</a></th></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "menu: with direction attribute (v2 syntax)",
+      "input": "<menu direction=\"vertical\"><item href=\"#\">Link</item></menu>",
+      "expected": "<table role=\"presentation\" class=\"menu vertical\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><th class=\"menu-item\"><a href=\"#\">Link</a></th></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "menu: item with target attribute",
+      "input": "<menu><item href=\"#\" target=\"_blank\">Link</item></menu>",
+      "expected": "<table role=\"presentation\" class=\"menu\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><th class=\"menu-item\"><a href=\"#\" target=_blank>Link</a></th></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "menu: multiple items",
+      "input": "<menu><item href=\"/a\">A</item><item href=\"/b\">B</item></menu>",
+      "expected": "<table role=\"presentation\" class=\"menu\"><tbody><tr><td><table role=\"presentation\"><tbody><tr><th class=\"menu-item\"><a href=\"/a\">A</a></th><th class=\"menu-item\"><a href=\"/b\">B</a></th></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "wrapper: basic wrapper",
+      "input": "<wrapper>Content</wrapper>",
+      "expected": "<table role=\"presentation\" class=\"wrapper\" align=\"center\"><tbody><tr><td class=\"wrapper-inner\">Content</td></tr></tbody></table>"
+    },
+    {
+      "name": "wrapper: with classes",
+      "input": "<wrapper class=\"header\">Content</wrapper>",
+      "expected": "<table role=\"presentation\" class=\"wrapper header\" align=\"center\"><tbody><tr><td class=\"wrapper-inner\">Content</td></tr></tbody></table>"
+    },
+    {
+      "name": "outlook: wraps content in mso conditional",
+      "input": "<outlook><table><tr><td>Fallback</td></tr></table></outlook>",
+      "expected": "<!--[if mso]>\n<table><tbody><tr><td>Fallback</td></tr></tbody></table>\n<![endif]-->"
+    },
+    {
+      "name": "not-outlook: wraps content in not-mso conditional",
+      "input": "<not-outlook><div>Modern</div></not-outlook>",
+      "expected": "<!--[if !mso]><!-->\n<div>Modern</div>\n<!--<![endif]-->"
+    },
+    {
+      "name": "image: basic image",
+      "input": "<image src=\"hero.jpg\" alt=\"Hero\" width=\"600\">",
+      "expected": "<img src=\"hero.jpg\" alt=\"Hero\" width=\"600\" style=\"width: 600px; max-width: 100%;\">"
+    },
+    {
+      "name": "image: retina image (halves width)",
+      "input": "<image src=\"hero.jpg\" alt=\"Hero\" width=\"600\" retina>",
+      "expected": "<img src=\"hero.jpg\" alt=\"Hero\" width=\"300\" style=\"width: 300px; max-width: 100%;\">"
+    },
+    {
+      "name": "image: no width attribute",
+      "input": "<image src=\"hero.jpg\" alt=\"Hero\">",
+      "expected": "<img src=\"hero.jpg\" alt=\"Hero\" style=\"max-width: 100%;\">"
+    },
+    {
+      "name": "image: with class",
+      "input": "<image src=\"hero.jpg\" alt=\"Hero\" width=\"400\" class=\"float-center\">",
+      "expected": "<img src=\"hero.jpg\" alt=\"Hero\" width=\"400\" style=\"width: 400px; max-width: 100%;\" class=\"float-center\">"
+    },
+    {
+      "name": "raw: content passes through untouched",
+      "input": "before<raw><button>not transformed</button></raw>after",
+      "expected": "before<button>not transformed</button>after"
+    },
+    {
+      "name": "container: basic container",
+      "input": "<container>Content</container>",
+      "expected": "<table role=\"presentation\" align=\"center\" class=\"container\"><tbody><tr><td class=\"container-inner\">Content</td></tr></tbody></table>"
+    },
+    {
+      "name": "row: basic row",
+      "input": "<row>Content</row>",
+      "expected": "<table role=\"presentation\" class=\"row\"><tbody><tr>Content</tr></tbody></table>"
+    },
+    {
+      "name": "block-grid: basic block grid",
+      "input": "<block-grid up=\"3\"><td>Item</td></block-grid>",
+      "expected": "<table role=\"presentation\" class=\"block-grid up-3\"><tbody><tr><td>Item</td></tr></tbody></table>"
+    },
+    {
+      "name": "block-grid: with classes",
+      "input": "<block-grid up=\"4\" class=\"show-for-large\"><td>Item</td></block-grid>",
+      "expected": "<table role=\"presentation\" class=\"block-grid up-4 show-for-large\"><tbody><tr><td>Item</td></tr></tbody></table>"
+    },
+    {
+      "name": "preview: basic preheader text",
+      "input": "<preview>Check out our sale!</preview>",
+      "expected": "<div style=\"display: none; max-height: 0; overflow: hidden; mso-hide: all;\">Check out our sale!</div><div style=\"display: none; max-height: 0; overflow: hidden; mso-hide: all;\">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>"
+    },
+    {
+      "name": "video: basic video with poster",
+      "input": "<video src=\"movie.mp4\" poster=\"poster.jpg\" width=\"600\"></video>",
+      "expected": "<a href=\"movie.mp4\" target=\"_blank\" style=\"text-decoration: none;\"><video width=\"600\" autoplay muted loop playsinline poster=\"poster.jpg\" style=\"max-width: 100%; display: block;\"><source src=\"movie.mp4\" type=\"video/mp4\"><img src=\"poster.jpg\" alt=\"Video\" width=\"600\" style=\"width: 600px; max-width: 100%; display: block;\"></video></a>"
+    },
+    {
+      "name": "video: with custom href and alt",
+      "input": "<video src=\"movie.mp4\" poster=\"poster.jpg\" href=\"https://example.com/watch\" alt=\"Watch now\" width=\"600\"></video>",
+      "expected": "<a href=\"https://example.com/watch\" target=\"_blank\" style=\"text-decoration: none;\"><video width=\"600\" autoplay muted loop playsinline poster=\"poster.jpg\" style=\"max-width: 100%; display: block;\"><source src=\"movie.mp4\" type=\"video/mp4\"><img src=\"poster.jpg\" alt=\"Watch now\" width=\"600\" style=\"width: 600px; max-width: 100%; display: block;\"></video></a>"
+    },
+    {
+      "name": "hero: basic hero section",
+      "input": "<hero background=\"hero.jpg\" width=\"600\" height=\"400\"><p>Hello</p></hero>",
+      "expected": "<!--[if mso]>\n<v:rect xmlns:v=\"urn:schemas-microsoft-com:vml\" fill=\"true\" stroke=\"false\" style=\"width:600px;height:400px;\">\n<v:fill type=\"frame\" src=\"hero.jpg\" />\n<v:textbox style=\"mso-fit-shape-to-text:true\" inset=\"0,0,0,0\">\n<![endif]-->\n<table role=\"presentation\" class=\"hero\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-image: url('hero.jpg'); background-size: cover; background-position: center center; background-repeat: no-repeat; width: 600px;\"><tbody><tr><td style=\"padding: 0;\"><p>Hello</p></td></tr></tbody></table>\n<!--[if mso]>\n</v:textbox>\n</v:rect>\n<![endif]-->"
+    },
+    {
+      "name": "social: with social-link children",
+      "input": "<social align=\"center\"><social-link platform=\"facebook\" href=\"https://fb.com\">Facebook</social-link></social>",
+      "expected": "<table role=\"presentation\" class=\"social\" align=\"center\"><tbody><tr><td><table role=\"presentation\" align=\"center\"><tbody><tr><td class=\"social-link facebook\" style=\"padding: 0 4px;\"><a href=\"https://fb.com\" target=\"_blank\" style=\"color: #3b5998; text-decoration: none;\">Facebook</a></td></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "social-link: auto-capitalize platform name when no label",
+      "input": "<social-link platform=\"twitter\" href=\"https://twitter.com\"></social-link>",
+      "expected": "<td class=\"social-link twitter\" style=\"padding: 0 4px;\"><a href=\"https://twitter.com\" target=\"_blank\" style=\"color: #1da1f2; text-decoration: none;\">Twitter</a></td>"
+    },
+    {
+      "name": "social-link: with custom color",
+      "input": "<social-link platform=\"custom\" href=\"#\" color=\"#ff0000\">Custom</social-link>",
+      "expected": "<td class=\"social-link custom\" style=\"padding: 0 4px;\"><a href=\"#\" target=\"_blank\" style=\"color: #ff0000; text-decoration: none;\">Custom</a></td>"
+    },
+    {
+      "name": "badge: basic badge",
+      "input": "<badge color=\"#e74c3c\">New</badge>",
+      "expected": "<span class=\"badge\" style=\"display: inline-block; padding: 2px 8px; background-color: #e74c3c; color: #ffffff; border-radius: 12px; font-size: 12px; font-weight: bold; line-height: 1.4;\">New</span>"
+    },
+    {
+      "name": "badge: with custom text color",
+      "input": "<badge color=\"#f0f0f0\" text-color=\"#333333\">Sale</badge>",
+      "expected": "<span class=\"badge\" style=\"display: inline-block; padding: 2px 8px; background-color: #f0f0f0; color: #333333; border-radius: 12px; font-size: 12px; font-weight: bold; line-height: 1.4;\">Sale</span>"
+    },
+    {
+      "name": "alert: success alert",
+      "input": "<alert type=\"success\">Done!</alert>",
+      "expected": "<table role=\"presentation\" class=\"alert alert-success\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td style=\"padding: 12px 16px; background-color: #dff0d8; border-radius: 4px;\">Done!</td></tr></tbody></table>"
+    },
+    {
+      "name": "alert: warning alert",
+      "input": "<alert type=\"warning\">Caution!</alert>",
+      "expected": "<table role=\"presentation\" class=\"alert alert-warning\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td style=\"padding: 12px 16px; background-color: #fcf8e3; border-radius: 4px;\">Caution!</td></tr></tbody></table>"
+    },
+    {
+      "name": "alert: error alert",
+      "input": "<alert type=\"error\">Failed!</alert>",
+      "expected": "<table role=\"presentation\" class=\"alert alert-error\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td style=\"padding: 12px 16px; background-color: #f2dede; border-radius: 4px;\">Failed!</td></tr></tbody></table>"
+    },
+    {
+      "name": "alert: info alert (default)",
+      "input": "<alert type=\"info\">Note</alert>",
+      "expected": "<table role=\"presentation\" class=\"alert alert-info\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td style=\"padding: 12px 16px; background-color: #d9edf7; border-radius: 4px;\">Note</td></tr></tbody></table>"
+    },
+    {
+      "name": "blockquote: with citation",
+      "input": "<blockquote cite=\"Author\">Some quote</blockquote>",
+      "expected": "<table role=\"presentation\" class=\"blockquote\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-left: 4px solid #cccccc;\"><tbody><tr><td style=\"padding: 0 0 0 16px; font-style: italic;\">Some quote</td></tr><tr><td style=\"padding: 8px 0 0 16px; font-size: 14px; color: #999999;\">&mdash; Author</td></tr></tbody></table>"
+    },
+    {
+      "name": "blockquote: without citation",
+      "input": "<blockquote>Some quote</blockquote>",
+      "expected": "<table role=\"presentation\" class=\"blockquote\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-left: 4px solid #cccccc;\"><tbody><tr><td style=\"padding: 0 0 0 16px; font-style: italic;\">Some quote</td></tr></tbody></table>"
+    },
+    {
+      "name": "blockquote: with custom color",
+      "input": "<blockquote color=\"#3498db\">Styled quote</blockquote>",
+      "expected": "<table role=\"presentation\" class=\"blockquote\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-left: 4px solid #3498db;\"><tbody><tr><td style=\"padding: 0 0 0 16px; font-style: italic;\">Styled quote</td></tr></tbody></table>"
+    },
+    {
+      "name": "card: with image and title",
+      "input": "<card title=\"My Card\" image=\"photo.jpg\">Body text</card>",
+      "expected": "<table role=\"presentation\" class=\"card\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border: 1px solid #e0e0e0; border-radius: 4px; overflow: hidden;\"><tbody><tr><td class=\"card-image\"><img src=\"photo.jpg\" alt=\"\" width=\"100%\" style=\"display: block; border: 0;\"></td></tr><tr><td class=\"card-title\" style=\"padding: 16px 16px 0 16px; font-weight: bold; font-size: 18px;\">My Card</td></tr><tr><td class=\"card-body\" style=\"padding: 16px;\">Body text</td></tr></tbody></table>"
+    },
+    {
+      "name": "card: body only",
+      "input": "<card>Body text</card>",
+      "expected": "<table role=\"presentation\" class=\"card\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border: 1px solid #e0e0e0; border-radius: 4px; overflow: hidden;\"><tbody><tr><td class=\"card-body\" style=\"padding: 16px;\">Body text</td></tr></tbody></table>"
+    },
+    {
+      "name": "accordion: with items",
+      "input": "<accordion><accordion-item title=\"Section 1\">Content 1</accordion-item></accordion>",
+      "expected": "<table role=\"presentation\" class=\"accordion\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr class=\"accordion-item\"><td><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td class=\"accordion-title\" style=\"padding: 10px 16px; background-color: #f4f4f4; font-weight: bold; cursor: pointer;\">Section 1</td></tr><tr><td class=\"accordion-content\" style=\"padding: 16px;\">Content 1</td></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "accordion: multiple items",
+      "input": "<accordion><accordion-item title=\"FAQ 1\">Answer 1</accordion-item><accordion-item title=\"FAQ 2\">Answer 2</accordion-item><accordion-item title=\"FAQ 3\">Answer 3</accordion-item></accordion>",
+      "expected": "<table role=\"presentation\" class=\"accordion\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr class=\"accordion-item\"><td><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td class=\"accordion-title\" style=\"padding: 10px 16px; background-color: #f4f4f4; font-weight: bold; cursor: pointer;\">FAQ 1</td></tr><tr><td class=\"accordion-content\" style=\"padding: 16px;\">Answer 1</td></tr></tbody></table></td></tr><tr class=\"accordion-item\"><td><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td class=\"accordion-title\" style=\"padding: 10px 16px; background-color: #f4f4f4; font-weight: bold; cursor: pointer;\">FAQ 2</td></tr><tr><td class=\"accordion-content\" style=\"padding: 16px;\">Answer 2</td></tr></tbody></table></td></tr><tr class=\"accordion-item\"><td><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td class=\"accordion-title\" style=\"padding: 10px 16px; background-color: #f4f4f4; font-weight: bold; cursor: pointer;\">FAQ 3</td></tr><tr><td class=\"accordion-content\" style=\"padding: 16px;\">Answer 3</td></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "hero: with classes",
+      "input": "<hero background=\"bg.jpg\" width=\"600\" height=\"300\" class=\"dark\"><h1>Title</h1></hero>",
+      "expected": "<!--[if mso]>\n<v:rect xmlns:v=\"urn:schemas-microsoft-com:vml\" fill=\"true\" stroke=\"false\" style=\"width:600px;height:300px;\">\n<v:fill type=\"frame\" src=\"bg.jpg\" />\n<v:textbox style=\"mso-fit-shape-to-text:true\" inset=\"0,0,0,0\">\n<![endif]-->\n<table role=\"presentation\" class=\"hero dark\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-image: url('bg.jpg'); background-size: cover; background-position: center center; background-repeat: no-repeat; width: 600px;\"><tbody><tr><td style=\"padding: 0;\"><h1>Title</h1></td></tr></tbody></table>\n<!--[if mso]>\n</v:textbox>\n</v:rect>\n<![endif]-->"
+    },
+    {
+      "name": "hero: default width and height",
+      "input": "<hero background=\"bg.jpg\"><p>Content</p></hero>",
+      "expected": "<!--[if mso]>\n<v:rect xmlns:v=\"urn:schemas-microsoft-com:vml\" fill=\"true\" stroke=\"false\" style=\"width:600px;height:400px;\">\n<v:fill type=\"frame\" src=\"bg.jpg\" />\n<v:textbox style=\"mso-fit-shape-to-text:true\" inset=\"0,0,0,0\">\n<![endif]-->\n<table role=\"presentation\" class=\"hero\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-image: url('bg.jpg'); background-size: cover; background-position: center center; background-repeat: no-repeat; width: 600px;\"><tbody><tr><td style=\"padding: 0;\"><p>Content</p></td></tr></tbody></table>\n<!--[if mso]>\n</v:textbox>\n</v:rect>\n<![endif]-->"
+    },
+    {
+      "name": "social: multiple social-link children",
+      "input": "<social align=\"center\"><social-link platform=\"facebook\" href=\"https://fb.com\">Facebook</social-link><social-link platform=\"twitter\" href=\"https://twitter.com\">Twitter</social-link><social-link platform=\"instagram\" href=\"https://ig.com\">Instagram</social-link></social>",
+      "expected": "<table role=\"presentation\" class=\"social\" align=\"center\"><tbody><tr><td><table role=\"presentation\" align=\"center\"><tbody><tr><td class=\"social-link facebook\" style=\"padding: 0 4px;\"><a href=\"https://fb.com\" target=\"_blank\" style=\"color: #3b5998; text-decoration: none;\">Facebook</a></td><td class=\"social-link twitter\" style=\"padding: 0 4px;\"><a href=\"https://twitter.com\" target=\"_blank\" style=\"color: #1da1f2; text-decoration: none;\">Twitter</a></td><td class=\"social-link instagram\" style=\"padding: 0 4px;\"><a href=\"https://ig.com\" target=\"_blank\" style=\"color: #e1306c; text-decoration: none;\">Instagram</a></td></tr></tbody></table></td></tr></tbody></table>"
+    },
+    {
+      "name": "social-link: with icon image",
+      "input": "<social-link platform=\"facebook\" href=\"https://fb.com\" icon=\"https://cdn.example.com/fb.png\">Facebook</social-link>",
+      "expected": "<td class=\"social-link facebook\" style=\"padding: 0 4px;\"><a href=\"https://fb.com\" target=\"_blank\" style=\"color: #3b5998; text-decoration: none;\"><img src=\"https://cdn.example.com/fb.png\" alt=\"facebook\" width=\"24\" height=\"24\" style=\"display: block; border: 0;\">Facebook</a></td>"
+    },
+    {
+      "name": "card: with href links image",
+      "input": "<card title=\"Click Me\" image=\"photo.jpg\" href=\"https://example.com\">Body</card>",
+      "expected": "<table role=\"presentation\" class=\"card\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border: 1px solid #e0e0e0; border-radius: 4px; overflow: hidden;\"><tbody><tr><td class=\"card-image\"><a href=\"https://example.com\" target=\"_blank\"><img src=\"photo.jpg\" alt=\"\" width=\"100%\" style=\"display: block; border: 0;\"></a></td></tr><tr><td class=\"card-title\" style=\"padding: 16px 16px 0 16px; font-weight: bold; font-size: 18px;\">Click Me</td></tr><tr><td class=\"card-body\" style=\"padding: 16px;\">Body</td></tr></tbody></table>"
+    },
+    {
+      "name": "card: title only",
+      "input": "<card title=\"Just a Title\"></card>",
+      "expected": "<table role=\"presentation\" class=\"card\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border: 1px solid #e0e0e0; border-radius: 4px; overflow: hidden;\"><tbody><tr><td class=\"card-title\" style=\"padding: 16px 16px 0 16px; font-weight: bold; font-size: 18px;\">Just a Title</td></tr></tbody></table>"
+    },
+    {
+      "name": "alert: with HTML content",
+      "input": "<alert type=\"error\"><strong>Error:</strong> Something went wrong</alert>",
+      "expected": "<table role=\"presentation\" class=\"alert alert-error\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td style=\"padding: 12px 16px; background-color: #f2dede; border-radius: 4px;\"><strong>Error:</strong> Something went wrong</td></tr></tbody></table>"
+    },
+    {
+      "name": "alert: with custom color override",
+      "input": "<alert type=\"info\" color=\"#abcdef\">Custom colored</alert>",
+      "expected": "<table role=\"presentation\" class=\"alert alert-info\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td style=\"padding: 12px 16px; background-color: #abcdef; border-radius: 4px;\">Custom colored</td></tr></tbody></table>"
+    },
+    {
+      "name": "badge: default color",
+      "input": "<badge>Default</badge>",
+      "expected": "<span class=\"badge\" style=\"display: inline-block; padding: 2px 8px; background-color: #333333; color: #ffffff; border-radius: 12px; font-size: 12px; font-weight: bold; line-height: 1.4;\">Default</span>"
+    },
+    {
+      "name": "badge: with class",
+      "input": "<badge color=\"#27ae60\" class=\"status\">Active</badge>",
+      "expected": "<span class=\"badge status\" style=\"display: inline-block; padding: 2px 8px; background-color: #27ae60; color: #ffffff; border-radius: 12px; font-size: 12px; font-weight: bold; line-height: 1.4;\">Active</span>"
+    },
+    {
+      "name": "blockquote: with HTML content",
+      "input": "<blockquote cite=\"Shakespeare\"><em>To be or not to be</em>, that is the question.</blockquote>",
+      "expected": "<table role=\"presentation\" class=\"blockquote\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-left: 4px solid #cccccc;\"><tbody><tr><td style=\"padding: 0 0 0 16px; font-style: italic;\"><em>To be or not to be</em>, that is the question.</td></tr><tr><td style=\"padding: 8px 0 0 16px; font-size: 14px; color: #999999;\">&mdash; Shakespeare</td></tr></tbody></table>"
+    },
+    {
+      "name": "preview: with HTML entities",
+      "input": "<preview>50% off &amp; free shipping!</preview>",
+      "expected": "<div style=\"display: none; max-height: 0; overflow: hidden; mso-hide: all;\">50% off &amp; free shipping!</div><div style=\"display: none; max-height: 0; overflow: hidden; mso-hide: all;\">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>"
+    },
+    {
+      "name": "video: default width",
+      "input": "<video src=\"clip.mp4\" poster=\"thumb.jpg\"></video>",
+      "expected": "<a href=\"clip.mp4\" target=\"_blank\" style=\"text-decoration: none;\"><video width=\"600\" autoplay muted loop playsinline poster=\"thumb.jpg\" style=\"max-width: 100%; display: block;\"><source src=\"clip.mp4\" type=\"video/mp4\"><img src=\"thumb.jpg\" alt=\"Video\" width=\"600\" style=\"width: 600px; max-width: 100%; display: block;\"></video></a>"
+    },
+    {
+      "name": "alert: data attribute passthrough",
+      "input": "<alert type=\"info\" data-testid=\"my-alert\">Test</alert>",
+      "expected": "<table role=\"presentation\" data-testid=\"my-alert\" class=\"alert alert-info\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr><td style=\"padding: 12px 16px; background-color: #d9edf7; border-radius: 4px;\">Test</td></tr></tbody></table>"
+    },
+    {
+      "name": "card: data attribute passthrough",
+      "input": "<card data-id=\"123\" title=\"Test\">Content</card>",
+      "expected": "<table role=\"presentation\" data-id=\"123\" class=\"card\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border: 1px solid #e0e0e0; border-radius: 4px; overflow: hidden;\"><tbody><tr><td class=\"card-title\" style=\"padding: 16px 16px 0 16px; font-weight: bold; font-size: 18px;\">Test</td></tr><tr><td class=\"card-body\" style=\"padding: 16px;\">Content</td></tr></tbody></table>"
+    }
+  ]
+}

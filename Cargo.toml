@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "crates/inky-core",
+    "crates/inky-cli",
+    "crates/inky-wasm",
+    "crates/inky-ffi",
+]
+resolver = "2"

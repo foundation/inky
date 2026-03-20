@@ -1,0 +1,23 @@
+[package]
+name = "inky-core"
+version = "2.0.0"
+edition = "2021"
+description = "Inky — convert simple HTML into email-safe table markup"
+license = "MIT"
+
+[features]
+default = []
+css-inlining = ["css-inline"]
+templating = ["minijinja", "serde_json"]
+
+[dependencies]
+scraper = "0.22"
+ego-tree = "0.10"
+regex = "1"
+css-inline = { version = "0.20", default-features = false, optional = true }
+minijinja = { version = "2", optional = true }
+serde_json = { version = "1", optional = true }
+
+[dev-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

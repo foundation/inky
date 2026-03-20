@@ -1,0 +1,58 @@
+// Inky Email Framework
+// Divider & Image Components
+// Licensed under MIT Open Source
+@use '../settings' as *;
+
+////
+/// @group divider
+////
+
+// Divider settings
+$divider-border: 1px solid $medium-gray !default;
+$divider-margin: 20px auto !default;
+
+@mixin divider-styles {
+  width: 100%;
+
+  th {
+    padding: 0;
+    height: 0;
+    font-size: 0;
+    line-height: 0;
+    border-top: $divider-border;
+    margin: $divider-margin;
+    Margin: $divider-margin;
+  }
+
+  &.dotted th {
+    border-top-style: dotted;
+  }
+
+  &.dashed th {
+    border-top-style: dashed;
+  }
+}
+
+table.divider {
+  @include divider-styles;
+}
+
+// Legacy h-line support (same styles)
+table.h-line {
+  @include divider-styles;
+}
+
+////
+/// @group image
+////
+
+// Responsive image defaults
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+img.float-center {
+  display: block;
+  margin: 0 auto;
+}

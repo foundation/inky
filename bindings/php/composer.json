@@ -1,0 +1,21 @@
+{
+    "name": "foundation/inky",
+    "description": "Transform email templates into email-safe HTML — powered by Rust",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["email", "html", "inky", "foundation", "responsive"],
+    "require": {
+        "php": ">=8.1"
+    },
+    "suggest": {
+        "ext-ffi": "Required for FFI driver (alternative to the inky PHP extension)"
+    },
+    "autoload": {
+        "psr-4": {
+            "Inky\\": "src/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

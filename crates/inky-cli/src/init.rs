@@ -1,0 +1,249 @@
+use colored::Colorize;
+use std::fs;
+use std::path::PathBuf;
+use std::process;
+
+pub fn cmd_init(name: Option<String>) {
+    let project_dir = match &name {
+        Some(n) => PathBuf::from(n),
+        None => std::env::current_dir().unwrap_or_else(|e| {
+            eprintln!(
+                "{} Could not determine current directory: {}",
+                "error:".red().bold(),
+                e
+            );
+            process::exit(1);
+        }),
+    };
+
+    // If a name was given, check the directory doesn't already exist with content
+    if name.is_some() && project_dir.exists() {
+        let has_content = fs::read_dir(&project_dir)
+            .map(|mut entries| entries.next().is_some())
+            .unwrap_or(false);
+        if has_content {
+            eprintln!(
+                "{} Directory '{}' already exists and is not empty",
+                "error:".red().bold(),
+                project_dir.display()
+            );
+            process::exit(1);
+        }
+    }
+
+    // Create directory structure
+    let dirs = [
+        "src/layouts",
+        "src/partials",
+        "src/components",
+        "src/styles",
+        "src/emails",
+        "data",
+        "dist",
+    ];
+
+    for dir in &dirs {
+        let full = project_dir.join(dir);
+        fs::create_dir_all(&full).unwrap_or_else(|e| {
+            eprintln!(
+                "{} Failed to create {}: {}",
+                "error:".red().bold(),
+                full.display(),
+                e
+            );
+            process::exit(1);
+        });
+    }
+
+    // Write files
+    let files: Vec<(&str, &str)> = vec![
+        ("inky.config.json", CONFIG_JSON),
+        ("src/layouts/default.html", LAYOUT_DEFAULT),
+        ("src/styles/theme.scss", STYLES_THEME),
+        ("src/partials/header.inky", PARTIAL_HEADER),
+        ("src/partials/footer.inky", PARTIAL_FOOTER),
+        ("src/components/cta.inky", COMPONENT_CTA),
+        ("src/emails/welcome.inky", EMAIL_WELCOME),
+        ("data/welcome.json", DATA_WELCOME),
+    ];
+
+    for (rel_path, content) in &files {
+        let full = project_dir.join(rel_path);
+        fs::write(&full, content).unwrap_or_else(|e| {
+            eprintln!(
+                "{} Failed to write {}: {}",
+                "error:".red().bold(),
+                full.display(),
+                e
+            );
+            process::exit(1);
+        });
+    }
+
+    // Print summary
+    let display_root = name.as_deref().unwrap_or(".");
+    eprintln!();
+    if name.is_some() {
+        print_created(&format!("{}/", display_root));
+    }
+    for (rel_path, _) in &files {
+        print_created(rel_path);
+    }
+
+    eprintln!();
+    eprintln!("  {}:", "Get started".bold());
+    if name.is_some() {
+        eprintln!("    cd {}", display_root);
+    }
+    eprintln!("    inky build");
+    eprintln!("    inky watch");
+    eprintln!();
+    eprintln!("  {}:", "Preview with sample data".bold());
+    eprintln!("    inky build --data data");
+    eprintln!();
+}
+
+fn print_created(path: &str) {
+    eprintln!("  {} {}", "created".green().bold(), path);
+}
+
+const CONFIG_JSON: &str = r#"{
+  "src": "src/emails",
+  "dist": "dist",
+  "columns": 12,
+  "components": "src/components"
+}
+"#;
+
+// Note: "data" is not included in the default config so merge tags
+// pass through untouched. Users can add "data": "data" to merge
+// per-template data, or use: inky build --data data
+
+const LAYOUT_DEFAULT: &str = r#"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>$title|$</title>
+  <link rel="stylesheet" href="../styles/theme.scss">
+  <!-- You can also use inline SCSS overrides instead of a linked file:
+  <style type="text/scss">
+  $primary-color: #1a73b5;
+  $global-font-family: Helvetica, Arial, sans-serif;
+  $global-width: 580px;
+  $body-background: #f3f3f3;
+  $container-background: #fefefe;
+  </style>
+  -->
+</head>
+<body>
+  <span class="preheader">$preheader|$</span>
+  <table class="body" data-made-with-inky>
+    <tr>
+      <td class="center" align="center" valign="top">
+        <center>
+          <!-- email content goes here -->
+          <yield>
+        </center>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"#;
+
+const STYLES_THEME: &str = r#"// Inky Theme
+// Uncomment and edit variables to customize your email styles.
+// See all available variables: https://github.com/foundation/inky/blob/develop/docs/styles.md
+
+// Colors
+// $primary-color: #1a73b5;
+// $secondary-color: #777777;
+// $success-color: #3adb76;
+// $warning-color: #ffae00;
+// $alert-color: #ec5840;
+
+// Layout
+// $global-width: 580px;
+// $global-gutter: 16px;
+// $body-background: #f3f3f3;
+// $container-background: #fefefe;
+
+// Typography
+// $body-font-family: Helvetica, Arial, sans-serif;
+// $global-font-size: 16px;
+// $global-font-color: #0a0a0a;
+// $header-font-family: $body-font-family;
+
+// Buttons
+// $button-background: $primary-color;
+// $button-color: #fefefe;
+// $button-font-weight: bold;
+// $button-radius: 3px;
+
+// Dark Mode
+// $dark-body-background: #1a1a1a;
+// $dark-container-background: #2d2d2d;
+// $dark-font-color: #f0f0f0;
+// $dark-link-color: #5ab5f7;
+"#;
+
+const PARTIAL_HEADER: &str = r#"<wrapper class="header">
+  <container>
+    <row>
+      <column sm="12" lg="12">
+        <img src="https://placehold.co/200x50?text=Logo" alt="Company logo" width="200">
+      </column>
+    </row>
+  </container>
+</wrapper>
+"#;
+
+const PARTIAL_FOOTER: &str = r##"<wrapper class="footer">
+  <container>
+    <row>
+      <column sm="12" lg="12">
+        <p class="text-center"><small>You're receiving this because you signed up. <a href="{{ unsubscribe_url }}">Unsubscribe</a></small></p>
+      </column>
+    </row>
+  </container>
+</wrapper>
+"##;
+
+const COMPONENT_CTA: &str = r#"<row>
+  <column sm="12" lg="12">
+    <center>
+      <button href="$href$" class="$color|primary$">$text|Learn More$</button>
+    </center>
+    <yield>
+  </column>
+</row>
+"#;
+
+const EMAIL_WELCOME: &str = r#"<layout src="../layouts/default.html" title="Welcome!" preheader="Thanks for signing up — here's how to get started.">
+<include src="../partials/header.inky">
+
+<container>
+  <row>
+    <column sm="12" lg="12">
+      <h1>Welcome, {{ user_name }}!</h1>
+      <p>Thanks for signing up. We're excited to have you on board.</p>
+    </column>
+  </row>
+
+  <!-- Custom component: resolves to src/components/cta.inky -->
+  <ink-cta href="{{ cta_url }}" text="Get Started">
+    <spacer height="16"></spacer>
+    <p class="text-center"><small>Questions? Just reply to this email.</small></p>
+  </ink-cta>
+</container>
+
+<include src="../partials/footer.inky">
+"#;
+
+const DATA_WELCOME: &str = r#"{
+  "user_name": "Alice",
+  "cta_url": "https://example.com/get-started",
+  "unsubscribe_url": "https://example.com/unsubscribe"
+}
+"#;

@@ -1,0 +1,89 @@
+{
+  "tests": [
+    {
+      "name": "migration: columns to column (plural to singular)",
+      "input": "<columns>Content</columns>",
+      "expected": "<column>Content</column>"
+    },
+    {
+      "name": "migration: columns with large/small to lg/sm",
+      "input": "<columns large=\"6\" small=\"12\">Content</columns>",
+      "expected": "<column lg=\"6\" sm=\"12\">Content</column>"
+    },
+    {
+      "name": "migration: h-line to divider",
+      "input": "<h-line></h-line>",
+      "expected": "<divider></divider>"
+    },
+    {
+      "name": "migration: h-line with class",
+      "input": "<h-line class=\"dotted\"></h-line>",
+      "expected": "<divider class=\"dotted\"></divider>"
+    },
+    {
+      "name": "migration: spacer size to height",
+      "input": "<spacer size=\"16\"></spacer>",
+      "expected": "<spacer height=\"16\"></spacer>"
+    },
+    {
+      "name": "migration: spacer size-sm to sm",
+      "input": "<spacer size-sm=\"10\"></spacer>",
+      "expected": "<spacer sm=\"10\"></spacer>"
+    },
+    {
+      "name": "migration: spacer size-lg to lg",
+      "input": "<spacer size-lg=\"20\"></spacer>",
+      "expected": "<spacer lg=\"20\"></spacer>"
+    },
+    {
+      "name": "migration: spacer size-sm and size-lg combined",
+      "input": "<spacer size-sm=\"10\" size-lg=\"20\"></spacer>",
+      "expected": "<spacer sm=\"10\" lg=\"20\"></spacer>"
+    },
+    {
+      "name": "migration: button class small to size attribute",
+      "input": "<button class=\"small\" href=\"#\">Click</button>",
+      "expected": "<button size=\"small\" href=\"#\">Click</button>"
+    },
+    {
+      "name": "migration: button class alert to color attribute",
+      "input": "<button class=\"alert\" href=\"#\">Click</button>",
+      "expected": "<button color=\"alert\" href=\"#\">Click</button>"
+    },
+    {
+      "name": "migration: button with size and color classes",
+      "input": "<button class=\"small alert\" href=\"#\">Click</button>",
+      "expected": "<button size=\"small\" color=\"alert\" href=\"#\">Click</button>"
+    },
+    {
+      "name": "migration: button with expand class",
+      "input": "<button class=\"expand\" href=\"#\">Click</button>",
+      "expected": "<button expand href=\"#\">Click</button>"
+    },
+    {
+      "name": "migration: button with mixed known and custom classes",
+      "input": "<button class=\"small alert custom-btn\" href=\"#\">Click</button>",
+      "expected": "<button class=\"custom-btn\" size=\"small\" color=\"alert\" href=\"#\">Click</button>"
+    },
+    {
+      "name": "migration: callout class to color attribute",
+      "input": "<callout class=\"primary\">Message</callout>",
+      "expected": "<callout color=\"primary\">Message</callout>"
+    },
+    {
+      "name": "migration: menu vertical class to direction attribute",
+      "input": "<menu class=\"vertical\"></menu>",
+      "expected": "<menu direction=\"vertical\"></menu>"
+    },
+    {
+      "name": "migration: already v2 syntax (no changes)",
+      "input": "<column lg=\"6\" sm=\"12\">Content</column>",
+      "expected": "<column lg=\"6\" sm=\"12\">Content</column>"
+    },
+    {
+      "name": "migration: full template with multiple v1 components",
+      "input": "<container><row><columns large=\"6\" small=\"12\">Left</columns><columns large=\"6\" small=\"12\">Right</columns></row><spacer size=\"16\"></spacer><h-line></h-line><button class=\"small alert\" href=\"#\">Click</button></container>",
+      "expected": "<container><row><column lg=\"6\" sm=\"12\">Left</column><column lg=\"6\" sm=\"12\">Right</column></row><spacer height=\"16\"></spacer><divider></divider><button size=\"small\" color=\"alert\" href=\"#\">Click</button></container>"
+    }
+  ]
+}

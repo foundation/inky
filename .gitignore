@@ -1,5 +1,30 @@
+# Build output
+/build
+/dist
+
+# Rust
+/target
+**/*.rs.bk
+Cargo.lock
+
+# Node (for WASM/bindings)
 /node_modules
+/bindings/node/inky_wasm*
+/bindings/node/inky_wasm_bg*
+/bindings/node/.gitignore
+
+# OS
 *.DS_Store
-test/fixtures/_build
 *.swp
+Thumbs.db
+
+# IDE
+/.idea
+/.vscode
+*.iml
+
+# Claude
 /.claude
+
+# Legacy
+test/fixtures/_build

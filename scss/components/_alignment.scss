@@ -1,0 +1,105 @@
+// Inky Email Framework
+// get.foundation/inky/
+// Licensed under MIT Open Source
+@use '../settings' as *;
+
+////
+/// @group alignment
+////
+
+table,
+th,
+td,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span {
+  &.text-center {
+    text-align: center;
+  }
+
+  &.text-left {
+    text-align: left;
+  }
+
+  &.text-right {
+    text-align: right;
+  }
+}
+
+span.text-center {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+@media only screen and (max-width: #{$global-breakpoint}) {
+  .small-float-center {
+    margin: 0 auto !important;
+    float: none !important;
+    text-align: center !important;
+  }
+
+  .small-text-center {
+    text-align: center !important;
+  }
+
+  .small-text-left {
+    text-align: left !important;
+  }
+
+  .small-text-right {
+    text-align: right !important;
+  }
+}
+
+img.float-left {
+  float: left;
+  text-align: left;
+}
+
+img.float-right {
+  float: right;
+  text-align: right;
+}
+
+img.float-center,
+img.text-center {
+  margin: 0 auto;
+  Margin: 0 auto;
+  float: none;
+  text-align: center;
+}
+
+table,
+td,
+th {
+  &.float-center {
+    margin: 0 auto;
+    Margin: 0 auto;
+    float: none;
+    text-align: center;
+  }
+}
+
+td.columns,
+td.column,
+th.columns,
+th.column {
+  &[valign="bottom"] {
+    vertical-align: bottom;
+  }
+}
+
+td.columns,
+td.column,
+th.columns,
+th.column {
+  &[valign="middle"] {
+    vertical-align: middle;
+  }
+}

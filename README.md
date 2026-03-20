@@ -1,143 +1,150 @@
 # Inky
 
-[![npm version](https://badge.fury.io/js/inky.svg)](https://badge.fury.io/js/inky)
+> **Pre-release:** v2 is not yet published. To test the CLI, build from source:
+>
+> ```bash
+> # Requires Rust — https://rustup.rs
+> git clone https://github.com/foundation/inky.git
+> cd inky
+> git checkout feature/2.0-rust
+> cargo build -p inky-cli --release
+>
+> # Copy the binary somewhere on your PATH
+> cp target/release/inky /usr/local/bin/
+> ```
+>
+> Then run `inky --version` to verify. Report issues on the `feature/2.0-rust` branch.
 
-Inky is an HTML-based templating language that converts simple HTML into complex, responsive email-ready HTML. Designed for [Foundation for Emails](https://get.foundation/emails).
+Inky is a complete email framework that converts simple HTML into complex, responsive email-ready HTML. It includes a templating engine, built-in responsive CSS, CSS inlining, validation, and a CLI toolchain.
+
+Written in Rust. Distributed as a CLI binary, WASM module, native shared library, and Rust crate — with official bindings for Node.js, PHP, Python, Ruby, and Go.
+
+> Inky was formerly known as "Foundation for Emails." Starting with v2, everything is unified under the Inky brand.
 
 Give Inky simple HTML like this:
 
 ```html
-<row>
-  <columns large="6"></columns>
-  <columns large="6"></columns>
-</row>
+<container>
+  <row>
+    <column lg="6">Left</column>
+    <column lg="6">Right</column>
+  </row>
+</container>
 ```
 
-And get complicated, but battle-tested, email-ready HTML like this:
+And get email-ready HTML like this:
 
 ```html
-<table class="row">
-  <tbody>
-    <tr>
-      <th class="small-12 large-6 columns first">
-        <table>
-          <tr>
-            <th class="expander"></th>
-          </tr>
-        </table>
-      </th>
-      <th class="small-12 large-6 columns first">
-        <table>
-          <tr>
-            <th class="expander"></th>
-          </tr>
-        </table>
-      </th>
-    </tr>
-  </tbody>
+<table role="presentation" align="center" class="container">
+  <tbody><tr><td>
+    <table role="presentation" class="row">
+      <tbody><tr>
+        <th class="small-12 large-6 columns first">
+          <table role="presentation"><tbody><tr><th>Left</th></tr></tbody></table>
+        </th>
+        <th class="small-12 large-6 columns last">
+          <table role="presentation"><tbody><tr><th>Right</th></tr></tbody></table>
+        </th>
+      </tr></tbody>
+    </table>
+  </td></tr></tbody>
 </table>
 ```
 
-## Installation
+## Install
 
 ```bash
-npm install inky --save-dev
+# Homebrew
+brew tap foundation/inky && brew install inky
+
+# Cargo
+cargo install inky-cli
+
+# npm (WASM)
+npm install inky-email
 ```
 
-## Usage
+## Quick Start
 
-Inky can be used standalone, as a Gulp plugin, or with a CLI. You can also access the `Inky` parser class directly.
+```bash
+# Scaffold a new project
+inky init my-email
+cd my-email
 
-### Standalone
+# Build
+inky build
 
-```js
-var inky = require('inky');
-
-inky({
-  src: 'src/pages/**/*.html',
-  dest: 'dist'
-}, function() {
-  console.log('Done parsing.');
-});
+# Watch for changes
+inky watch
 ```
 
-### With Gulp
+## What's New in v2
 
-```js
-var inky = require('inky')
+- **Rust rewrite** — fast, single binary, cross-platform
+- **Modern syntax** — attributes over classes (`size="small"` instead of `class="small"`)
+- **27 components** — layout, buttons, cards, alerts, hero sections, social links, video, and more
+- **CSS inlining** — built-in, enabled by default
+- **SCSS framework** — responsive email styles with per-template variable overrides
+- **Layouts & includes** — `<layout>`, `<include>`, custom `<ink-*>` components, and template variables
+- **Validation** — catches missing alt text, Gmail clipping risks, Outlook issues
+- **Data merging** — optional Jinja2-compatible data merge via MiniJinja (`--data data.json`)
+- **Hybrid output** — `--hybrid` mode emits `<div>` layout with Outlook MSO ghost table fallbacks
+- **Bulletproof buttons** — VML `<v:roundrect>` fallbacks for styled buttons in Outlook
+- **Live preview** — `inky serve` starts a local dev server with auto-reload
+- **Template friendly** — auto-preserves ERB, Jinja2, Handlebars, and other merge tag syntax
+- **Plain text generation** — auto-generate `.txt` multipart email version (`--plain-text`)
+- **Spam checker** — `inky spam-check` detects common spam triggers
+- **22 validation rules** — links, accessibility, rendering quirks, Gmail clipping, spam detection
+- **Per-template data** — `--data-dir` auto-pairs JSON data files with templates
+- **Migration tool** — `inky migrate` converts v1 syntax to v2 automatically
+- **Language bindings** — Node.js, PHP, Python, Ruby, Go
 
-function parse() {
-  gulp.src('src/pages/**/*.html')
-    .pipe(inky())
-    .pipe(gulp.dest('dist'));
-}
+## Documentation
+
+- **[Getting Started](docs/getting-started.md)** — Installation, CLI usage, first template
+- **[Component Reference](docs/components.md)** — All 27 components with examples
+- **[Style Reference](docs/styles.md)** — SCSS variables for colors, typography, layout, and more
+- **[Email Development Guide](docs/email-guide.md)** — CSS support, Outlook quirks, images, testing, and best practices
+- **[Email Client Compatibility](docs/compatibility.md)** — Support matrix across desktop, webmail, and mobile
+- **[Data Merging](docs/data-merging.md)** — Merge JSON data into templates
+- **[Hybrid Output](docs/hybrid-output.md)** — `<div>` layout with Outlook fallbacks
+- **[Migration Guide](docs/migration.md)** — Upgrading from v1 to v2
+- **[Language Bindings](docs/bindings.md)** — Node.js, PHP, Python, Ruby, Go
+- **[Troubleshooting](docs/troubleshooting.md)** — Common issues and how to fix them
+
+## Examples
+
+| Language | Repository |
+|----------|------------|
+| Node.js | [inky-example-node](https://github.com/foundation/inky-example-node) |
+| PHP | [inky-example-php](https://github.com/foundation/inky-example-php) |
+| Python | [inky-example-python](https://github.com/foundation/inky-example-python) |
+| Ruby | [inky-example-ruby](https://github.com/foundation/inky-example-ruby) |
+| Go | [inky-example-go](https://github.com/foundation/inky-example-go) |
+
+## Building from Source
+
+```bash
+git clone https://github.com/foundation/inky.git
+cd inky
+
+# Build the CLI
+cargo build -p inky-cli --release
+# Binary at: target/release/inky
+
+# Run tests
+cargo test --workspace
 ```
 
-### Command Line
+## Architecture
 
-Install [foundation-cli](https://github.com/foundation/foundation-cli) to get the `foundation` command.
+| Crate | Purpose | Output |
+|-------|---------|--------|
+| `inky-core` | Core transformation engine | Rust library |
+| `inky-cli` | Command-line tool | `inky` binary |
+| `inky-wasm` | Browser/Node.js bindings | `.wasm` module |
+| `inky-ffi` | PHP/Python/Ruby/Go bindings | `.so` / `.dylib` / `.dll` |
 
-## Plugin Settings
+## License
 
-- `src` (String): Glob of files to process. You don't need to supply this when using Inky with Gulp.
-- `dest` (String): Folder to output processed files to. You don't need to supply this when using Inky with Gulp.
-- `components` (Object): Tag names for custom components. See [custom components](#custom-components) below to learn more.
-- `columnCount` (Number): Column count for the grid. Make sure your Foundation for Emails project has the same column count in the Sass as well.
-- `cheerio` (Object): cheerio settings (for available options please refer to [cheerio project at github](https://github.com/cheeriojs/cheerio)).
-
-## Custom Components
-
-Inky simplifies the process of creating HTML emails by expanding out simple tags like `<row>` and `<column>` into full table syntax. The names of the tags can be changed with the `components` setting.
-
-Here are the names of the defaults:
-
-```js
-{
-  button: 'button',
-  row: 'row',
-  columns: 'columns',
-  container: 'container',
-  inky: 'inky',
-  blockGrid: 'block-grid',
-  menu: 'menu',
-  menuItem: 'item'
-}
-```
-
-## Raw HTML
-
-If you need to include raw html, you can wrap raw content in `<raw>` tags
-
-```html
-<raw>
-  <button></button>
-  <asdf></asdf>
-</raw>
-```
-
-This is a feature intended for advanced users. You will be responsible for ensuring all markup between `<raw>` tags is valid. All content after an opening `<raw>` tag will be inserted "As Is" until the next closing `</raw>` tag.
-
-This means that `<raw>` tags CANNOT be nested
-
-
-## Programmatic Use
-
-The Inky parser can be accessed directly for programmatic use. It takes in a [Cheerio](https://github.com/cheeriojs/cheerio) object of HTML, and gives you back a converted Cheerio object.
-
-```js
-var Inky = require('inky').Inky;
-var cheerio = require('cheerio');
-
-var options = {};
-var input = '<row></row>';
-
-// The same plugin settings are passed in the constructor
-var i = new Inky(options);
-var html = cheerio.load(input)
-
-// Now unleash the fury
-var convertedHtml = i.releaseTheKraken(html);
-
-// The return value is a Cheerio object. Get the string value with .html()
-convertedHtml.html();
-```
+MIT

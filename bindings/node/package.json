@@ -1,0 +1,13 @@
+{
+  "name": "inky-wasm",
+  "description": "WASM bindings for Inky",
+  "version": "2.0.0",
+  "license": "MIT",
+  "files": [
+    "inky_wasm_bg.wasm",
+    "inky_wasm.js",
+    "inky_wasm.d.ts"
+  ],
+  "main": "inky_wasm.js",
+  "types": "inky_wasm.d.ts"
+}
