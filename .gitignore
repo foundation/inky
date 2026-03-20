@@ -1,5 +1,3 @@
-.DS_Store
-
 # Build output
 /build
 /dist
@@ -16,7 +14,7 @@ Cargo.lock
 /bindings/node/.gitignore
 
 # OS
-*.DS_Store
+.DS_Store
 *.swp
 Thumbs.db
 
