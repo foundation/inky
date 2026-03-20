@@ -4,6 +4,8 @@ version = "2.0.0-beta.1"
 edition = "2021"
 description = "Inky — convert simple HTML into email-safe table markup"
 license = "MIT"
+repository = "https://github.com/foundation/inky"
+readme = "../../README.md"
 
 [features]
 default = []

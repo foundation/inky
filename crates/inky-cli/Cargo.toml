@@ -4,6 +4,8 @@ version = "2.0.0-beta.1"
 edition = "2021"
 description = "Inky CLI — transform, migrate, and validate email templates"
 license = "MIT"
+repository = "https://github.com/foundation/inky"
+readme = "../../README.md"
 include = ["src/**/*", "scss/**/*", "Cargo.toml"]
 
 [[bin]]
