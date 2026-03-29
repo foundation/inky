@@ -45,6 +45,11 @@ This creates:
 ```
 my-email/
 ├── inky.config.json
+├── AGENT.md
+├── CLAUDE.md → AGENT.md
+├── .cursorrules → AGENT.md
+├── .github/
+│   └── copilot-instructions.md → AGENT.md
 ├── src/
 │   ├── layouts/
 │   │   └── default.html
@@ -53,10 +58,16 @@ my-email/
 │   ├── partials/
 │   │   ├── header.inky
 │   │   └── footer.inky
+│   ├── components/
+│   │   └── cta.inky
 │   └── emails/
 │       └── welcome.inky
+├── data/
+│   └── welcome.json
 └── dist/
 ```
+
+`AGENT.md` contains project conventions and component syntax for AI coding assistants. The symlinks (`CLAUDE.md`, `.cursorrules`, `copilot-instructions.md`) ensure the instructions are auto-discovered by Claude Code, Cursor, and GitHub Copilot respectively.
 
 ### 2. Edit your template
 
@@ -124,6 +135,10 @@ inky build src/ -o dist/ --data data/
 
 # VML bulletproof buttons for Outlook
 inky build email.inky --bulletproof-buttons
+
+# JSON output (for AI agents and scripts)
+inky build email.inky --json
+echo '<button href="#">Hi</button>' | inky build --json
 ```
 
 ### `inky watch`
@@ -143,6 +158,13 @@ Check templates for common email issues.
 ```bash
 inky validate email.inky
 inky validate src/
+
+# Pipe from stdin
+echo '<img src="photo.jpg">' | inky validate
+
+# JSON output
+inky validate src/ --json
+echo '<img src="photo.jpg">' | inky validate --json
 ```
 
 | Rule | Severity | What it checks |
@@ -191,6 +213,13 @@ Check templates for common spam triggers.
 ```bash
 inky spam-check email.inky
 inky spam-check src/
+
+# Pipe from stdin
+echo '<p>FREE MONEY!!!</p>' | inky spam-check
+
+# JSON output
+inky spam-check src/ --json
+echo '<p>FREE MONEY!!!</p>' | inky spam-check --json
 ```
 
 Checks for ALL CAPS text, excessive exclamation marks, high image-to-text ratio, missing unsubscribe link, and common spam trigger phrases. Exit code `1` if any issues found.
@@ -376,6 +405,38 @@ Inky auto-detects and preserves common template syntaxes. No `<raw>` tags needed
 | `${expression}` | ES6 template literals |
 | `*\|MERGE_TAG\|*` | Mailchimp |
 | `%%variable%%` | Salesforce Marketing Cloud |
+
+## JSON Output
+
+The `build`, `validate`, and `spam-check` commands support `--json` for machine-readable output. This is useful for CI pipelines, editor integrations, and AI agents.
+
+```bash
+inky validate src/ --json
+```
+
+```json
+{
+  "files": [
+    {
+      "path": "src/emails/welcome.inky",
+      "diagnostics": [
+        {
+          "severity": "warning",
+          "rule": "missing-alt",
+          "message": "1 image(s) missing alt text"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "files": 1,
+    "errors": 0,
+    "warnings": 1
+  }
+}
+```
+
+For `build --json`, each file entry also includes an `html` field with the transformed output.
 
 ## Configuration File
 

@@ -7,6 +7,8 @@ use crate::Inky;
 
 /// Severity of a validation finding.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "serialize", serde(rename_all = "lowercase"))]
 pub enum Severity {
     Warning,
     Error,
@@ -14,6 +16,7 @@ pub enum Severity {
 
 /// A single validation finding.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct Diagnostic {
     pub severity: Severity,
     pub rule: &'static str,

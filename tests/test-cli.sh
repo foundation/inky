@@ -256,6 +256,106 @@ fi
 
 # --------------------------------------------------------------------------
 echo ""
+echo "=== Init AGENT.md + Symlinks Tests ==="
+# --------------------------------------------------------------------------
+
+assert_file_exists "init: AGENT.md created" "$TMPDIR/init-test/AGENT.md"
+
+# Check symlinks exist and point to AGENT.md
+if [[ -L "$TMPDIR/init-test/CLAUDE.md" ]]; then
+  TARGET=$(readlink "$TMPDIR/init-test/CLAUDE.md")
+  assert_contains "init: CLAUDE.md symlink target" "$TARGET" "AGENT.md"
+else
+  echo "  FAIL  init: CLAUDE.md is a symlink"
+  echo "        file is not a symlink"
+  FAILED=$((FAILED + 1))
+fi
+
+if [[ -L "$TMPDIR/init-test/.cursorrules" ]]; then
+  TARGET=$(readlink "$TMPDIR/init-test/.cursorrules")
+  assert_contains "init: .cursorrules symlink target" "$TARGET" "AGENT.md"
+else
+  echo "  FAIL  init: .cursorrules is a symlink"
+  echo "        file is not a symlink"
+  FAILED=$((FAILED + 1))
+fi
+
+if [[ -L "$TMPDIR/init-test/.github/copilot-instructions.md" ]]; then
+  TARGET=$(readlink "$TMPDIR/init-test/.github/copilot-instructions.md")
+  assert_contains "init: copilot-instructions.md symlink target" "$TARGET" "AGENT.md"
+else
+  echo "  FAIL  init: copilot-instructions.md is a symlink"
+  echo "        file is not a symlink"
+  FAILED=$((FAILED + 1))
+fi
+
+# Verify AGENT.md content
+CONTENT=$(cat "$TMPDIR/init-test/AGENT.md")
+assert_contains "init: AGENT.md has project info" "$CONTENT" "Inky Email Project"
+assert_contains "init: AGENT.md has commands" "$CONTENT" "inky build"
+
+# Verify symlinked files are readable (resolve correctly)
+CLAUDE_CONTENT=$(cat "$TMPDIR/init-test/CLAUDE.md")
+assert_contains "init: CLAUDE.md readable via symlink" "$CLAUDE_CONTENT" "Inky Email Project"
+
+# --------------------------------------------------------------------------
+echo ""
+echo "=== JSON Output Tests ==="
+# --------------------------------------------------------------------------
+
+# validate --json
+cat > "$TMPDIR/json-test.html" <<'HTML'
+<img src="logo.png">
+<p>No container</p>
+HTML
+
+OUTPUT=$($INKY validate --json "$TMPDIR/json-test.html" 2>/dev/null) || true
+assert_contains "validate --json: has files array" "$OUTPUT" '"files"'
+assert_contains "validate --json: has summary" "$OUTPUT" '"summary"'
+assert_contains "validate --json: has diagnostics" "$OUTPUT" '"diagnostics"'
+assert_contains "validate --json: severity is lowercase" "$OUTPUT" '"warning"'
+assert_contains "validate --json: has rule field" "$OUTPUT" '"rule"'
+assert_contains "validate --json: missing-alt in json" "$OUTPUT" "missing-alt"
+
+# build --json
+OUTPUT=$(echo '<container><row><column><p>Hello</p></column></row></container>' | $INKY build --json --no-inline-css 2>/dev/null)
+assert_contains "build --json: has html field" "$OUTPUT" '"html"'
+assert_contains "build --json: has files array" "$OUTPUT" '"files"'
+assert_contains "build --json: has summary" "$OUTPUT" '"summary"'
+assert_contains "build --json: html contains table" "$OUTPUT" "<table"
+
+# spam-check --json
+OUTPUT=$(echo '<p>FREE MONEY NOW!!!</p>' | $INKY spam-check --json 2>/dev/null) || true
+assert_contains "spam-check --json: has files array" "$OUTPUT" '"files"'
+assert_contains "spam-check --json: has diagnostics" "$OUTPUT" '"diagnostics"'
+assert_contains "spam-check --json: exclamation detected" "$OUTPUT" "spam-exclamation"
+
+# --------------------------------------------------------------------------
+echo ""
+echo "=== Stdin Support Tests ==="
+# --------------------------------------------------------------------------
+
+# validate from stdin
+OUTPUT=$(echo '<img src="logo.png"><p>test</p>' | $INKY validate 2>&1) || true
+assert_contains "validate stdin: missing-alt detected" "$OUTPUT" "missing-alt"
+assert_contains "validate stdin: path shows stdin" "$OUTPUT" "stdin"
+
+# validate from stdin with --json
+OUTPUT=$(echo '<img src="logo.png">' | $INKY validate --json 2>/dev/null) || true
+assert_contains "validate stdin --json: path is stdin" "$OUTPUT" '"stdin"'
+assert_contains "validate stdin --json: missing-alt" "$OUTPUT" "missing-alt"
+
+# spam-check from stdin
+OUTPUT=$(echo '<p>BUY NOW!!! FREE!!! ACT NOW!!!</p>' | $INKY spam-check 2>&1) || true
+assert_contains "spam-check stdin: exclamation detected" "$OUTPUT" "spam-exclamation"
+assert_contains "spam-check stdin: path shows stdin" "$OUTPUT" "stdin"
+
+# spam-check from stdin with --json
+OUTPUT=$(echo '<p>FREE!!! BUY NOW!!!</p>' | $INKY spam-check --json 2>/dev/null) || true
+assert_contains "spam-check stdin --json: path is stdin" "$OUTPUT" '"stdin"'
+
+# --------------------------------------------------------------------------
+echo ""
 echo "=== Results ==="
 echo "$PASSED passed, $FAILED failed"
 echo ""
