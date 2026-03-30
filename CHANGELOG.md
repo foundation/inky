@@ -2,6 +2,20 @@
 
 All notable changes to the Inky project will be documented in this file.
 
+## 2.0.0-beta.5
+
+### Fixed
+
+- **Media queries preserved in output.** CSS `@media` rules (responsive breakpoints, dark mode) were being silently dropped during CSS inlining. They are now correctly preserved in a `<style>` block.
+- **NPM package name.** The WASM crate has been renamed from `inky-wasm` to `inky` so that `wasm-pack build` generates the correct npm package name directly, eliminating the need for post-build patching.
+
+### Changed
+
+- **Minified CSS output.** Inline `style` attributes are now minified (no spaces after colons), and the framework SCSS compiles in compressed mode. This reduces email size and helps stay under Gmail's 102KB clipping limit.
+- **HTML comments stripped.** Regular HTML comments are removed from build output. MSO conditional comments (`<!--[if mso]>`) are preserved.
+- **Dead vendor prefixes removed.** Removed `-moz-box-sizing`, `-webkit-box-sizing`, `-ms-text-size-adjust`, `-moz-hyphens`, and `-ms-interpolation-mode` from the framework CSS. Kept `-webkit-text-size-adjust` and `-webkit-hyphens` which are still needed for iOS Mail.
+- **Code refactoring.** Major internal cleanup: split `validate.rs` into modules, extracted shared helpers, introduced `BuildContext` struct, replaced component dispatch with data-driven table, converted static regexes to `LazyLock`, and deduplicated ~500 lines across the CLI.
+
 ## 2.0.0-beta.4
 
 ### Changed
