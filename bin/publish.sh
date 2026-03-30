@@ -28,6 +28,51 @@ confirm() {
     [[ "$response" =~ ^[Yy]$ ]]
 }
 
+# Pre-flight: check credentials for all registries
+echo "==> Checking credentials..."
+PREFLIGHT_OK=true
+
+# crates.io: cargo checks ~/.cargo/credentials.toml or CARGO_REGISTRY_TOKEN
+if cargo login --help > /dev/null 2>&1 && [ -f ~/.cargo/credentials.toml ] || [ -n "$CARGO_REGISTRY_TOKEN" ]; then
+    echo "  crates.io: ok"
+else
+    echo "  crates.io: NOT CONFIGURED — run 'cargo login' or set CARGO_REGISTRY_TOKEN"
+    PREFLIGHT_OK=false
+fi
+
+# npm: check for auth token
+if npm whoami > /dev/null 2>&1; then
+    echo "  npm: ok ($(npm whoami))"
+else
+    echo "  npm: NOT CONFIGURED — run 'npm login'"
+    PREFLIGHT_OK=false
+fi
+
+# PyPI: check for twine and credentials (~/.pypirc or TWINE_USERNAME/TWINE_PASSWORD)
+if ! command -v twine > /dev/null 2>&1; then
+    echo "  PyPI: NOT CONFIGURED — twine not installed (pip install twine)"
+    PREFLIGHT_OK=false
+elif [ -f ~/.pypirc ] || [ -n "$TWINE_USERNAME" ] || [ -n "$TWINE_PASSWORD" ]; then
+    echo "  PyPI: ok"
+else
+    echo "  PyPI: NOT CONFIGURED — create ~/.pypirc or set TWINE_USERNAME/TWINE_PASSWORD"
+    PREFLIGHT_OK=false
+fi
+
+# RubyGems: check for credentials (~/.gem/credentials or GEM_HOST_API_KEY)
+if [ -f ~/.gem/credentials ] || [ -n "$GEM_HOST_API_KEY" ]; then
+    echo "  RubyGems: ok"
+else
+    echo "  RubyGems: NOT CONFIGURED — run 'gem signin' or set GEM_HOST_API_KEY"
+    PREFLIGHT_OK=false
+fi
+
+echo ""
+if [ "$PREFLIGHT_OK" = false ]; then
+    echo "Warning: Some registries are not configured. You can still skip them during publish."
+    echo ""
+fi
+
 PUBLISHED=()
 SKIPPED=()
 

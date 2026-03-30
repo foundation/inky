@@ -142,6 +142,21 @@ fi
 # Clean up
 rm -rf "$TMPDIR"
 
+# Tag inky-go module
+GO_DIR="$(cd "$(dirname "$0")"/../../inky-go 2>/dev/null && pwd)"
+if [ -d "$GO_DIR" ]; then
+    echo "==> Tagging inky-go $TAG..."
+    cd "$GO_DIR"
+    git tag -a "$TAG" -m "$TAG"
+    git push origin --tags
+    cd - > /dev/null
+    echo "==> inky-go $TAG tagged and pushed."
+    echo "==> Triggering pkg.go.dev indexing..."
+    curl -s "https://proxy.golang.org/github.com/foundation/inky-go/@v/${TAG}.info" > /dev/null 2>&1 || true
+else
+    echo "Warning: inky-go repo not found at ../inky-go — skipping Go module tag."
+fi
+
 # Publish to package registries
 echo ""
 read -r -p "==> Publish to package registries now? [y/N] " response
