@@ -14,14 +14,8 @@ const SCSS_FILES: &[(&str, &str)] = &[
         "settings/_settings.scss",
         include_str!("../scss/settings/_settings.scss"),
     ),
-    (
-        "util/_index.scss",
-        include_str!("../scss/util/_index.scss"),
-    ),
-    (
-        "util/_util.scss",
-        include_str!("../scss/util/_util.scss"),
-    ),
+    ("util/_index.scss", include_str!("../scss/util/_index.scss")),
+    ("util/_util.scss", include_str!("../scss/util/_util.scss")),
     ("_global.scss", include_str!("../scss/_global.scss")),
     (
         "components/_normalize.scss",
@@ -71,10 +65,7 @@ const SCSS_FILES: &[(&str, &str)] = &[
         "components/_dark-mode.scss",
         include_str!("../scss/components/_dark-mode.scss"),
     ),
-    (
-        "grid/_grid.scss",
-        include_str!("../scss/grid/_grid.scss"),
-    ),
+    ("grid/_grid.scss", include_str!("../scss/grid/_grid.scss")),
     (
         "grid/_block-grid.scss",
         include_str!("../scss/grid/_block-grid.scss"),
