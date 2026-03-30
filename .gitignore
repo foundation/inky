@@ -13,6 +13,13 @@ Cargo.lock
 /bindings/node/inky_wasm_bg*
 /bindings/node/.gitignore
 
+# Python
+/bindings/python/dist
+/bindings/python/src/*.egg-info
+
+# Ruby
+/bindings/ruby/*.gem
+
 # OS
 .DS_Store
 *.swp
