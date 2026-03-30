@@ -664,4 +664,255 @@ mod tests {
         let result = transform(input);
         assert!(result.contains("{% url 'home' %}"));
     }
+
+    // --- protect_merge_tags / restore_merge_tags ---
+
+    #[test]
+    fn test_protect_merge_tags_erb() {
+        let input = "Hello <%= name %> world";
+        let (tags, result) = protect_merge_tags(input);
+        assert_eq!(tags, vec!["<%= name %>"]);
+        assert_eq!(result, "Hello ###MERGE0### world");
+    }
+
+    #[test]
+    fn test_protect_merge_tags_multiple() {
+        let input = "<%= first %> and <% second %> and {% third %}";
+        let (tags, result) = protect_merge_tags(input);
+        assert_eq!(tags.len(), 3);
+        assert!(result.contains("###MERGE0###"));
+        assert!(result.contains("###MERGE1###"));
+        assert!(result.contains("###MERGE2###"));
+    }
+
+    #[test]
+    fn test_restore_merge_tags_roundtrip() {
+        let input = "Hello <%= name %>, your order is {% order_id %}.";
+        let (tags, protected) = protect_merge_tags(input);
+        let restored = restore_merge_tags(&protected, &tags);
+        assert_eq!(restored, input);
+    }
+
+    #[test]
+    fn test_protect_merge_tags_none() {
+        let input = "No merge tags here";
+        let (tags, result) = protect_merge_tags(input);
+        assert!(tags.is_empty());
+        assert_eq!(result, input);
+    }
+
+    // --- extract_raws / re_inject_raws ---
+
+    #[test]
+    fn test_extract_multiple_raws() {
+        let input = "a<raw>first</raw>b<raw>second</raw>c";
+        let (raws, result) = extract_raws(input);
+        assert_eq!(raws, vec!["first", "second"]);
+        assert!(result.contains("###RAW0###"));
+        assert!(result.contains("###RAW1###"));
+        let restored = re_inject_raws(&result, &raws);
+        assert!(restored.contains("first"));
+        assert!(restored.contains("second"));
+    }
+
+    #[test]
+    fn test_extract_raws_with_html_content() {
+        let input = "<raw><table><tr><td>Keep</td></tr></table></raw>";
+        let (raws, result) = extract_raws(input);
+        assert_eq!(raws.len(), 1);
+        assert!(raws[0].contains("<table>"));
+        assert!(!result.contains("<table>"));
+        let restored = re_inject_raws(&result, &raws);
+        assert!(restored.contains("<table><tr><td>Keep</td></tr></table>"));
+    }
+
+    // --- replace_first_tag ---
+
+    #[test]
+    fn test_replace_first_tag_simple() {
+        let html = "<button>Click</button>";
+        let result = replace_first_tag(html, "button", "REPLACED");
+        assert_eq!(result, "REPLACED");
+    }
+
+    #[test]
+    fn test_replace_first_tag_with_surrounding() {
+        let html = "before<button>Click</button>after";
+        let result = replace_first_tag(html, "button", "REPLACED");
+        assert_eq!(result, "beforeREPLACEDafter");
+    }
+
+    #[test]
+    fn test_replace_first_tag_nested() {
+        // Should replace the outermost tag, not be confused by nested same-name tags
+        let html = "<div><div>inner</div></div>trailing";
+        let result = replace_first_tag(html, "div", "REPLACED");
+        assert_eq!(result, "REPLACEDtrailing");
+    }
+
+    #[test]
+    fn test_replace_first_tag_self_closing() {
+        let html = "before<divider />after";
+        let result = replace_first_tag(html, "divider", "REPLACED");
+        assert_eq!(result, "beforeREPLACEDafter");
+    }
+
+    #[test]
+    fn test_replace_first_tag_with_attributes() {
+        let html = r#"before<button href="http://example.com" class="big">Click</button>after"#;
+        let result = replace_first_tag(html, "button", "REPLACED");
+        assert_eq!(result, "beforeREPLACEDafter");
+    }
+
+    #[test]
+    fn test_replace_first_tag_no_match() {
+        let html = "<div>content</div>";
+        let result = replace_first_tag(html, "button", "REPLACED");
+        assert_eq!(result, html);
+    }
+
+    #[test]
+    fn test_replace_first_tag_only_first() {
+        let html = "<spacer></spacer><spacer></spacer>";
+        let result = replace_first_tag(html, "spacer", "X");
+        assert_eq!(result, "X<spacer></spacer>");
+    }
+
+    // --- transform_all_columns ---
+
+    #[test]
+    fn test_transform_all_columns_single() {
+        let html = "<row><column>Content</column></row>";
+        let config = Config::default();
+        let result = transform_all_columns(html, &config, "column");
+        // Should transform the column into table markup
+        assert!(result.contains("class=\""));
+        assert!(result.contains("Content"));
+    }
+
+    #[test]
+    fn test_transform_all_columns_multiple_adjacent() {
+        let html = "<row><column>First</column><column>Second</column></row>";
+        let config = Config::default();
+        let result = transform_all_columns(html, &config, "column");
+        assert!(result.contains("First"));
+        assert!(result.contains("Second"));
+        // Both columns should be transformed (no raw <column> tags left)
+        assert!(!result.contains("<column>"));
+    }
+
+    #[test]
+    fn test_transform_all_columns_no_columns() {
+        let html = "<row><div>No columns</div></row>";
+        let config = Config::default();
+        let result = transform_all_columns(html, &config, "column");
+        assert_eq!(result, html);
+    }
+
+    // --- preserve_block_grid_tds / restore_block_grid_tds ---
+
+    #[test]
+    fn test_preserve_block_grid_tds() {
+        let html = "<block-grid><td>Item 1</td><td>Item 2</td></block-grid>";
+        let result = preserve_block_grid_tds(html, "block-grid");
+        assert!(result.contains("###BGTD###"));
+        assert!(result.contains("###/BGTD###"));
+        assert!(!result.contains("<td>"));
+    }
+
+    #[test]
+    fn test_restore_block_grid_tds() {
+        let html = "###BGTD###Item###/BGTD###";
+        let result = restore_block_grid_tds(html);
+        assert_eq!(result, "<td>Item</td>");
+    }
+
+    #[test]
+    fn test_block_grid_td_roundtrip() {
+        let html = "<block-grid><td>A</td><td>B</td></block-grid>";
+        let preserved = preserve_block_grid_tds(html, "block-grid");
+        let restored = restore_block_grid_tds(&preserved);
+        assert_eq!(restored, html);
+    }
+
+    // --- preprocess_image_tags ---
+
+    #[test]
+    fn test_preprocess_image_basic() {
+        let html = r#"<image src="photo.jpg" alt="A photo" width="600">"#;
+        let result = preprocess_image_tags(html);
+        assert!(result.contains("<img "));
+        assert!(result.contains(r#"src="photo.jpg""#));
+        assert!(result.contains(r#"alt="A photo""#));
+        assert!(result.contains(r#"width="600""#));
+    }
+
+    #[test]
+    fn test_preprocess_image_retina() {
+        let html = r#"<image src="photo.jpg" alt="A photo" width="600" retina>"#;
+        let result = preprocess_image_tags(html);
+        assert!(result.contains(r#"width="300""#));
+    }
+
+    #[test]
+    fn test_preprocess_image_with_class() {
+        let html = r#"<image src="photo.jpg" alt="" class="hero-img">"#;
+        let result = preprocess_image_tags(html);
+        assert!(result.contains(r#"class="hero-img""#));
+    }
+
+    #[test]
+    fn test_preprocess_image_no_width() {
+        let html = r#"<image src="photo.jpg" alt="test">"#;
+        let result = preprocess_image_tags(html);
+        assert!(result.contains(r#"style="max-width: 100%;""#));
+        assert!(!result.contains("width="));
+    }
+
+    // --- add_float_center_to_centered_menu_items ---
+
+    #[test]
+    fn test_float_center_added_to_menu_item_in_center() {
+        let html = r#"<center><th class="menu-item">Item</th></center>"#;
+        let result = add_float_center_to_centered_menu_items(html);
+        assert!(result.contains("menu-item float-center"));
+    }
+
+    #[test]
+    fn test_float_center_not_added_outside_center() {
+        let html = r#"<th class="menu-item">Item</th>"#;
+        let result = add_float_center_to_centered_menu_items(html);
+        assert!(!result.contains("float-center"));
+    }
+
+    // --- Full pipeline integration for columns ---
+
+    #[test]
+    fn test_full_transform_two_equal_columns() {
+        let input = "<row><column>Left</column><column>Right</column></row>";
+        let result = transform(input);
+        assert!(result.contains("Left"));
+        assert!(result.contains("Right"));
+        assert!(result.contains("small-12"));
+        assert!(result.contains("large-6"));
+    }
+
+    #[test]
+    fn test_full_transform_three_columns() {
+        let input = "<row><column>A</column><column>B</column><column>C</column></row>";
+        let result = transform(input);
+        assert!(result.contains("large-4"));
+        assert!(result.contains("A"));
+        assert!(result.contains("B"));
+        assert!(result.contains("C"));
+    }
+
+    #[test]
+    fn test_full_transform_column_with_sizes() {
+        let input = r#"<row><column sm="6" lg="8">Wide</column><column sm="6" lg="4">Narrow</column></row>"#;
+        let result = transform(input);
+        assert!(result.contains("small-6"));
+        assert!(result.contains("large-8"));
+        assert!(result.contains("large-4"));
+    }
 }

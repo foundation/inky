@@ -881,6 +881,60 @@ mod tests {
         Config::default()
     }
 
+    // --- v1 syntax detection ---
+
+    #[test]
+    fn test_v1_syntax_columns_plural() {
+        let html = "<columns>content</columns>";
+        let diags = check_v1_syntax(html);
+        assert!(diags.iter().any(|d| d.rule == "v1-syntax"));
+    }
+
+    #[test]
+    fn test_v1_syntax_h_line() {
+        let html = "<h-line></h-line>";
+        let diags = check_v1_syntax(html);
+        assert!(diags
+            .iter()
+            .any(|d| d.rule == "v1-syntax" && d.message.contains("h-line")));
+    }
+
+    #[test]
+    fn test_v1_syntax_large_attr() {
+        let html = r#"<column large="8">content</column>"#;
+        let diags = check_v1_syntax(html);
+        assert!(diags
+            .iter()
+            .any(|d| d.rule == "v1-syntax" && d.message.contains("large")));
+    }
+
+    #[test]
+    fn test_v1_syntax_small_attr() {
+        let html = r#"<column small="6">content</column>"#;
+        let diags = check_v1_syntax(html);
+        assert!(diags
+            .iter()
+            .any(|d| d.rule == "v1-syntax" && d.message.contains("small")));
+    }
+
+    #[test]
+    fn test_v1_syntax_spacer_size() {
+        let html = r#"<spacer size="20"></spacer>"#;
+        let diags = check_v1_syntax(html);
+        assert!(diags
+            .iter()
+            .any(|d| d.rule == "v1-syntax" && d.message.contains("size")));
+    }
+
+    #[test]
+    fn test_v2_syntax_no_warnings() {
+        let html = r#"<column sm="6" lg="8">content</column>"#;
+        let diags = check_v1_syntax(html);
+        assert!(diags.is_empty());
+    }
+
+    // --- Source-level checks ---
+
     #[test]
     fn test_missing_alt() {
         let html = r#"<container><img src="photo.jpg"></container>"#;
