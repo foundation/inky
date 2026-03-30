@@ -233,6 +233,12 @@ jobs:
         run: |
           tar xzf inky-wasm-nodejs.tar.gz
           cd node
+          # Add repository field required for npm provenance/OIDC
+          node -e "
+            const pkg = require('./package.json');
+            pkg.repository = { type: 'git', url: 'https://github.com/foundation/inky.git' };
+            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
           VERSION=$(node -p "require('./package.json').version")
           if echo "$VERSION" | grep -qE '(alpha|beta|rc|dev)'; then
             npm publish --access public --tag beta --provenance

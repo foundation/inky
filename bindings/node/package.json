@@ -9,5 +9,9 @@
     "inky_wasm.d.ts"
   ],
   "main": "inky_wasm.js",
-  "types": "inky_wasm.d.ts"
+  "types": "inky_wasm.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/foundation/inky.git"
+  }
 }
