@@ -225,10 +225,11 @@ pub fn compile_framework_scss(overrides: &[(String, String)]) -> Result<String, 
     let embedded_fs = EmbeddedFs::new(overrides);
     let entry_path = format!("{}/inky.scss", EMBEDDED_ROOT);
     let options = grass::Options::default()
-        .style(grass::OutputStyle::Expanded)
+        .style(grass::OutputStyle::Compressed)
         .fs(&embedded_fs);
 
-    grass::from_path(&entry_path, &options)
+    let css = grass::from_path(&entry_path, &options)?;
+    Ok(css.replace(" !important", "!important"))
 }
 
 /// Inject compiled CSS into HTML as a `<style>` block.

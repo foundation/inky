@@ -21,6 +21,6 @@
 // Sizing classes
 @for $i from 2 through $block-grid-max {
   .up-#{$i} td {
-    width: math.floor(math.div($global-width - $i * $block-grid-gutter, $i)) !important;
+    width: math.floor(math.div($global-width - $i * $block-grid-gutter, $i))!important;
   }
 }

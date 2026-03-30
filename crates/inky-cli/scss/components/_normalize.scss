@@ -11,15 +11,12 @@
 }
 
 body {
-  width: 100% !important;
+  width: 100%!important;
   min-width: 100%;
   -webkit-text-size-adjust: 100%;
-  -ms-text-size-adjust: 100%;
   margin: 0;
   Margin: 0;
   padding: 0;
-  -moz-box-sizing: border-box;
-  -webkit-box-sizing: border-box;
   box-sizing: border-box;
 }
 
@@ -41,14 +38,13 @@ body {
   margin: 0;
   Margin: 0;
   padding: 0;
-  width: 100% !important;
-  line-height: 100% !important;
+  width: 100%!important;
+  line-height: 100%!important;
 }
 
 img {
   outline: none;
   text-decoration: none;
-  -ms-interpolation-mode: bicubic;
   width: auto;
   max-width: 100%;
   clear: both;
@@ -71,11 +67,8 @@ table {
 td, th {
   word-wrap: break-word;
   -webkit-hyphens: auto;
-  -moz-hyphens: auto;
   hyphens: auto;
-  border-collapse: collapse !important;
-  -moz-box-sizing: border-box;
-  -webkit-box-sizing: border-box;
+  border-collapse: collapse!important;
   box-sizing: border-box;
 }
 
@@ -94,22 +87,22 @@ u + .body img + div,
 // Neutralize auto-detected links (dates, addresses, phone numbers)
 // Gmail
 .aBn {
-  border-bottom: 0 !important;
-  cursor: default !important;
-  color: inherit !important;
-  text-decoration: none !important;
-  font-size: inherit !important;
-  font-family: inherit !important;
-  font-weight: inherit !important;
-  line-height: inherit !important;
+  border-bottom: 0!important;
+  cursor: default!important;
+  color: inherit!important;
+  text-decoration: none!important;
+  font-size: inherit!important;
+  font-family: inherit!important;
+  font-weight: inherit!important;
+  line-height: inherit!important;
 }
 
 // iOS
 a[x-apple-data-detectors] {
-  color: inherit !important;
-  text-decoration: none !important;
-  font-size: inherit !important;
-  font-family: inherit !important;
-  font-weight: inherit !important;
-  line-height: inherit !important;
+  color: inherit!important;
+  text-decoration: none!important;
+  font-size: inherit!important;
+  font-family: inherit!important;
+  font-weight: inherit!important;
+  line-height: inherit!important;
 }

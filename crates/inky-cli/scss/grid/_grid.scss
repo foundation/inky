@@ -62,19 +62,19 @@ th.column {
   // Prevents Nested columns from double the padding
   .column.first,
   .columns.first {
-    padding-left: 0 !important;
+    padding-left: 0!important;
   }
 
   .column.last,
   .columns.last {
-    padding-right: 0 !important;
+    padding-right: 0!important;
   }
 
   .column,
   .columns {
     &:not([class*=large-offset]) {
-      padding-left: 0 !important;
-      padding-right: 0 !important;
+      padding-left: 0!important;
+      padding-right: 0!important;
     }
   }
 }
@@ -167,7 +167,7 @@ td.expander,
 th.expander {
   visibility: hidden;
   width: 0;
-  padding: 0 !important;
+  padding: 0!important;
 }
 
 // adds radius to container

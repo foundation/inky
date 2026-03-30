@@ -253,9 +253,9 @@ table.h-line {
 
 // preheader styles
 span.preheader {
-  display: none !important;
+  display: none!important;
   visibility: hidden;
-  mso-hide: all !important;
+  mso-hide: all!important;
   font-size: 1px;
   color: $body-background; // needs to match background color of it's container
   line-height: 1px;
@@ -270,12 +270,12 @@ span.preheader {
   // Wrapping in a media only screen to have inline-css respect the styling
   @media only screen {
     a[x-apple-data-detectors] {
-      color: inherit !important;
-      text-decoration: none !important;
-      font-size: inherit !important;
-      font-family: inherit !important;
-      font-weight: inherit !important;
-      line-height: inherit !important;
+      color: inherit!important;
+      text-decoration: none!important;
+      font-size: inherit!important;
+      font-family: inherit!important;
+      font-weight: inherit!important;
+      line-height: inherit!important;
     }
   }
 }

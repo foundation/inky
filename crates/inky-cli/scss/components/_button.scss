@@ -303,9 +303,9 @@ table.button.warning:hover {
 table.button.hollow {
   table td,
   &:hover table td {
-    border: none !important;
+    border: none!important;
     border-radius: 0;
-    background: transparent !important;
+    background: transparent!important;
   }
 
   table a {

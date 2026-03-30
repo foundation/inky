@@ -17,12 +17,12 @@
   line-height: 0;
 
   @media only screen and (max-width: #{$global-breakpoint}) {
-    display: block !important;
-    width: auto !important;
-    overflow: visible !important;
-    max-height: none !important;
-    font-size: inherit !important;
-    line-height: inherit !important;
+    display: block!important;
+    width: auto!important;
+    overflow: visible!important;
+    max-height: none!important;
+    font-size: inherit!important;
+    line-height: inherit!important;
   }
 }
 
@@ -33,21 +33,21 @@ table.body table.container .hide-for-large * {
 table.body table.container .hide-for-large,
 table.body table.container .row.hide-for-large {
   @media only screen and (max-width: #{$global-breakpoint}) {
-    display: table !important;
-    width: 100% !important;
+    display: table!important;
+    width: 100%!important;
   }
 }
 
 table.body table.container .callout-inner.hide-for-large {
   @media only screen and (max-width: #{$global-breakpoint}) {
-    display: table-cell !important;
-    width: 100% !important;
+    display: table-cell!important;
+    width: 100%!important;
   }
 }
 
 table.body table.container .show-for-large {
   @media only screen and (max-width: #{$global-breakpoint}) {
-    display: none !important;
+    display: none!important;
     width: 0;
     mso-hide: all; // hide selected elements in Outlook 2007-2013
     overflow: hidden;
@@ -61,7 +61,7 @@ table.body table.container .show-for-large {
 // }
 // in media query
 // img { 
-//   max-height: none !important; 
-//   width: auto !important; 
+//   max-height: none!important; 
+//   width: auto!important; 
 // }
 

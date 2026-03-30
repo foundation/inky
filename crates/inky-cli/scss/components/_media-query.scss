@@ -15,31 +15,29 @@
   }
 
   table.body center {
-    min-width: 0 !important;
+    min-width: 0!important;
   }
 
   table.body .container {
-    width: $global-width-small !important;
+    width: $global-width-small!important;
   }
 
   //If it supports border-box, why not? Am I right?
   //Also, by default pad that to the global-gutter variable
   table.body .columns,
   table.body .column {
-    height: auto !important;
-    -moz-box-sizing: border-box;
-    -webkit-box-sizing: border-box;
+    height: auto!important;
     box-sizing: border-box;
-    padding-left: $global-gutter-small !important;
-    padding-right: $global-gutter-small !important;
+    padding-left: $global-gutter-small!important;
+    padding-right: $global-gutter-small!important;
   }
 
   // Collpased columns have no gutter.
   .collapse {
     table.body & > tbody > tr > .columns,
     table.body & > tbody > tr > .column {
-      padding-left: 0 !important;
-      padding-right: 0 !important;
+      padding-left: 0!important;
+      padding-right: 0!important;
     }
   }
 
@@ -47,8 +45,8 @@
   @for $i from 1 through $grid-column-count {
     td.small-#{$i},
     th.small-#{$i} {
-      display: inline-block !important;
-      width: zf-grid-calc-pct($i, $grid-column-count) !important;
+      display: inline-block!important;
+      width: zf-grid-calc-pct($i, $grid-column-count)!important;
     }
   }
 
@@ -58,71 +56,71 @@
   .column td.small-#{$grid-column-count},
   .columns th.small-#{$grid-column-count},
   .column th.small-#{$grid-column-count} {
-    display: block !important;
-    width: 100% !important;
+    display: block!important;
+    width: 100%!important;
   }
 
   @for $i from 1 through ($grid-column-count - 1) {
     table.body td.small-offset-#{$i},
     table.body th.small-offset-#{$i} {
       //1.5 takes in effect a whole empty cell.
-      margin-left: zf-grid-calc-pct($i, $grid-column-count) !important;
-      Margin-left: zf-grid-calc-pct($i, $grid-column-count) !important;
+      margin-left: zf-grid-calc-pct($i, $grid-column-count)!important;
+      Margin-left: zf-grid-calc-pct($i, $grid-column-count)!important;
     }
   }
 
   table.body table.columns td.expander,
   table.body table.columns th.expander {
-    display: none !important;
+    display: none!important;
   }
 
   table.body .right-text-pad,
   table.body .text-pad-right {
-    padding-left: $text-padding !important;
+    padding-left: $text-padding!important;
   }
 
   table.body .left-text-pad,
   table.body .text-pad-left {
-    padding-right: $text-padding !important;
+    padding-right: $text-padding!important;
   }
 
   //menu
   table.menu {
-    width: 100% !important;
+    width: 100%!important;
 
     td,
     th {
-      width: auto !important;
-      display: inline-block !important;
+      width: auto!important;
+      display: inline-block!important;
     }
 
     &.vertical,
     &.small-vertical {
       td,
       th {
-        display: block !important;
+        display: block!important;
       }
     }
   }
 
   // Centers the menus!
   table.menu[align="center"] {
-    width: auto !important;
+    width: auto!important;
   }
 
   // expands buttons for small only
   table.button.small-expand,
   table.button.small-expanded {
-    width: 100% !important;
+    width: 100%!important;
 
     table {
       width: 100%;
 
       a {
-        text-align: center !important;
-        width: 100% !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
+        text-align: center!important;
+        width: 100%!important;
+        padding-left: 0!important;
+        padding-right: 0!important;
       }
     }
 
@@ -133,7 +131,7 @@
 
   // Small padding inside callouts
   th.callout-inner {
-    padding: $callout-padding-small !important;
+    padding: $callout-padding-small!important;
   }
 }
 

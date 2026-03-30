@@ -18,6 +18,7 @@ pub fn inline_css(html: &str, base_path: Option<&std::path::Path>) -> Result<Str
         keep_style_tags: false,
         keep_link_tags: false,
         inline_style_tags: true,
+        minify_css: true,
         ..InlineOptions::default()
     };
     let inliner = CSSInliner::new(options);

@@ -4,6 +4,8 @@ use std::sync::LazyLock;
 use colored::Colorize;
 use regex::Regex;
 
+static RE_COMMENT: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?s)<!--.*?-->").unwrap());
 static RE_TABLE_TAGS: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)(</?(table|tbody|tr|td|th)[\s>])").unwrap());
 static RE_CLOSING_TAGS: LazyLock<Regex> =
@@ -109,10 +111,25 @@ pub fn process_template(
         inky.transform(&html)
     };
 
+    let result = strip_comments(&result);
     let result = break_long_lines(&result);
     let result = strip_leading_whitespace(&result);
     let result = collapse_closing_tags(&result);
     collapse_blank_lines(&result)
+}
+
+/// Strip HTML comments, preserving MSO conditional comments.
+fn strip_comments(html: &str) -> String {
+    RE_COMMENT
+        .replace_all(html, |caps: &regex::Captures| {
+            let comment = &caps[0];
+            if comment.starts_with("<!--[if ") || comment.starts_with("<![endif]") {
+                comment.to_string()
+            } else {
+                String::new()
+            }
+        })
+        .to_string()
 }
 
 /// Insert newlines before and after table structure tags to prevent lines
