@@ -232,14 +232,18 @@ fn main() {
             let data_path = data.or(cfg.data);
             let data_source = resolve_data_source(data_path.as_deref());
             let bulletproof_buttons = bulletproof_buttons || cfg.bulletproof_buttons;
+            let build_ctx = build::BuildContext {
+                inline_css: !no_inline_css,
+                framework_css: !no_framework_css,
+                components_dir: cfg.components,
+                error_mode: build::ErrorMode::Exit,
+            };
             cmd_build(
                 cfg.input,
                 cfg.output,
                 cfg.columns,
-                !no_inline_css,
-                !no_framework_css,
                 strict,
-                cfg.components,
+                &build_ctx,
                 &data_source,
                 output_mode,
                 plain_text,
@@ -278,13 +282,17 @@ fn main() {
                 eprintln!("{} No output directory specified. Use `-o <dir>` or set \"dist\" in inky.config.json", "error:".red().bold());
                 process::exit(1);
             });
+            let watch_ctx = build::BuildContext {
+                inline_css: !no_inline_css,
+                framework_css: !no_framework_css,
+                components_dir: cfg.components,
+                error_mode: build::ErrorMode::Continue,
+            };
             watch::cmd_watch(
                 input,
                 output,
                 cfg.columns,
-                !no_inline_css,
-                !no_framework_css,
-                cfg.components,
+                watch_ctx,
                 data,
                 output_mode,
                 _plain_text,
@@ -308,16 +316,13 @@ fn main() {
                 eprintln!("{} No input directory specified. Use `inky serve <dir>` or set \"src\" in inky.config.json", "error:".red().bold());
                 process::exit(1);
             });
-            serve::cmd_serve(
-                input,
-                cfg.columns,
-                !no_inline_css,
-                !no_framework_css,
-                cfg.components,
-                data,
-                port,
-                output_mode,
-            )
+            let serve_ctx = build::BuildContext {
+                inline_css: !no_inline_css,
+                framework_css: !no_framework_css,
+                components_dir: cfg.components,
+                error_mode: build::ErrorMode::Continue,
+            };
+            serve::cmd_serve(input, cfg.columns, serve_ctx, data, port, output_mode)
         }
         Commands::SpamCheck { input, json } => cmd_spam_check(input, json),
     }
@@ -489,15 +494,12 @@ fn load_merge_data(path: Option<&Path>) -> Option<serde_json::Value> {
     Some(data)
 }
 
-#[allow(clippy::too_many_arguments)]
 fn cmd_build(
     input: Option<PathBuf>,
     output: Option<PathBuf>,
     columns: u32,
-    inline_css: bool,
-    framework_css: bool,
     strict: bool,
-    components_dir: Option<String>,
+    build_ctx: &build::BuildContext,
     data_source: &DataSource,
     output_mode: OutputMode,
     plain_text: bool,
@@ -519,10 +521,8 @@ fn cmd_build(
                     &inky,
                     &path,
                     output.as_deref(),
-                    inline_css,
-                    framework_css,
+                    build_ctx,
                     &config,
-                    components_dir.as_deref(),
                     data_source,
                     plain_text,
                     json,
@@ -538,12 +538,9 @@ fn cmd_build(
                 let result = build::process_template(
                     &inky,
                     &html,
-                    inline_css,
-                    framework_css,
+                    build_ctx,
                     base.as_deref(),
-                    components_dir.as_deref(),
                     file_data.as_ref(),
-                    build::ErrorMode::Exit,
                 );
 
                 if json {
@@ -587,16 +584,8 @@ fn cmd_build(
                 DataSource::File(ref d) => Some(d),
                 _ => None,
             };
-            let result = build::process_template(
-                &inky,
-                &html,
-                inline_css,
-                framework_css,
-                cwd.as_deref(),
-                components_dir.as_deref(),
-                global_data,
-                build::ErrorMode::Exit,
-            );
+            let result =
+                build::process_template(&inky, &html, build_ctx, cwd.as_deref(), global_data);
 
             if json {
                 let mut diagnostics = validate::validate_source(&html, &config);
@@ -678,15 +667,12 @@ fn print_validation_warnings(
     !diagnostics.is_empty()
 }
 
-#[allow(clippy::too_many_arguments)]
 fn build_directory(
     inky: &Inky,
     input_dir: &Path,
     output_dir: Option<&Path>,
-    inline_css: bool,
-    framework_css: bool,
+    build_ctx: &build::BuildContext,
     config: &Config,
-    components_dir: Option<&str>,
     data_source: &DataSource,
     plain_text: bool,
     json: bool,
@@ -708,16 +694,8 @@ fn build_directory(
         let html = read_file(file);
         let file_data = resolve_data_for_file(file, input_dir, data_source);
         let base = file.parent().map(Path::to_path_buf);
-        let result = build::process_template(
-            inky,
-            &html,
-            inline_css,
-            framework_css,
-            base.as_deref(),
-            components_dir,
-            file_data.as_ref(),
-            build::ErrorMode::Exit,
-        );
+        let result =
+            build::process_template(inky, &html, build_ctx, base.as_deref(), file_data.as_ref());
 
         if json {
             let mut diagnostics = validate::validate_source(&html, config);
@@ -818,6 +796,12 @@ fn cmd_validate(input: Option<PathBuf>, json: bool) {
         ..Config::default()
     };
     let inky = Inky::with_config(config.clone());
+    let validate_ctx = build::BuildContext {
+        inline_css: true,
+        framework_css: true,
+        components_dir: cfg.components.clone(),
+        error_mode: build::ErrorMode::Continue,
+    };
 
     match input {
         Some(input) => {
@@ -854,12 +838,9 @@ fn cmd_validate(input: Option<PathBuf>, json: bool) {
                 let output_html = build::process_template(
                     &inky,
                     &source_html,
-                    true,
-                    true,
+                    &validate_ctx,
                     base.as_deref(),
-                    cfg.components.as_deref(),
                     file_data.as_ref(),
-                    build::ErrorMode::Continue,
                 );
 
                 let mut diagnostics = validate::validate_source(&source_html, &config);
@@ -897,16 +878,8 @@ fn cmd_validate(input: Option<PathBuf>, json: bool) {
         None => {
             let html = read_stdin();
             let cwd = std::env::current_dir().ok();
-            let output_html = build::process_template(
-                &inky,
-                &html,
-                true,
-                true,
-                cwd.as_deref(),
-                cfg.components.as_deref(),
-                None,
-                build::ErrorMode::Continue,
-            );
+            let output_html =
+                build::process_template(&inky, &html, &validate_ctx, cwd.as_deref(), None);
 
             let mut diagnostics = validate::validate_source(&html, &config);
             diagnostics.extend(validate::validate_output(&output_html));
@@ -989,6 +962,12 @@ fn resolve_data_for_file(
 fn cmd_spam_check(input: Option<PathBuf>, json: bool) {
     let config = Config::default();
     let inky = Inky::with_config(config.clone());
+    let spam_ctx = build::BuildContext {
+        inline_css: true,
+        framework_css: true,
+        components_dir: None,
+        error_mode: build::ErrorMode::Continue,
+    };
 
     match input {
         Some(input) => {
@@ -1009,16 +988,8 @@ fn cmd_spam_check(input: Option<PathBuf>, json: bool) {
             for file in &files {
                 let html = read_file(file);
                 let base = file.parent().map(Path::to_path_buf);
-                let result = build::process_template(
-                    &inky,
-                    &html,
-                    true,
-                    true,
-                    base.as_deref(),
-                    None,
-                    None,
-                    build::ErrorMode::Continue,
-                );
+                let result =
+                    build::process_template(&inky, &html, &spam_ctx, base.as_deref(), None);
                 let diagnostics = validate::validate_spam(&result);
 
                 if json {
@@ -1049,16 +1020,7 @@ fn cmd_spam_check(input: Option<PathBuf>, json: bool) {
         None => {
             let html = read_stdin();
             let cwd = std::env::current_dir().ok();
-            let result = build::process_template(
-                &inky,
-                &html,
-                true,
-                true,
-                cwd.as_deref(),
-                None,
-                None,
-                build::ErrorMode::Continue,
-            );
+            let result = build::process_template(&inky, &html, &spam_ctx, cwd.as_deref(), None);
             let diagnostics = validate::validate_spam(&result);
             let has_issues = !diagnostics.is_empty();
 

@@ -1,8 +1,28 @@
+use std::sync::LazyLock;
+
 use regex::Regex;
 use scraper::{Html, Selector};
 
 use super::Diagnostic;
 use crate::color::{self, Color};
+
+static RE_STYLE_BLOCK: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?si)<style[^>]*>(.*?)</style>").unwrap());
+static RE_OUTLOOK_CSS: LazyLock<Vec<(&'static str, Regex)>> = LazyLock::new(|| {
+    vec![
+        ("display: grid", Regex::new(r"(?i)display:\s*grid").unwrap()),
+        ("grid-template", Regex::new(r"(?i)grid-template").unwrap()),
+        ("display: flex", Regex::new(r"(?i)display:\s*flex").unwrap()),
+        ("flex-direction", Regex::new(r"(?i)flex-direction").unwrap()),
+        ("flex-wrap", Regex::new(r"(?i)flex-wrap").unwrap()),
+        (
+            "justify-content",
+            Regex::new(r"(?i)justify-content").unwrap(),
+        ),
+        ("align-items", Regex::new(r"(?i)align-items").unwrap()),
+        ("border-radius", Regex::new(r"(?i)border-radius").unwrap()),
+    ]
+});
 
 const GMAIL_CLIP_LIMIT: usize = 102 * 1024;
 const STYLE_BLOCK_LIMIT: usize = 8 * 1024;
@@ -45,9 +65,8 @@ pub(crate) fn check_gmail_clipping(html: &str) -> Vec<Diagnostic> {
 }
 
 pub(crate) fn check_style_block_too_large(html: &str) -> Vec<Diagnostic> {
-    let re = Regex::new(r"(?si)<style[^>]*>(.*?)</style>").unwrap();
     let mut diags = Vec::new();
-    for (i, caps) in re.captures_iter(html).enumerate() {
+    for (i, caps) in RE_STYLE_BLOCK.captures_iter(html).enumerate() {
         let content = caps.get(1).unwrap().as_str();
         if content.len() > STYLE_BLOCK_LIMIT {
             let kb = content.len() / 1024;
@@ -184,25 +203,11 @@ pub(crate) fn check_outlook_unsupported_css(html: &str) -> Vec<Diagnostic> {
     let doc = Html::parse_fragment(html);
     let sel = Selector::parse("[style]").unwrap();
 
-    let patterns: &[(&str, Regex)] = &[
-        ("display: grid", Regex::new(r"(?i)display:\s*grid").unwrap()),
-        ("grid-template", Regex::new(r"(?i)grid-template").unwrap()),
-        ("display: flex", Regex::new(r"(?i)display:\s*flex").unwrap()),
-        ("flex-direction", Regex::new(r"(?i)flex-direction").unwrap()),
-        ("flex-wrap", Regex::new(r"(?i)flex-wrap").unwrap()),
-        (
-            "justify-content",
-            Regex::new(r"(?i)justify-content").unwrap(),
-        ),
-        ("align-items", Regex::new(r"(?i)align-items").unwrap()),
-        ("border-radius", Regex::new(r"(?i)border-radius").unwrap()),
-    ];
-
     let mut found_props: Vec<&str> = Vec::new();
 
     for el in doc.select(&sel) {
         if let Some(style) = el.value().attr("style") {
-            for (name, re) in patterns {
+            for (name, re) in RE_OUTLOOK_CSS.iter() {
                 if re.is_match(style) && !found_props.contains(name) {
                     found_props.push(name);
                 }

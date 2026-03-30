@@ -20,13 +20,10 @@ struct RenderedTemplate {
 /// Global version counter incremented on each rebuild.
 static VERSION: AtomicU64 = AtomicU64::new(1);
 
-#[allow(clippy::too_many_arguments)]
 pub fn cmd_serve(
     input: PathBuf,
     columns: u32,
-    inline_css: bool,
-    framework_css: bool,
-    components_dir: Option<String>,
+    build_ctx: crate::build::BuildContext,
     data_path: Option<PathBuf>,
     port: u16,
     output_mode: OutputMode,
@@ -55,15 +52,7 @@ pub fn cmd_serve(
     let templates: Arc<RwLock<HashMap<String, RenderedTemplate>>> =
         Arc::new(RwLock::new(HashMap::new()));
 
-    build_all_templates(
-        &input,
-        &config,
-        inline_css,
-        framework_css,
-        components_dir.as_deref(),
-        merge_data.as_ref(),
-        &templates,
-    );
+    build_all_templates(&input, &config, &build_ctx, merge_data.as_ref(), &templates);
 
     let addr = format!("0.0.0.0:{}", port);
     let server = tiny_http::Server::http(&addr).unwrap_or_else(|e| {
@@ -83,16 +72,14 @@ pub fn cmd_serve(
     // Spawn file watcher thread
     let watcher_templates = Arc::clone(&templates);
     let watcher_input = input.clone();
-    let watcher_components = components_dir.clone();
     let watcher_data_path = data_path.clone();
+    let watcher_ctx = build_ctx.clone();
 
     std::thread::spawn(move || {
         run_file_watcher(
             watcher_input,
             config,
-            inline_css,
-            framework_css,
-            watcher_components,
+            watcher_ctx,
             watcher_data_path,
             watcher_templates,
         );
@@ -154,9 +141,7 @@ pub fn cmd_serve(
 fn build_all_templates(
     input: &Path,
     config: &Config,
-    inline_css: bool,
-    framework_css: bool,
-    components_dir: Option<&str>,
+    build_ctx: &crate::build::BuildContext,
     merge_data: Option<&serde_json::Value>,
     templates: &Arc<RwLock<HashMap<String, RenderedTemplate>>>,
 ) {
@@ -170,16 +155,8 @@ fn build_all_templates(
         let name = template_name(file, input);
         match std::fs::read_to_string(file) {
             Ok(html) => {
-                let result = build::process_template(
-                    &inky,
-                    &html,
-                    inline_css,
-                    framework_css,
-                    file.parent(),
-                    components_dir,
-                    merge_data,
-                    build::ErrorMode::Continue,
-                );
+                let result =
+                    build::process_template(&inky, &html, build_ctx, file.parent(), merge_data);
                 eprintln!("  {} {}", "built".green().bold(), name);
                 state.insert(name, RenderedTemplate { html: result });
             }
@@ -209,9 +186,7 @@ fn template_name(file: &Path, input_dir: &Path) -> String {
 fn run_file_watcher(
     input: PathBuf,
     config: Config,
-    inline_css: bool,
-    framework_css: bool,
-    components_dir: Option<String>,
+    build_ctx: crate::build::BuildContext,
     data_path: Option<PathBuf>,
     templates: Arc<RwLock<HashMap<String, RenderedTemplate>>>,
 ) {
@@ -318,9 +293,7 @@ fn run_file_watcher(
                     build_all_templates(
                         &input,
                         &config,
-                        inline_css,
-                        framework_css,
-                        components_dir.as_deref(),
+                        &build_ctx,
                         merge_data.as_ref(),
                         &templates,
                     );

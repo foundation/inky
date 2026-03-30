@@ -1,7 +1,11 @@
+use std::sync::LazyLock;
+
 use regex::Regex;
 use scraper::{Html, Selector};
 
 use super::Diagnostic;
+
+static RE_EXCLAMATION: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"!{3,}").unwrap());
 
 /// Extract visible text from HTML, skipping style/script/head elements.
 fn extract_visible_text(html: &str) -> String {
@@ -48,8 +52,7 @@ pub(crate) fn check_spam_all_caps(html: &str) -> Vec<Diagnostic> {
 
 pub(crate) fn check_spam_exclamation(html: &str) -> Vec<Diagnostic> {
     let text = extract_visible_text(html);
-    let re = Regex::new(r"!{3,}").unwrap();
-    let count = re.find_iter(&text).count();
+    let count = RE_EXCLAMATION.find_iter(&text).count();
     if count > 0 {
         vec![Diagnostic::warning(
             "spam-exclamation",

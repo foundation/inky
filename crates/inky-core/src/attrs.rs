@@ -76,3 +76,21 @@ pub fn get_classes(element: &ElementRef) -> Vec<String> {
 pub fn has_class(element: &ElementRef, class: &str) -> bool {
     get_classes(element).iter().any(|c| c == class)
 }
+
+/// Extract a CSS property value from an inline style string.
+/// e.g. `extract_css_property("color: red; font-size: 14px", "color")` => `Some("red")`
+pub fn extract_css_property(style: &str, property: &str) -> Option<String> {
+    for decl in style.split(';') {
+        let decl = decl.trim();
+        if let Some(colon_pos) = decl.find(':') {
+            let prop = decl[..colon_pos].trim();
+            if prop.eq_ignore_ascii_case(property) {
+                let value = decl[colon_pos + 1..].trim();
+                if !value.is_empty() {
+                    return Some(value.to_string());
+                }
+            }
+        }
+    }
+    None
+}

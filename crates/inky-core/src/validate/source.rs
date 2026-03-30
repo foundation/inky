@@ -1,3 +1,5 @@
+use std::sync::LazyLock;
+
 use regex::Regex;
 use scraper::{Html, Selector};
 
@@ -6,47 +8,47 @@ use crate::config::Config;
 
 // --- v1 syntax detection ---
 
+static RE_V1_COLUMNS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"<columns[\s>]").unwrap());
+static RE_V1_HLINE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"<h-line[\s>]").unwrap());
+static RE_V1_LARGE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"<column[^>]+\blarge\s*="#).unwrap());
+static RE_V1_SMALL: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"<column[^>]+\bsmall\s*="#).unwrap());
+static RE_V1_SPACER_SIZE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"<spacer[^>]+\bsize\s*="#).unwrap());
+
 pub(crate) fn check_v1_syntax(html: &str) -> Vec<Diagnostic> {
     let mut diags = Vec::new();
 
-    if Regex::new(r"<columns[\s>]").unwrap().is_match(html) {
+    if RE_V1_COLUMNS.is_match(html) {
         diags.push(Diagnostic::warning(
             "v1-syntax",
             "<columns> is v1 syntax — use <column> instead, or run `inky migrate`",
         ));
     }
 
-    if Regex::new(r"<h-line[\s>]").unwrap().is_match(html) {
+    if RE_V1_HLINE.is_match(html) {
         diags.push(Diagnostic::warning(
             "v1-syntax",
             "<h-line> is v1 syntax — use <divider> instead, or run `inky migrate`",
         ));
     }
 
-    if Regex::new(r#"<column[^>]+\blarge\s*="#)
-        .unwrap()
-        .is_match(html)
-    {
+    if RE_V1_LARGE.is_match(html) {
         diags.push(Diagnostic::warning(
             "v1-syntax",
             r#"large="..." is v1 syntax — use lg="..." instead, or run `inky migrate`"#,
         ));
     }
 
-    if Regex::new(r#"<column[^>]+\bsmall\s*="#)
-        .unwrap()
-        .is_match(html)
-    {
+    if RE_V1_SMALL.is_match(html) {
         diags.push(Diagnostic::warning(
             "v1-syntax",
             r#"small="..." is v1 syntax — use sm="..." instead, or run `inky migrate`"#,
         ));
     }
 
-    if Regex::new(r#"<spacer[^>]+\bsize\s*="#)
-        .unwrap()
-        .is_match(html)
-    {
+    if RE_V1_SPACER_SIZE.is_match(html) {
         diags.push(Diagnostic::warning(
             "v1-syntax",
             r#"<spacer size="..."> is v1 syntax — use height="..." instead, or run `inky migrate`"#,

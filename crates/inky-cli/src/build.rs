@@ -1,6 +1,17 @@
+use std::path::Path;
+use std::sync::LazyLock;
+
 use colored::Colorize;
 use regex::Regex;
-use std::path::Path;
+
+static RE_TABLE_TAGS: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?i)(</?(table|tbody|tr|td|th)[\s>])").unwrap());
+static RE_CLOSING_TAGS: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?m)(^</(?:table|tbody|tr|td|th)>\n){2,}").unwrap());
+static RE_LEADING_WS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?m)^\s+<").unwrap());
+static RE_HEAD: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?i)<head[^>]*>").unwrap());
+static RE_PRE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?si)<pre[^>]*>.*?</pre>").unwrap());
+static RE_BLANK_LINES: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n\s*\n(\s*\n)*").unwrap());
 
 use inky_core::Inky;
 
@@ -15,6 +26,15 @@ pub enum ErrorMode {
     Continue,
 }
 
+/// Common build parameters shared across build, watch, and serve commands.
+#[derive(Clone)]
+pub struct BuildContext {
+    pub inline_css: bool,
+    pub framework_css: bool,
+    pub components_dir: Option<String>,
+    pub error_mode: ErrorMode,
+}
+
 fn handle_error(mode: ErrorMode, msg: &str) -> String {
     eprintln!("{} {}", "error:".red().bold(), msg);
     match mode {
@@ -24,45 +44,42 @@ fn handle_error(mode: ErrorMode, msg: &str) -> String {
 }
 
 /// Full build pipeline: layout → custom components → includes → merge data → extract SCSS overrides → compile framework CSS → inject → transform → inline → cleanup.
-#[allow(clippy::too_many_arguments)]
 pub fn process_template(
     inky: &Inky,
     html: &str,
-    inline_css: bool,
-    framework_css: bool,
+    ctx: &BuildContext,
     base_path: Option<&Path>,
-    components_dir: Option<&str>,
     merge_data: Option<&serde_json::Value>,
-    error_mode: ErrorMode,
 ) -> String {
     // Resolve <layout> tag, then custom components, then <include> tags
     let mut html = if let Some(base) = base_path {
         let with_layout = inky_core::include::process_layout(html, base)
-            .unwrap_or_else(|e| handle_error(error_mode, &e));
+            .unwrap_or_else(|e| handle_error(ctx.error_mode, &e));
         let with_components = inky_core::include::process_custom_components(
             &with_layout,
             base,
-            components_dir.unwrap_or("components"),
+            ctx.components_dir.as_deref().unwrap_or("components"),
         )
-        .unwrap_or_else(|e| handle_error(error_mode, &e));
+        .unwrap_or_else(|e| handle_error(ctx.error_mode, &e));
         inky_core::include::process_includes(&with_components, base)
-            .unwrap_or_else(|e| handle_error(error_mode, &e))
+            .unwrap_or_else(|e| handle_error(ctx.error_mode, &e))
     } else {
         html.to_string()
     };
 
     // MiniJinja template merge (after includes, before transform)
     if let Some(data) = merge_data {
-        html = inky_core::templating::render_template(&html, data, false)
-            .unwrap_or_else(|e| handle_error(error_mode, &format!("Template merge failed: {}", e)));
+        html = inky_core::templating::render_template(&html, data, false).unwrap_or_else(|e| {
+            handle_error(ctx.error_mode, &format!("Template merge failed: {}", e))
+        });
     }
 
-    if framework_css {
+    if ctx.framework_css {
         let (cleaned, overrides) = scss::extract_scss_overrides(&html, base_path);
         html = cleaned;
 
         let css = scss::compile_framework_scss(&overrides).unwrap_or_else(|e| {
-            handle_error(error_mode, &format!("SCSS compilation failed: {}", e))
+            handle_error(ctx.error_mode, &format!("SCSS compilation failed: {}", e))
         });
 
         html = scss::inject_css_into_html(&html, &css);
@@ -74,11 +91,11 @@ pub fn process_template(
         html = cleaned;
     }
 
-    let result = if inline_css {
+    let result = if ctx.inline_css {
         inky.transform_and_inline(&html, base_path)
             .unwrap_or_else(|e| {
                 eprintln!("{} CSS inlining failed: {}", "error:".red().bold(), e);
-                match error_mode {
+                match ctx.error_mode {
                     ErrorMode::Exit => std::process::exit(1),
                     ErrorMode::Continue => html.clone(),
                 }
@@ -98,37 +115,36 @@ pub fn process_template(
 /// elements (<table>, <tbody>, <tr>, <td>, <th>) is ignored by email clients,
 /// so this is safe and does not affect rendering.
 fn break_long_lines(html: &str) -> String {
-    let re = Regex::new(r"(?i)(</?(table|tbody|tr|td|th)[\s>])").unwrap();
-    re.replace_all(html, |caps: &regex::Captures| {
-        let tag = &caps[0];
-        if tag.starts_with("</") {
-            // Closing tag: newline before it
-            format!("\n{}", tag)
-        } else {
-            // Opening tag: newline before it
-            format!("\n{}", tag)
-        }
-    })
-    .to_string()
+    RE_TABLE_TAGS
+        .replace_all(html, |caps: &regex::Captures| {
+            let tag = &caps[0];
+            if tag.starts_with("</") {
+                // Closing tag: newline before it
+                format!("\n{}", tag)
+            } else {
+                // Opening tag: newline before it
+                format!("\n{}", tag)
+            }
+        })
+        .to_string()
 }
 
 /// Collapse consecutive lines that contain only closing table tags into a single line.
 /// e.g., `</th>\n</tr>\n</tbody>\n</table>\n` becomes `</th></tr></tbody></table>\n`
 fn collapse_closing_tags(html: &str) -> String {
-    let re = Regex::new(r"(?m)(^</(?:table|tbody|tr|td|th)>\n){2,}").unwrap();
-    re.replace_all(html, |caps: &regex::Captures| {
-        let s = &caps[0];
-        // Join all closing tags, keep one trailing newline
-        let joined: String = s.lines().collect::<Vec<_>>().join("");
-        format!("{}\n", joined)
-    })
-    .to_string()
+    RE_CLOSING_TAGS
+        .replace_all(html, |caps: &regex::Captures| {
+            let s = &caps[0];
+            // Join all closing tags, keep one trailing newline
+            let joined: String = s.lines().collect::<Vec<_>>().join("");
+            format!("{}\n", joined)
+        })
+        .to_string()
 }
 
 /// Strip leading whitespace from lines that start with an HTML tag.
 fn strip_leading_whitespace(html: &str) -> String {
-    let re = Regex::new(r"(?m)^\s+<").unwrap();
-    re.replace_all(html, "<").to_string()
+    RE_LEADING_WS.replace_all(html, "<").to_string()
 }
 
 /// Inject `<meta name="color-scheme">` and `<meta name="supported-color-schemes">`
@@ -148,8 +164,7 @@ fn inject_color_scheme_meta(html: &str) -> String {
 <meta name="supported-color-schemes" content="light dark">"#;
 
     // Insert after opening <head> tag
-    let head_re = Regex::new(r"(?i)<head[^>]*>").unwrap();
-    if let Some(m) = head_re.find(html) {
+    if let Some(m) = RE_HEAD.find(html) {
         let mut result = String::with_capacity(html.len() + meta_tags.len() + 2);
         result.push_str(&html[..m.end()]);
         result.push('\n');
@@ -163,11 +178,10 @@ fn inject_color_scheme_meta(html: &str) -> String {
 
 /// Remove consecutive blank lines, preserving content inside <pre> blocks.
 fn collapse_blank_lines(html: &str) -> String {
-    let pre_re = Regex::new(r"(?si)<pre[^>]*>.*?</pre>").unwrap();
     let mut result = String::with_capacity(html.len());
     let mut last_end = 0;
 
-    for m in pre_re.find_iter(html) {
+    for m in RE_PRE.find_iter(html) {
         result.push_str(&do_collapse(&html[last_end..m.start()]));
         result.push_str(m.as_str());
         last_end = m.end();
@@ -178,6 +192,5 @@ fn collapse_blank_lines(html: &str) -> String {
 }
 
 fn do_collapse(s: &str) -> String {
-    let blank_re = Regex::new(r"\n\s*\n(\s*\n)*").unwrap();
-    blank_re.replace_all(s, "\n").to_string()
+    RE_BLANK_LINES.replace_all(s, "\n").to_string()
 }

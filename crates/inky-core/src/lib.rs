@@ -11,8 +11,19 @@ pub mod plaintext;
 pub mod templating;
 pub mod validate;
 
+use std::sync::LazyLock;
+
 use regex::Regex;
 use scraper::{Html, Selector};
+
+static RE_MERGE_TAGS: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(<%[=#-]?.*?%>|\{%-?.*?-?%\})").unwrap());
+static RE_RAW_BLOCKS: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?s)(?:\n *)?< *raw *>(.*?)</ *raw *>(?: *\n)?").unwrap());
+static RE_CENTER: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?s)<center[^>]*>(.*?)</center>").unwrap());
+static RE_MENU_ITEM: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(<th\s[^>]*class=")menu-item(")"#).unwrap());
 
 use components::transform_component;
 pub use config::{ComponentNames, Config, OutputMode};
@@ -367,13 +378,10 @@ fn replace_first_tag(html: &str, tag_name: &str, replacement: &str) -> String {
 /// We do this as a post-processing step because <center> is transformed before <item>,
 /// so at center-transform time, the menu items haven't been converted to .menu-item yet.
 fn add_float_center_to_centered_menu_items(html: &str) -> String {
-    let center_re = Regex::new(r"(?s)<center[^>]*>(.*?)</center>").unwrap();
-    let menu_item_re = Regex::new(r#"(<th\s[^>]*class=")menu-item(")"#).unwrap();
-
-    center_re
+    RE_CENTER
         .replace_all(html, |caps: &regex::Captures| {
             let inner = &caps[1];
-            let updated = menu_item_re.replace_all(inner, |mcaps: &regex::Captures| {
+            let updated = RE_MENU_ITEM.replace_all(inner, |mcaps: &regex::Captures| {
                 format!("{}menu-item float-center{}", &mcaps[1], &mcaps[2])
             });
             format!(
@@ -522,8 +530,7 @@ fn restore_placeholders(html: &str, saved: &[String], prefix: &str) -> String {
 
 /// Protect template merge tags that look like HTML (ERB/EJS/ASP tags) from html5ever.
 fn protect_merge_tags(html: &str) -> (Vec<String>, String) {
-    let re = Regex::new(r"(<%[=#-]?.*?%>|\{%-?.*?-?%\})").unwrap();
-    extract_with_placeholders(html, &re, "MERGE", 0)
+    extract_with_placeholders(html, &RE_MERGE_TAGS, "MERGE", 0)
 }
 
 /// Restore protected merge tags from placeholders.
@@ -533,8 +540,7 @@ fn restore_merge_tags(html: &str, tags: &[String]) -> String {
 
 /// Extract `<raw>` blocks from HTML, replacing them with placeholders.
 fn extract_raws(html: &str) -> (Vec<String>, String) {
-    let re = Regex::new(r"(?s)(?:\n *)?< *raw *>(.*?)</ *raw *>(?: *\n)?").unwrap();
-    extract_with_placeholders(html, &re, "RAW", 1)
+    extract_with_placeholders(html, &RE_RAW_BLOCKS, "RAW", 1)
 }
 
 /// Re-inject raw block content back into placeholders.
