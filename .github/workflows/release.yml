@@ -215,6 +215,9 @@ jobs:
     name: Publish to npm
     needs: [release]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/setup-node@v5
         with:
@@ -232,12 +235,10 @@ jobs:
           cd node
           VERSION=$(node -p "require('./package.json').version")
           if echo "$VERSION" | grep -qE '(alpha|beta|rc|dev)'; then
-            npm publish --access public --tag beta
+            npm publish --access public --tag beta --provenance
           else
-            npm publish --access public
+            npm publish --access public --provenance
           fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-pypi:
     name: Publish to PyPI
