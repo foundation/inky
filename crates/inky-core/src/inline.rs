@@ -17,6 +17,7 @@ pub fn inline_css(html: &str, base_path: Option<&std::path::Path>) -> Result<Str
     let options = InlineOptions {
         keep_style_tags: false,
         keep_link_tags: false,
+        keep_at_rules: true,
         inline_style_tags: true,
         minify_css: true,
         ..InlineOptions::default()
