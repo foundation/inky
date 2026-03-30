@@ -112,10 +112,29 @@ pub fn process_template(
     };
 
     let result = strip_comments(&result);
+    let result = break_at_rules(&result);
     let result = break_long_lines(&result);
     let result = strip_leading_whitespace(&result);
     let result = collapse_closing_tags(&result);
     collapse_blank_lines(&result)
+}
+
+static RE_STYLE_CONTENT: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?s)(<style>)(.*?)(</style>)").unwrap());
+
+/// Break long lines inside <style> blocks by inserting newlines
+/// before @media rules and between CSS rule groups.
+fn break_at_rules(html: &str) -> String {
+    RE_STYLE_CONTENT
+        .replace_all(html, |caps: &regex::Captures| {
+            let css = &caps[2];
+            let css = css.replace(" @media", "\n@media");
+            // Break between CSS rules (}selector{) but keep }} together
+            let css = css.replace("}", "}\n");
+            let css = css.replace("}\n}", "}}");
+            format!("{}{}{}", &caps[1], css.trim(), &caps[3])
+        })
+        .to_string()
 }
 
 /// Strip HTML comments, preserving MSO conditional comments.
