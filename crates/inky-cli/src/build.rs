@@ -4,8 +4,7 @@ use std::sync::LazyLock;
 use colored::Colorize;
 use regex::Regex;
 
-static RE_COMMENT: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"(?s)<!--.*?-->").unwrap());
+static RE_COMMENT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?s)<!--.*?-->").unwrap());
 static RE_TABLE_TAGS: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)(</?(table|tbody|tr|td|th)[\s>])").unwrap());
 static RE_CLOSING_TAGS: LazyLock<Regex> =
