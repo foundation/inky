@@ -79,11 +79,15 @@ for target in "${TARGETS[@]}"; do
     gh release download "$TAG" --pattern "inky-${target}.tar.gz" --dir "$TMPDIR"
 done
 
-declare -A SHAS
-for target in "${TARGETS[@]}"; do
-    SHAS[$target]=$(shasum -a 256 "$TMPDIR/inky-${target}.tar.gz" | awk '{print $1}')
-    echo "  $target: ${SHAS[$target]}"
-done
+SHA_AARCH64_APPLE=$(shasum -a 256 "$TMPDIR/inky-aarch64-apple-darwin.tar.gz" | awk '{print $1}')
+SHA_X86_64_APPLE=$(shasum -a 256 "$TMPDIR/inky-x86_64-apple-darwin.tar.gz" | awk '{print $1}')
+SHA_AARCH64_LINUX=$(shasum -a 256 "$TMPDIR/inky-aarch64-unknown-linux-gnu.tar.gz" | awk '{print $1}')
+SHA_X86_64_LINUX=$(shasum -a 256 "$TMPDIR/inky-x86_64-unknown-linux-gnu.tar.gz" | awk '{print $1}')
+
+echo "  aarch64-apple-darwin: $SHA_AARCH64_APPLE"
+echo "  x86_64-apple-darwin:  $SHA_X86_64_APPLE"
+echo "  aarch64-unknown-linux-gnu: $SHA_AARCH64_LINUX"
+echo "  x86_64-unknown-linux-gnu:  $SHA_X86_64_LINUX"
 
 # Update Homebrew tap
 TAP_DIR="$(cd "$(dirname "$0")"/../../homebrew-inky && pwd)"
@@ -102,20 +106,20 @@ class Inky < Formula
   on_macos do
     if Hardware::CPU.arm?
       url "https://github.com/foundation/inky/releases/download/${TAG}/inky-aarch64-apple-darwin.tar.gz"
-      sha256 "${SHAS[aarch64-apple-darwin]}"
+      sha256 "${SHA_AARCH64_APPLE}"
     else
       url "https://github.com/foundation/inky/releases/download/${TAG}/inky-x86_64-apple-darwin.tar.gz"
-      sha256 "${SHAS[x86_64-apple-darwin]}"
+      sha256 "${SHA_X86_64_APPLE}"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
       url "https://github.com/foundation/inky/releases/download/${TAG}/inky-aarch64-unknown-linux-gnu.tar.gz"
-      sha256 "${SHAS[aarch64-unknown-linux-gnu]}"
+      sha256 "${SHA_AARCH64_LINUX}"
     else
       url "https://github.com/foundation/inky/releases/download/${TAG}/inky-x86_64-unknown-linux-gnu.tar.gz"
-      sha256 "${SHAS[x86_64-unknown-linux-gnu]}"
+      sha256 "${SHA_X86_64_LINUX}"
     end
   end
 
