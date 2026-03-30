@@ -2,6 +2,13 @@
 
 All notable changes to the Inky project will be documented in this file.
 
+## 2.0.0-beta.4
+
+### Changed
+
+- **NPM Package** The npm package will continue to use `inky` instead of `inky-wasm`
+
+
 ## 2.0.0-beta.3
 
 ### Changed
