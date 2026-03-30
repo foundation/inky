@@ -79,7 +79,6 @@ SKIPPED=()
 # --- crates.io ---
 echo "--- crates.io ---"
 echo "  Packages: inky-core, inky-cli"
-echo "  Note: CI may have already published these."
 if confirm "  Publish to crates.io?"; then
     echo "  Publishing inky-core..."
     cargo publish -p inky-core
