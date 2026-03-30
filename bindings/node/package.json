@@ -1,5 +1,5 @@
 {
-  "name": "inky",
+  "name": "inky-wasm",
   "description": "WASM bindings for Inky",
   "version": "2.0.0-beta.4",
   "license": "MIT",
@@ -9,9 +9,5 @@
     "inky_wasm.d.ts"
   ],
   "main": "inky_wasm.js",
-  "types": "inky_wasm.d.ts",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/foundation/inky.git"
-  }
+  "types": "inky_wasm.d.ts"
 }
