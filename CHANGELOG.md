@@ -51,7 +51,7 @@ Complete rewrite of Inky in Rust. Inky v2 is a ground-up reimplementation that r
 ### Distribution
 
 - **CLI binary** (`inky`) via Homebrew, npm, cargo, and direct download.
-- **WASM module** (`inky-wasm`) for browser and Node.js via npm.
+- **WASM module** (`inky` on npm) for browser and Node.js.
 - **Native shared library** (`inky-ffi`) with C FFI bindings.
 - **Language bindings** for Node.js, PHP, Python, Ruby, and Go.
 

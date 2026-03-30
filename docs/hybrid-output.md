@@ -115,7 +115,7 @@ The `--hybrid` CLI flag overrides the config file.
 ### Node.js (WASM)
 
 ```js
-const inky = require("inky-wasm");
+const inky = require("inky");
 const html = inky.transformHybrid('<container><row><column>Hello</column></row></container>');
 ```
 

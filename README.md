@@ -127,7 +127,7 @@ cargo test --workspace
 |-------|---------|--------|
 | `inky-core` | Core transformation engine | Rust library |
 | `inky-cli` | Command-line tool | `inky` binary |
-| `inky-wasm` | Browser/Node.js bindings | `.wasm` module |
+| `inky-wasm` | Browser/Node.js bindings (`inky` on npm) | `.wasm` module |
 | `inky-ffi` | PHP/Python/Ruby/Go bindings | `.so` / `.dylib` / `.dll` |
 
 ## License

@@ -254,7 +254,7 @@ brew tap foundation/inky && brew install inky
 cargo install inky-cli
 
 # npm
-npm install -g inky-wasm
+npm install -g inky
 
 # Direct download — make sure the binary is on your PATH
 export PATH="$PATH:/path/to/inky"

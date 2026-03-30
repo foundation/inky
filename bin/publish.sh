@@ -92,7 +92,7 @@ echo ""
 
 # --- npm ---
 echo "--- npm ---"
-echo "  Package: inky-wasm@$VERSION"
+echo "  Package: inky@$VERSION"
 if confirm "  Publish to npm?"; then
     TMPDIR=$(mktemp -d)
     echo "  Downloading WASM artifact from GitHub release..."

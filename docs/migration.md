@@ -43,7 +43,7 @@ inky migrate src/ --in-place
 ### Programmatic migration (any language)
 
 ```js
-const inky = require("inky-wasm");
+const inky = require("inky");
 const result = inky.migrateWithDetails(v1Html);
 console.log(result.html);      // migrated HTML
 console.log(result.changes);   // ["<columns> -> <column>", ...]

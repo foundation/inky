@@ -168,7 +168,7 @@ By default, missing keys render as empty strings (lenient mode). This means `{{ 
 ### Node.js (WASM)
 
 ```js
-const inky = require("inky-wasm");
+const inky = require("inky");
 
 const html = inky.transformWithData(
   '<button href="{{ url }}">{{ text }}</button>',

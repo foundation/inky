@@ -16,7 +16,7 @@ brew install foundation/inky/inky
 ### npm
 
 ```bash
-npm install -g inky-wasm
+npm install -g inky
 ```
 
 ### Cargo (from source)

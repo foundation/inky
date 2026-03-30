@@ -36,20 +36,20 @@ Diagnostics from `validate()` are objects/dicts with `severity` (`"warning"` or 
 
 ## Node.js
 
-**Package:** `inky-wasm` on npm
+**Package:** `inky` on npm
 **Engine:** WASM (compiled from Rust via wasm-bindgen)
 **Requires:** Node.js (any recent version)
 
 ### Install
 
 ```bash
-npm install inky-wasm
+npm install inky
 ```
 
 ### API
 
 ```js
-const inky = require("inky-wasm");
+const inky = require("inky");
 
 // Transform
 const html = inky.transform('<button href="#">Click</button>');
