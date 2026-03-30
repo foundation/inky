@@ -227,14 +227,10 @@ fn main() {
             json,
         } => {
             let cfg = resolve_config(input, output, columns);
+            let output_mode = cfg.output_mode(hybrid);
+            let plain_text = plain_text || cfg.plain_text;
             let data_path = data.or(cfg.data);
             let data_source = resolve_data_source(data_path.as_deref());
-            let output_mode = if hybrid || cfg.hybrid {
-                OutputMode::Hybrid
-            } else {
-                OutputMode::Table
-            };
-            let plain_text = plain_text || cfg.plain_text;
             let bulletproof_buttons = bulletproof_buttons || cfg.bulletproof_buttons;
             cmd_build(
                 cfg.input,
@@ -270,14 +266,10 @@ fn main() {
             bulletproof_buttons,
         } => {
             let cfg = resolve_config(input, output, columns);
-            let data = data.or(cfg.data);
-            let output_mode = if hybrid || cfg.hybrid {
-                OutputMode::Hybrid
-            } else {
-                OutputMode::Table
-            };
+            let output_mode = cfg.output_mode(hybrid);
             let _plain_text = plain_text || cfg.plain_text;
             let _bulletproof_buttons = bulletproof_buttons || cfg.bulletproof_buttons;
+            let data = data.or(cfg.data);
             let input = cfg.input.unwrap_or_else(|| {
                 eprintln!("{} No input directory specified. Use `inky watch <dir>` or set \"src\" in inky.config.json", "error:".red().bold());
                 process::exit(1);
@@ -309,13 +301,9 @@ fn main() {
             bulletproof_buttons,
         } => {
             let cfg = resolve_config(input, None, columns);
-            let data = data.or(cfg.data);
-            let output_mode = if hybrid || cfg.hybrid {
-                OutputMode::Hybrid
-            } else {
-                OutputMode::Table
-            };
+            let output_mode = cfg.output_mode(hybrid);
             let _bulletproof_buttons = bulletproof_buttons || cfg.bulletproof_buttons;
+            let data = data.or(cfg.data);
             let input = cfg.input.unwrap_or_else(|| {
                 eprintln!("{} No input directory specified. Use `inky serve <dir>` or set \"src\" in inky.config.json", "error:".red().bold());
                 process::exit(1);
@@ -368,6 +356,17 @@ struct ResolvedConfig {
     hybrid: bool,
     plain_text: bool,
     bulletproof_buttons: bool,
+}
+
+impl ResolvedConfig {
+    /// Merge a CLI --hybrid flag with the config file value.
+    fn output_mode(&self, cli_hybrid: bool) -> OutputMode {
+        if cli_hybrid || self.hybrid {
+            OutputMode::Hybrid
+        } else {
+            OutputMode::Table
+        }
+    }
 }
 
 /// CLI flags take priority over config file values.
@@ -582,11 +581,7 @@ fn cmd_build(
         }
         None => {
             // Read from stdin — use cwd as base for resolving CSS files
-            let mut html = String::new();
-            io::stdin().read_to_string(&mut html).unwrap_or_else(|e| {
-                eprintln!("{} Failed to read stdin: {}", "error:".red().bold(), e);
-                process::exit(1);
-            });
+            let html = read_stdin();
             let cwd = std::env::current_dir().ok();
             let global_data = match data_source {
                 DataSource::File(ref d) => Some(d),
@@ -658,6 +653,17 @@ fn print_json_output(results: &[JsonFileResult]) {
     println!("{}", serde_json::to_string_pretty(&output).unwrap());
 }
 
+/// Print diagnostics to stderr with colored severity labels.
+fn print_diagnostics(diagnostics: &[Diagnostic], path: &str) {
+    for d in diagnostics {
+        let label = match d.severity {
+            Severity::Warning => "warn".yellow().bold(),
+            Severity::Error => "error".red().bold(),
+        };
+        eprintln!("  {} {} [{}] {}", label, path, d.rule, d.message);
+    }
+}
+
 /// Run validation on source and output HTML, print any warnings to stderr.
 /// Returns true if any diagnostics were found.
 fn print_validation_warnings(
@@ -668,13 +674,7 @@ fn print_validation_warnings(
 ) -> bool {
     let mut diagnostics = validate::validate_source(source_html, config);
     diagnostics.extend(validate::validate_output(output_html));
-    for d in &diagnostics {
-        let label = match d.severity {
-            Severity::Warning => "warn".yellow().bold(),
-            Severity::Error => "error".red().bold(),
-        };
-        eprintln!("  {} {} [{}] {}", label, path.display(), d.rule, d.message);
-    }
+    print_diagnostics(&diagnostics, &path.display().to_string());
     !diagnostics.is_empty()
 }
 
@@ -877,13 +877,7 @@ fn cmd_validate(input: Option<PathBuf>, json: bool) {
                 } else {
                     if !diagnostics.is_empty() {
                         has_errors = true;
-                        for d in &diagnostics {
-                            let label = match d.severity {
-                                Severity::Warning => "warn".yellow().bold(),
-                                Severity::Error => "error".red().bold(),
-                            };
-                            eprintln!("  {} {} [{}] {}", label, file.display(), d.rule, d.message);
-                        }
+                        print_diagnostics(&diagnostics, &file.display().to_string());
                     } else {
                         eprintln!("  {} {}", "ok".green().bold(), file.display());
                     }
@@ -901,12 +895,7 @@ fn cmd_validate(input: Option<PathBuf>, json: bool) {
             }
         }
         None => {
-            // Read from stdin
-            let mut html = String::new();
-            io::stdin().read_to_string(&mut html).unwrap_or_else(|e| {
-                eprintln!("{} Failed to read stdin: {}", "error:".red().bold(), e);
-                process::exit(1);
-            });
+            let html = read_stdin();
             let cwd = std::env::current_dir().ok();
             let output_html = build::process_template(
                 &inky,
@@ -931,13 +920,7 @@ fn cmd_validate(input: Option<PathBuf>, json: bool) {
                 }];
                 print_json_output(&results);
             } else {
-                for d in &diagnostics {
-                    let label = match d.severity {
-                        Severity::Warning => "warn".yellow().bold(),
-                        Severity::Error => "error".red().bold(),
-                    };
-                    eprintln!("  {} stdin [{}] {}", label, d.rule, d.message);
-                }
+                print_diagnostics(&diagnostics, "stdin");
                 if !has_errors {
                     eprintln!("  {} stdin", "ok".green().bold());
                 }
@@ -957,6 +940,16 @@ fn find_template_files(dir: &Path) -> Vec<PathBuf> {
 
 fn to_output_path(input: &Path, input_dir: &Path, output_dir: &Path) -> PathBuf {
     util::to_output_path(input, input_dir, output_dir)
+}
+
+/// Read all input from stdin, exiting on failure.
+fn read_stdin() -> String {
+    let mut html = String::new();
+    io::stdin().read_to_string(&mut html).unwrap_or_else(|e| {
+        eprintln!("{} Failed to read stdin: {}", "error:".red().bold(), e);
+        process::exit(1);
+    });
+    html
 }
 
 fn read_file(path: &std::path::Path) -> String {
@@ -1041,13 +1034,7 @@ fn cmd_spam_check(input: Option<PathBuf>, json: bool) {
                     eprintln!("  {} {}", "ok".green().bold(), file.display());
                 } else {
                     has_issues = true;
-                    for d in &diagnostics {
-                        let label = match d.severity {
-                            Severity::Warning => "warn".yellow().bold(),
-                            Severity::Error => "error".red().bold(),
-                        };
-                        eprintln!("  {} {} [{}] {}", label, file.display(), d.rule, d.message);
-                    }
+                    print_diagnostics(&diagnostics, &file.display().to_string());
                 }
             }
 
@@ -1060,12 +1047,7 @@ fn cmd_spam_check(input: Option<PathBuf>, json: bool) {
             }
         }
         None => {
-            // Read from stdin
-            let mut html = String::new();
-            io::stdin().read_to_string(&mut html).unwrap_or_else(|e| {
-                eprintln!("{} Failed to read stdin: {}", "error:".red().bold(), e);
-                process::exit(1);
-            });
+            let html = read_stdin();
             let cwd = std::env::current_dir().ok();
             let result = build::process_template(
                 &inky,
@@ -1091,13 +1073,7 @@ fn cmd_spam_check(input: Option<PathBuf>, json: bool) {
                 if diagnostics.is_empty() {
                     eprintln!("  {} stdin", "ok".green().bold());
                 } else {
-                    for d in &diagnostics {
-                        let label = match d.severity {
-                            Severity::Warning => "warn".yellow().bold(),
-                            Severity::Error => "error".red().bold(),
-                        };
-                        eprintln!("  {} stdin [{}] {}", label, d.rule, d.message);
-                    }
+                    print_diagnostics(&diagnostics, "stdin");
                 }
             }
 

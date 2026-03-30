@@ -91,84 +91,12 @@ pub fn transform_column_with_position(
 }
 
 /// Single column fallback (used when not batch-processed via row).
+/// Detects sibling columns from the DOM and delegates to transform_column_with_position.
 pub fn make_column(element: &ElementRef, config: &Config) -> String {
-    let attrs = get_attrs(element);
-    let inner = inner_html(element);
-    let mut classes = get_classes(element);
-
     let col_count = count_sibling_columns(element, config) + 1;
-
-    let small_size = get_attr(element, "sm")
-        .or_else(|| get_attr(element, "small"))
-        .and_then(|s| s.parse::<u32>().ok())
-        .unwrap_or(config.column_count);
-
-    let large_size = get_attr(element, "lg")
-        .or_else(|| get_attr(element, "large"))
-        .and_then(|s| s.parse::<u32>().ok())
-        .or_else(|| {
-            get_attr(element, "sm")
-                .or_else(|| get_attr(element, "small"))
-                .and_then(|s| s.parse::<u32>().ok())
-        })
-        .unwrap_or(config.column_count / col_count);
-
-    classes.push(format!("small-{}", small_size));
-    classes.push(format!("large-{}", large_size));
-    classes.push("columns".to_string());
-
-    if !has_prev_sibling_column(element, config) {
-        classes.push("first".to_string());
-    }
-    if !has_next_sibling_column(element, config) {
-        classes.push("last".to_string());
-    }
-
-    let attrs_str = if attrs.is_empty() {
-        String::new()
-    } else {
-        attrs
-    };
-
-    match config.output_mode {
-        OutputMode::Table => {
-            let no_expander = get_attr(element, "no-expander");
-            let has_nested_row = inner.contains("class=\"row") || inner.contains("<row");
-            let needs_expander = large_size == config.column_count
-                && !has_nested_row
-                && (no_expander.is_none() || no_expander.as_deref() == Some("false"));
-
-            let expander = if needs_expander {
-                "\n<th class=\"expander\" aria-hidden=\"true\"></th>"
-            } else {
-                ""
-            };
-
-            format!(
-                r#"<th class="{}"{}><table role="presentation"><tbody><tr><th>{}</th>{}</tr></tbody></table></th>"#,
-                classes.join(" "),
-                attrs_str,
-                inner,
-                expander
-            )
-        }
-        OutputMode::Hybrid => {
-            let width_pct = (large_size as f64 / config.column_count as f64) * 100.0;
-            let width_pct_str = format!("{:.4}", width_pct)
-                .trim_end_matches('0')
-                .trim_end_matches('.')
-                .to_string();
-
-            format!(
-                r#"<!--[if mso]><td width="{}%" valign="top"><![endif]--><div class="{}"{} style="display:inline-block;width:100%;max-width:{}%;vertical-align:top;">{}</div><!--[if mso]></td><![endif]-->"#,
-                width_pct_str,
-                classes.join(" "),
-                attrs_str,
-                width_pct_str,
-                inner,
-            )
-        }
-    }
+    let is_first = !has_prev_sibling_column(element, config);
+    let is_last = !has_next_sibling_column(element, config);
+    transform_column_with_position(element, config, col_count, is_first, is_last)
 }
 
 /// Check if an element is a column.

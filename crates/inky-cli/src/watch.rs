@@ -1,11 +1,9 @@
-use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 use std::time::Duration;
 
 use colored::Colorize;
 use notify_debouncer_mini::{new_debouncer, DebouncedEventKind};
-use regex::Regex;
 
 use inky_core::{Config, Inky, OutputMode};
 
@@ -43,7 +41,7 @@ pub fn cmd_watch(
     };
 
     // Load merge data if a data file was provided
-    let merge_data = load_watch_data(data_path.as_deref());
+    let merge_data = crate::util::load_json_data(data_path.as_deref());
 
     // Initial full build
     eprintln!(
@@ -114,7 +112,7 @@ pub fn cmd_watch(
     }
 
     // Also watch directories containing included partials
-    let include_dirs = find_include_dirs(&input);
+    let include_dirs = crate::util::find_include_dirs(&input);
     for dir in &include_dirs {
         if dir != &input {
             eprintln!("  {} {}", "watching".cyan().bold(), dir.display());
@@ -157,7 +155,7 @@ pub fn cmd_watch(
                     }
 
                     // Only care about template files, ignore output directory
-                    if !is_template_file(path) || path.starts_with(&output) {
+                    if !crate::util::is_watchable_file(path) || path.starts_with(&output) {
                         continue;
                     }
 
@@ -186,7 +184,7 @@ pub fn cmd_watch(
                 if data_changed {
                     let timestamp = current_time();
                     eprintln!("  [{}] data file changed, reloading...", timestamp);
-                    merge_data = load_watch_data(data_path.as_deref());
+                    merge_data = crate::util::load_json_data(data_path.as_deref());
                     needs_full_rebuild = true;
                 }
 
@@ -229,40 +227,6 @@ pub fn cmd_watch(
             }
         }
     }
-}
-
-fn load_watch_data(path: Option<&Path>) -> Option<serde_json::Value> {
-    let path = path?;
-    match std::fs::read_to_string(path) {
-        Ok(content) => match serde_json::from_str(&content) {
-            Ok(data) => Some(data),
-            Err(e) => {
-                eprintln!(
-                    "  {} Failed to parse data file {}: {}",
-                    "warning:".yellow().bold(),
-                    path.display(),
-                    e
-                );
-                None
-            }
-        },
-        Err(e) => {
-            eprintln!(
-                "  {} Failed to read data file {}: {}",
-                "warning:".yellow().bold(),
-                path.display(),
-                e
-            );
-            None
-        }
-    }
-}
-
-fn is_template_file(path: &Path) -> bool {
-    path.extension()
-        .and_then(|e| e.to_str())
-        .map(|ext| crate::util::WATCH_EXTENSIONS.contains(&ext))
-        .unwrap_or(false)
 }
 
 fn current_time() -> String {
@@ -427,58 +391,6 @@ fn build_file(
 
 fn find_template_files(dir: &Path) -> Vec<PathBuf> {
     crate::util::find_files(dir, crate::util::TEMPLATE_EXTENSIONS)
-}
-
-/// Scan all templates in a directory for <include> and <layout> tags and return
-/// the unique canonicalized directories containing those referenced files.
-/// Scan all templates (and their referenced layouts) for include, layout, and link tags.
-/// Returns the unique canonicalized directories containing those referenced files.
-fn find_include_dirs(input_dir: &Path) -> Vec<PathBuf> {
-    let include_re = Regex::new(r#"<include\s+[^>]*?src\s*=\s*"([^"]+)"[^>]*/?\s*>"#).unwrap();
-    let layout_re = Regex::new(r#"<layout\s+[^>]*?src\s*=\s*"([^"]+)"[^>]*>"#).unwrap();
-    let link_re =
-        Regex::new(r#"<link\s+[^>]*href\s*=\s*"([^"]+\.(?:scss|css))"[^>]*/?\s*>"#).unwrap();
-    let mut dirs = HashSet::new();
-    let mut referenced_files: Vec<PathBuf> = Vec::new();
-    let files = find_template_files(input_dir);
-
-    // Scan input templates for includes, layouts, and linked stylesheets
-    for file in &files {
-        if let Ok(content) = std::fs::read_to_string(file) {
-            let base = file.parent().unwrap_or(input_dir);
-            for re in [&include_re, &layout_re, &link_re] {
-                for cap in re.captures_iter(&content) {
-                    let ref_path = base.join(&cap[1]);
-                    if let Some(parent) = ref_path.parent() {
-                        if let Ok(canonical) = std::fs::canonicalize(parent) {
-                            dirs.insert(canonical);
-                        }
-                    }
-                    // Track layout files so we can scan them for links too
-                    if re.as_str().contains("layout") {
-                        referenced_files.push(ref_path);
-                    }
-                }
-            }
-        }
-    }
-
-    // Scan referenced layout files for linked stylesheets
-    for layout_file in &referenced_files {
-        if let Ok(content) = std::fs::read_to_string(layout_file) {
-            let base = layout_file.parent().unwrap_or(input_dir);
-            for cap in link_re.captures_iter(&content) {
-                let ref_path = base.join(&cap[1]);
-                if let Some(parent) = ref_path.parent() {
-                    if let Ok(canonical) = std::fs::canonicalize(parent) {
-                        dirs.insert(canonical);
-                    }
-                }
-            }
-        }
-    }
-
-    dirs.into_iter().collect()
 }
 
 fn to_output_path(input: &Path, input_dir: &Path, output_dir: &Path) -> PathBuf {
