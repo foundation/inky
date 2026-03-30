@@ -4,10 +4,10 @@
   "version": "2.0.0-beta.4",
   "license": "MIT",
   "files": [
-    "inky_wasm_bg.wasm",
-    "inky_wasm.js",
-    "inky_wasm.d.ts"
+    "inky_bg.wasm",
+    "inky.js",
+    "inky.d.ts"
   ],
-  "main": "inky_wasm.js",
-  "types": "inky_wasm.d.ts"
+  "main": "inky.js",
+  "types": "inky.d.ts"
 }

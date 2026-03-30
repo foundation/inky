@@ -5,16 +5,13 @@ use std::time::Duration;
 use colored::Colorize;
 use notify_debouncer_mini::{new_debouncer, DebouncedEventKind};
 
-use inky_core::{Config, Inky, OutputMode};
+use inky_core::{Config, Inky};
 
 pub fn cmd_watch(
     input: PathBuf,
     output: PathBuf,
-    columns: u32,
     build_ctx: crate::build::BuildContext,
     data_path: Option<PathBuf>,
-    output_mode: OutputMode,
-    _plain_text: bool,
 ) {
     if !input.is_dir() {
         eprintln!(
@@ -32,8 +29,8 @@ pub fn cmd_watch(
     let output = std::fs::canonicalize(&output).unwrap_or(output);
 
     let config = Config {
-        column_count: columns,
-        output_mode,
+        column_count: build_ctx.columns,
+        output_mode: build_ctx.output_mode,
         ..Config::default()
     };
 

@@ -153,13 +153,13 @@ jobs:
         run: wasm-pack build crates/inky-wasm --target nodejs --out-dir ../../bindings/node
 
       - name: Package
-        run: tar czf inky-wasm-nodejs.tar.gz -C bindings node
+        run: tar czf inky-nodejs.tar.gz -C bindings node
 
       - name: Upload artifact
         uses: actions/upload-artifact@v5
         with:
           name: wasm-nodejs
-          path: inky-wasm-nodejs.tar.gz
+          path: inky-nodejs.tar.gz
 
   release:
     name: Create GitHub Release
@@ -231,7 +231,7 @@ jobs:
 
       - name: Extract and publish
         run: |
-          tar xzf inky-wasm-nodejs.tar.gz
+          tar xzf inky-nodejs.tar.gz
           cd node
           # wasm-pack generates package.json with crate name — fix for npm
           node -e "

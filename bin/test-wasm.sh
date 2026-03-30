@@ -89,7 +89,7 @@ if [ "$1" = "--browse" ] || [ "$1" = "-b" ]; then
 </div>
 
 <script type="module">
-import init, { transform, transform_with_config, validate, migrate, migrate_with_details, version } from './inky_wasm.js';
+import init, { transform, transform_with_config, validate, migrate, migrate_with_details, version } from './inky.js';
 
 await init();
 

@@ -8,7 +8,7 @@ use std::time::Duration;
 use colored::Colorize;
 use notify_debouncer_mini::{new_debouncer, DebouncedEventKind};
 
-use inky_core::{Config, Inky, OutputMode};
+use inky_core::{Config, Inky};
 
 use crate::build;
 
@@ -22,11 +22,9 @@ static VERSION: AtomicU64 = AtomicU64::new(1);
 
 pub fn cmd_serve(
     input: PathBuf,
-    columns: u32,
     build_ctx: crate::build::BuildContext,
     data_path: Option<PathBuf>,
     port: u16,
-    output_mode: OutputMode,
 ) {
     if !input.is_dir() {
         eprintln!(
@@ -40,8 +38,8 @@ pub fn cmd_serve(
     let input = std::fs::canonicalize(&input).unwrap_or(input);
 
     let config = Config {
-        column_count: columns,
-        output_mode,
+        column_count: build_ctx.columns,
+        output_mode: build_ctx.output_mode,
         ..Config::default()
     };
 

@@ -8,7 +8,7 @@
 let wasm;
 
 try {
-  wasm = require("./inky_wasm");
+  wasm = require("./inky");
 } catch (e) {
   throw new Error(
     "Inky WASM module not found. Run `npm run build:node` first.\n" + e.message

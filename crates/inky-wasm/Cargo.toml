@@ -1,5 +1,5 @@
 [package]
-name = "inky-wasm"
+name = "inky"
 version = "2.0.0-beta.4"
 edition = "2021"
 description = "WASM bindings for Inky"

@@ -228,28 +228,23 @@ fn main() {
         } => {
             let cfg = resolve_config(input, output, columns);
             let output_mode = cfg.output_mode(hybrid);
-            let plain_text = plain_text || cfg.plain_text;
+            let columns = cfg.columns;
+            let bp = bulletproof_buttons || cfg.bulletproof_buttons;
+            let pt = plain_text || cfg.plain_text;
             let data_path = data.or(cfg.data);
             let data_source = resolve_data_source(data_path.as_deref());
-            let bulletproof_buttons = bulletproof_buttons || cfg.bulletproof_buttons;
             let build_ctx = build::BuildContext {
                 inline_css: !no_inline_css,
                 framework_css: !no_framework_css,
                 components_dir: cfg.components,
                 error_mode: build::ErrorMode::Exit,
-            };
-            cmd_build(
-                cfg.input,
-                cfg.output,
-                cfg.columns,
-                strict,
-                &build_ctx,
-                &data_source,
                 output_mode,
-                plain_text,
-                bulletproof_buttons,
+                columns,
+                bulletproof_buttons: bp,
+                plain_text: pt,
                 json,
-            )
+            };
+            cmd_build(cfg.input, cfg.output, strict, &build_ctx, &data_source)
         }
         Commands::Validate { input, json } => cmd_validate(input, json),
         Commands::Migrate {
@@ -271,8 +266,9 @@ fn main() {
         } => {
             let cfg = resolve_config(input, output, columns);
             let output_mode = cfg.output_mode(hybrid);
-            let _plain_text = plain_text || cfg.plain_text;
-            let _bulletproof_buttons = bulletproof_buttons || cfg.bulletproof_buttons;
+            let columns = cfg.columns;
+            let bp = bulletproof_buttons || cfg.bulletproof_buttons;
+            let pt = plain_text || cfg.plain_text;
             let data = data.or(cfg.data);
             let input = cfg.input.unwrap_or_else(|| {
                 eprintln!("{} No input directory specified. Use `inky watch <dir>` or set \"src\" in inky.config.json", "error:".red().bold());
@@ -287,16 +283,13 @@ fn main() {
                 framework_css: !no_framework_css,
                 components_dir: cfg.components,
                 error_mode: build::ErrorMode::Continue,
-            };
-            watch::cmd_watch(
-                input,
-                output,
-                cfg.columns,
-                watch_ctx,
-                data,
                 output_mode,
-                _plain_text,
-            )
+                columns,
+                bulletproof_buttons: bp,
+                plain_text: pt,
+                json: false,
+            };
+            watch::cmd_watch(input, output, watch_ctx, data)
         }
         Commands::Serve {
             input,
@@ -310,7 +303,8 @@ fn main() {
         } => {
             let cfg = resolve_config(input, None, columns);
             let output_mode = cfg.output_mode(hybrid);
-            let _bulletproof_buttons = bulletproof_buttons || cfg.bulletproof_buttons;
+            let columns = cfg.columns;
+            let bp = bulletproof_buttons || cfg.bulletproof_buttons;
             let data = data.or(cfg.data);
             let input = cfg.input.unwrap_or_else(|| {
                 eprintln!("{} No input directory specified. Use `inky serve <dir>` or set \"src\" in inky.config.json", "error:".red().bold());
@@ -321,8 +315,13 @@ fn main() {
                 framework_css: !no_framework_css,
                 components_dir: cfg.components,
                 error_mode: build::ErrorMode::Continue,
+                output_mode,
+                columns,
+                bulletproof_buttons: bp,
+                plain_text: false,
+                json: false,
             };
-            serve::cmd_serve(input, cfg.columns, serve_ctx, data, port, output_mode)
+            serve::cmd_serve(input, serve_ctx, data, port)
         }
         Commands::SpamCheck { input, json } => cmd_spam_check(input, json),
     }
@@ -497,19 +496,16 @@ fn load_merge_data(path: Option<&Path>) -> Option<serde_json::Value> {
 fn cmd_build(
     input: Option<PathBuf>,
     output: Option<PathBuf>,
-    columns: u32,
     strict: bool,
     build_ctx: &build::BuildContext,
     data_source: &DataSource,
-    output_mode: OutputMode,
-    plain_text: bool,
-    bulletproof_buttons: bool,
-    json: bool,
 ) {
+    let json = build_ctx.json;
+    let plain_text = build_ctx.plain_text;
     let config = Config {
-        column_count: columns,
-        output_mode,
-        bulletproof_buttons,
+        column_count: build_ctx.columns,
+        output_mode: build_ctx.output_mode,
+        bulletproof_buttons: build_ctx.bulletproof_buttons,
         ..Config::default()
     };
     let inky = Inky::with_config(config.clone());
@@ -524,8 +520,6 @@ fn cmd_build(
                     build_ctx,
                     &config,
                     data_source,
-                    plain_text,
-                    json,
                 )
             } else {
                 let base = path.parent().map(Path::to_path_buf);
@@ -674,9 +668,9 @@ fn build_directory(
     build_ctx: &build::BuildContext,
     config: &Config,
     data_source: &DataSource,
-    plain_text: bool,
-    json: bool,
 ) -> bool {
+    let json = build_ctx.json;
+    let plain_text = build_ctx.plain_text;
     let files = find_template_files(input_dir);
     let mut has_warnings = false;
     let mut json_results: Vec<JsonFileResult> = Vec::new();
@@ -801,6 +795,11 @@ fn cmd_validate(input: Option<PathBuf>, json: bool) {
         framework_css: true,
         components_dir: cfg.components.clone(),
         error_mode: build::ErrorMode::Continue,
+        output_mode,
+        columns: cfg.columns,
+        bulletproof_buttons: cfg.bulletproof_buttons,
+        plain_text: false,
+        json,
     };
 
     match input {
@@ -967,6 +966,11 @@ fn cmd_spam_check(input: Option<PathBuf>, json: bool) {
         framework_css: true,
         components_dir: None,
         error_mode: build::ErrorMode::Continue,
+        output_mode: OutputMode::Table,
+        columns: 12,
+        bulletproof_buttons: false,
+        plain_text: false,
+        json,
     };
 
     match input {

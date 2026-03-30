@@ -32,7 +32,7 @@ pub use column::{is_column_element, transform_column_with_position};
 type ComponentFn = fn(&ElementRef, &Config) -> String;
 
 /// Build a dispatch table mapping tag names to their transform functions.
-fn component_table<'a>(config: &'a Config) -> Vec<(&'a str, ComponentFn)> {
+fn component_table(config: &Config) -> Vec<(&str, ComponentFn)> {
     let c = &config.components;
     vec![
         (c.h_line.as_str(), |el, _| divider::make_h_line(el)),

@@ -33,6 +33,11 @@ pub struct BuildContext {
     pub framework_css: bool,
     pub components_dir: Option<String>,
     pub error_mode: ErrorMode,
+    pub output_mode: inky_core::OutputMode,
+    pub columns: u32,
+    pub bulletproof_buttons: bool,
+    pub plain_text: bool,
+    pub json: bool,
 }
 
 fn handle_error(mode: ErrorMode, msg: &str) -> String {

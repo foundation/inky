@@ -96,18 +96,11 @@ echo "  Package: inky@$VERSION"
 if confirm "  Publish to npm?"; then
     TMPDIR=$(mktemp -d)
     echo "  Downloading WASM artifact from GitHub release..."
-    gh release download "$TAG" --pattern "inky-wasm-nodejs.tar.gz" --dir "$TMPDIR"
+    gh release download "$TAG" --pattern "inky-nodejs.tar.gz" --dir "$TMPDIR"
     echo "  Extracting to bindings/node/..."
-    tar -xzf "$TMPDIR/inky-wasm-nodejs.tar.gz" -C bindings/node/
+    tar -xzf "$TMPDIR/inky-nodejs.tar.gz" -C bindings/node/
     rm -rf "$TMPDIR"
-    echo "  Patching package.json..."
     cd bindings/node
-    node -e "
-      const pkg = require('./package.json');
-      pkg.name = 'inky';
-      pkg.repository = { type: 'git', url: 'https://github.com/foundation/inky.git' };
-      require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
-    "
     echo "  Publishing..."
     # Use --tag beta for prerelease versions, --tag latest for stable
     # --access public is required for first publish of scoped/new packages
