@@ -169,11 +169,10 @@ else
     echo "Warning: inky-go repo not found at ../inky-go — skipping Go module tag."
 fi
 
-# Publish to package registries
-echo ""
-read -r -p "==> Publish to package registries now? [y/N] " response
-if [[ "$response" =~ ^[Yy]$ ]]; then
-    bin/publish.sh
-fi
+# Publishing to crates.io, npm, PyPI, and RubyGems is handled by the
+# release workflow in CI. If any publish step fails, use bin/publish.sh
+# as a manual fallback.
 
 echo "==> Done! Inky $TAG has been released."
+echo "    Publishing to registries will happen automatically via CI."
+echo "    If needed, run bin/publish.sh as a fallback."
