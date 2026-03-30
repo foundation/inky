@@ -15,7 +15,7 @@ Common issues and how to fix them.
 
 ### "Unknown component" error
 
-```
+```sh
 error: unknown component <columns> at line 5
   hint: did you mean <column>? (singular in v2)
   hint: run `inky migrate` to convert v1 syntax automatically

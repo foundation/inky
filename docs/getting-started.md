@@ -44,7 +44,7 @@ cd my-email
 
 This creates:
 
-```
+```sh
 my-email/
 ├── inky.config.json
 ├── AGENT.md
