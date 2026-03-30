@@ -233,9 +233,10 @@ jobs:
         run: |
           tar xzf inky-wasm-nodejs.tar.gz
           cd node
-          # Add repository field required for npm provenance/OIDC
+          # wasm-pack generates package.json with crate name — fix for npm
           node -e "
             const pkg = require('./package.json');
+            pkg.name = 'inky';
             pkg.repository = { type: 'git', url: 'https://github.com/foundation/inky.git' };
             require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
           "

@@ -100,8 +100,15 @@ if confirm "  Publish to npm?"; then
     echo "  Extracting to bindings/node/..."
     tar -xzf "$TMPDIR/inky-wasm-nodejs.tar.gz" -C bindings/node/
     rm -rf "$TMPDIR"
-    echo "  Publishing..."
+    echo "  Patching package.json..."
     cd bindings/node
+    node -e "
+      const pkg = require('./package.json');
+      pkg.name = 'inky';
+      pkg.repository = { type: 'git', url: 'https://github.com/foundation/inky.git' };
+      require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+    "
+    echo "  Publishing..."
     # Use --tag beta for prerelease versions, --tag latest for stable
     # --access public is required for first publish of scoped/new packages
     if echo "$VERSION" | grep -qE '(alpha|beta|rc|dev)'; then
