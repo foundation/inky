@@ -21,18 +21,35 @@ if [ "$BRANCH" != "develop" ]; then
     exit 1
 fi
 
-if [ -n "$(git status --porcelain)" ]; then
-    echo "Error: Working directory is not clean. Commit or stash your changes first."
-    exit 1
-fi
-
 # Check tag doesn't already exist
 if git rev-parse "$TAG" >/dev/null 2>&1; then
     echo "Error: Tag $TAG already exists."
     exit 1
 fi
 
+# Verify CHANGELOG.md has an entry for this version
+if ! grep -q "## $VERSION" CHANGELOG.md 2>/dev/null; then
+    echo "Error: No entry for $VERSION found in CHANGELOG.md."
+    echo "Add a changelog entry before releasing."
+    exit 1
+fi
+
 echo "==> Releasing Inky $TAG"
+
+# Bump versions if needed
+CORE_VERSION=$(grep '^version' crates/inky-core/Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+if [ "$CORE_VERSION" != "$VERSION" ]; then
+    echo "==> Bumping versions..."
+    bin/version.sh "$VERSION"
+    git add -A
+    git commit -m "Bump version to $VERSION"
+else
+    # If versions already match, working directory must be clean
+    if [ -n "$(git status --porcelain)" ]; then
+        echo "Error: Working directory is not clean. Commit or stash your changes first."
+        exit 1
+    fi
+fi
 
 # Tag the release
 echo "==> Tagging $TAG..."
@@ -124,5 +141,12 @@ fi
 
 # Clean up
 rm -rf "$TMPDIR"
+
+# Publish to package registries
+echo ""
+read -r -p "==> Publish to package registries now? [y/N] " response
+if [[ "$response" =~ ^[Yy]$ ]]; then
+    bin/publish.sh
+fi
 
 echo "==> Done! Inky $TAG has been released."
