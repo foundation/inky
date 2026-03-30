@@ -178,6 +178,49 @@ impl Default for Inky {
     }
 }
 
+/// Find the end position of the matching close tag, tracking nested open/close depth.
+/// `pos` should point to just after the opening tag. Returns the byte offset just past
+/// the matching `</tag>`, or `None` if no matching close tag is found.
+fn find_matching_close(
+    html: &str,
+    open_re: &Regex,
+    close_re: &Regex,
+    mut pos: usize,
+) -> Option<usize> {
+    let mut depth = 1;
+    loop {
+        let next_open = open_re
+            .find(&html[pos..])
+            .map(|m| (pos + m.start(), pos + m.end()));
+        let next_close = close_re
+            .find(&html[pos..])
+            .map(|m| (pos + m.start(), pos + m.end()));
+
+        match (next_open, next_close) {
+            (Some((os, oe)), Some((cs, ce))) => {
+                if cs < os {
+                    depth -= 1;
+                    if depth == 0 {
+                        return Some(ce);
+                    }
+                    pos = ce;
+                } else {
+                    depth += 1;
+                    pos = oe;
+                }
+            }
+            (None, Some((_cs, ce))) => {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(ce);
+                }
+                pos = ce;
+            }
+            _ => return None,
+        }
+    }
+}
+
 /// Transform all adjacent <columns> tags in a group, handling first/last/sibling-count correctly.
 /// This is needed because html5ever restructures <th> elements into table structures,
 /// breaking sibling detection when processing columns one at a time.
@@ -200,48 +243,13 @@ fn transform_all_columns(html: &str, config: &Config, actual_tag: &str) -> Strin
 
     while let Some(open_match) = open_re.find(&html[search_start..]) {
         let col_start = search_start + open_match.start();
-        let mut pos = search_start + open_match.end();
-        let mut depth = 1;
+        let after_open = search_start + open_match.end();
 
-        // Track depth to find the matching close tag
-        loop {
-            let next_open = open_re
-                .find(&html[pos..])
-                .map(|m| (pos + m.start(), pos + m.end()));
-            let next_close = close_re
-                .find(&html[pos..])
-                .map(|m| (pos + m.start(), pos + m.end()));
-
-            match (next_open, next_close) {
-                (Some((os, oe)), Some((cs, ce))) => {
-                    if cs < os {
-                        depth -= 1;
-                        if depth == 0 {
-                            columns.push((col_start, ce));
-                            search_start = ce;
-                            break;
-                        }
-                        pos = ce;
-                    } else {
-                        depth += 1;
-                        pos = oe;
-                    }
-                }
-                (None, Some((_cs, ce))) => {
-                    depth -= 1;
-                    if depth == 0 {
-                        columns.push((col_start, ce));
-                        search_start = ce;
-                        break;
-                    }
-                    pos = ce;
-                }
-                _ => {
-                    // No matching close tag
-                    search_start = pos;
-                    break;
-                }
-            }
+        if let Some(close_end) = find_matching_close(html, &open_re, &close_re, after_open) {
+            columns.push((col_start, close_end));
+            search_start = close_end;
+        } else {
+            break;
         }
 
         // Check if the next non-whitespace content after this column is another <columns>
@@ -333,51 +341,16 @@ fn replace_first_tag(html: &str, tag_name: &str, replacement: &str) -> String {
             continue;
         }
 
-        // Track nesting depth to find the matching close tag
-        let mut depth = 1;
-        let mut pos = open_end;
-
-        loop {
-            // Find next opening or closing tag after current position
-            let next_open = open_re
-                .find(&html[pos..])
-                .map(|m| (pos + m.start(), pos + m.end()));
-            let next_close = close_re
-                .find(&html[pos..])
-                .map(|m| (pos + m.start(), pos + m.end()));
-
-            match (next_open, next_close) {
-                (Some((os, oe)), Some((cs, ce))) => {
-                    if cs < os {
-                        // Close tag comes first
-                        depth -= 1;
-                        if depth == 0 {
-                            return format!(
-                                "{}{}{}",
-                                &html[..open_start],
-                                replacement,
-                                &html[ce..]
-                            );
-                        }
-                        pos = ce;
-                    } else {
-                        // Open tag comes first
-                        depth += 1;
-                        pos = oe;
-                    }
-                }
-                (None, Some((_cs, ce))) => {
-                    depth -= 1;
-                    if depth == 0 {
-                        return format!("{}{}{}", &html[..open_start], replacement, &html[ce..]);
-                    }
-                    pos = ce;
-                }
-                _ => break, // No more tags
-            }
+        if let Some(close_end) = find_matching_close(html, &open_re, &close_re, open_end) {
+            return format!(
+                "{}{}{}",
+                &html[..open_start],
+                replacement,
+                &html[close_end..]
+            );
         }
 
-        // If we get here, there's no matching close tag — treat the open tag alone
+        // No matching close tag — treat the open tag alone
         return format!(
             "{}{}{}",
             &html[..open_start],
@@ -509,72 +482,64 @@ fn preprocess_image_tags(html: &str) -> String {
     .to_string()
 }
 
-/// Protect template merge tags that look like HTML (ERB/EJS/ASP tags) from html5ever.
-/// Tags like `<%= expr %>`, `<% code %>`, and `{% tag %}` get HTML-encoded by the parser.
-/// We replace them with placeholders and restore after transformation.
-fn protect_merge_tags(html: &str) -> (Vec<String>, String) {
-    // Match ERB/EJS/ASP-style tags: <%= ... %>, <% ... %>, <%- ... %>, <%# ... %>
-    // Also match Jinja2/Twig/Nunjucks tags: {% ... %}, {%- ... %}
-    let re = Regex::new(r"(<%[=#-]?.*?%>|\{%-?.*?-?%\})").unwrap();
-    let mut tags = Vec::new();
+/// Extract matches from HTML, replacing them with numbered placeholders.
+/// `capture_group` selects which regex group to save (0 = whole match, 1+ = sub-group).
+/// Returns the saved content and the modified HTML.
+fn extract_with_placeholders(
+    html: &str,
+    re: &Regex,
+    prefix: &str,
+    capture_group: usize,
+) -> (Vec<String>, String) {
+    let mut saved = Vec::new();
     let mut result = html.to_string();
 
-    while let Some(m) = re.find(&result) {
-        let tag = m.as_str().to_string();
-        let placeholder = format!("###MERGE{}###", tags.len());
+    while let Some(caps) = re.captures(&result) {
+        let full = caps.get(0).unwrap();
+        let content = caps.get(capture_group).unwrap_or(full).as_str().to_string();
+        let placeholder = format!("###{}{}###", prefix, saved.len());
         result = format!(
             "{}{}{}",
-            &result[..m.start()],
+            &result[..full.start()],
             placeholder,
-            &result[m.end()..]
+            &result[full.end()..]
         );
-        tags.push(tag);
+        saved.push(content);
     }
 
-    (tags, result)
+    (saved, result)
+}
+
+/// Restore placeholders with saved content.
+fn restore_placeholders(html: &str, saved: &[String], prefix: &str) -> String {
+    let mut result = html.to_string();
+    for (i, content) in saved.iter().enumerate() {
+        let placeholder = format!("###{}{}###", prefix, i);
+        result = result.replace(&placeholder, content);
+    }
+    result
+}
+
+/// Protect template merge tags that look like HTML (ERB/EJS/ASP tags) from html5ever.
+fn protect_merge_tags(html: &str) -> (Vec<String>, String) {
+    let re = Regex::new(r"(<%[=#-]?.*?%>|\{%-?.*?-?%\})").unwrap();
+    extract_with_placeholders(html, &re, "MERGE", 0)
 }
 
 /// Restore protected merge tags from placeholders.
 fn restore_merge_tags(html: &str, tags: &[String]) -> String {
-    let mut result = html.to_string();
-    for (i, tag) in tags.iter().enumerate() {
-        let placeholder = format!("###MERGE{}###", i);
-        result = result.replace(&placeholder, tag);
-    }
-    result
+    restore_placeholders(html, tags, "MERGE")
 }
 
 /// Extract `<raw>` blocks from HTML, replacing them with placeholders.
 fn extract_raws(html: &str) -> (Vec<String>, String) {
     let re = Regex::new(r"(?s)(?:\n *)?< *raw *>(.*?)</ *raw *>(?: *\n)?").unwrap();
-    let mut raws = Vec::new();
-    let mut result = html.to_string();
-    let mut i = 0;
-
-    while let Some(caps) = re.captures(&result) {
-        let full_match = caps.get(0).unwrap();
-        let content = caps.get(1).unwrap().as_str().to_string();
-        raws.push(content);
-        result = format!(
-            "{}###RAW{}###{}",
-            &result[..full_match.start()],
-            i,
-            &result[full_match.end()..]
-        );
-        i += 1;
-    }
-
-    (raws, result)
+    extract_with_placeholders(html, &re, "RAW", 1)
 }
 
 /// Re-inject raw block content back into placeholders.
 fn re_inject_raws(html: &str, raws: &[String]) -> String {
-    let mut result = html.to_string();
-    for (i, raw) in raws.iter().enumerate() {
-        let placeholder = format!("###RAW{}###", i);
-        result = result.replace(&placeholder, raw);
-    }
-    result
+    restore_placeholders(html, raws, "RAW")
 }
 
 /// Convenience function to transform HTML with default settings.
