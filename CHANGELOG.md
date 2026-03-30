@@ -2,6 +2,13 @@
 
 All notable changes to the Inky project will be documented in this file.
 
+## 2.0.0-beta.3
+
+### Changed
+
+- **Deployment Automation** I did quite a bit of work on the release automation. This build has no new features from beta 2. But I want to test the release automation.
+
+
 ## 2.0.0-beta.2
 
 ### Added
