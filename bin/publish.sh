@@ -50,7 +50,7 @@ fi
 
 # PyPI: check for twine and credentials (~/.pypirc or TWINE_USERNAME/TWINE_PASSWORD)
 if ! command -v twine > /dev/null 2>&1; then
-    echo "  PyPI: NOT CONFIGURED — twine not installed (pip install twine)"
+    echo "  PyPI: NOT CONFIGURED — twine not installed (brew install twine)"
     PREFLIGHT_OK=false
 elif [ -f ~/.pypirc ] || [ -n "$TWINE_USERNAME" ] || [ -n "$TWINE_PASSWORD" ]; then
     echo "  PyPI: ok"
@@ -69,8 +69,8 @@ fi
 
 echo ""
 if [ "$PREFLIGHT_OK" = false ]; then
-    echo "Warning: Some registries are not configured. You can still skip them during publish."
-    echo ""
+    echo "Some registries are not configured. Fix the issues above and re-run."
+    exit 1
 fi
 
 PUBLISHED=()
@@ -97,13 +97,19 @@ echo "  Package: inky-wasm@$VERSION"
 if confirm "  Publish to npm?"; then
     TMPDIR=$(mktemp -d)
     echo "  Downloading WASM artifact from GitHub release..."
-    gh release download "$TAG" --pattern "inky-wasm.tar.gz" --dir "$TMPDIR"
+    gh release download "$TAG" --pattern "inky-wasm-nodejs.tar.gz" --dir "$TMPDIR"
     echo "  Extracting to bindings/node/..."
-    tar -xzf "$TMPDIR/inky-wasm.tar.gz" -C bindings/node/
+    tar -xzf "$TMPDIR/inky-wasm-nodejs.tar.gz" -C bindings/node/
     rm -rf "$TMPDIR"
     echo "  Publishing..."
     cd bindings/node
-    npm publish
+    # Use --tag beta for prerelease versions, --tag latest for stable
+    # --access public is required for first publish of scoped/new packages
+    if echo "$VERSION" | grep -qE '(alpha|beta|rc|dev)'; then
+        npm publish --access public --tag beta
+    else
+        npm publish --access public
+    fi
     cd ../..
     PUBLISHED+=("npm")
 else
@@ -118,7 +124,7 @@ echo "  Requires: python -m build, twine"
 if confirm "  Publish to PyPI?"; then
     cd bindings/python
     rm -rf dist/
-    python -m build
+    pyproject-build
     twine upload dist/*
     cd ../..
     PUBLISHED+=("PyPI")
@@ -133,8 +139,9 @@ echo "  Package: inky-email@$VERSION"
 if confirm "  Publish to RubyGems?"; then
     cd bindings/ruby
     gem build inky-email.gemspec
-    gem push inky-email-"${VERSION}".gem
-    rm -f inky-email-"${VERSION}".gem
+    GEM_FILE=$(ls inky-email-*.gem | head -1)
+    gem push "$GEM_FILE"
+    rm -f "$GEM_FILE"
     cd ../..
     PUBLISHED+=("RubyGems")
 else
