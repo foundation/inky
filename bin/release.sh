@@ -67,8 +67,16 @@ if [ -z "$RUN_ID" ]; then
     echo "Error: Could not find release workflow run for $TAG"
     exit 1
 fi
-gh run watch "$RUN_ID" --exit-status
-echo "==> Release workflow completed."
+if gh run watch "$RUN_ID" --exit-status; then
+    echo "==> Release workflow completed."
+else
+    echo "==> Release workflow had failures (this is expected if crates.io was already published)."
+    echo "    Verify the GitHub release assets exist before continuing."
+    read -r -p "    Continue? [y/N] " response
+    if [[ ! "$response" =~ ^[Yy]$ ]]; then
+        exit 1
+    fi
+fi
 
 # Download CLI tarballs and compute SHA256s
 echo "==> Computing SHA256 checksums..."
