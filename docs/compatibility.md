@@ -1,6 +1,8 @@
 ---
 raw: true
 title: "Email Client Compatibility"
+nav_group: "Guides"
+nav_order: 4
 ---
 
 # Email Client Compatibility

@@ -1,6 +1,8 @@
 ---
 raw: true
 title: "Migration Guide: v1 to v2"
+nav_group: "Guides"
+nav_order: 3
 ---
 
 # Migration Guide: v1 to v2

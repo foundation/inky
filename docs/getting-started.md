@@ -1,6 +1,8 @@
 ---
 raw: true
-title: "Getting Started"
+title: "Installation & Usage"
+nav_group: "Getting Started"
+nav_order: 1
 ---
 
 # Getting Started

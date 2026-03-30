@@ -1,6 +1,8 @@
 ---
 raw: true
 title: "Style Reference"
+nav_group: "Features"
+nav_order: 2
 ---
 
 # Style Reference

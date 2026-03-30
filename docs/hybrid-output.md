@@ -1,6 +1,8 @@
 ---
 raw: true
 title: "Hybrid Output Mode"
+nav_group: "Features"
+nav_order: 4
 ---
 
 # Hybrid Output Mode

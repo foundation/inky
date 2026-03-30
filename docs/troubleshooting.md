@@ -1,6 +1,8 @@
 ---
 raw: true
 title: "Troubleshooting"
+nav_group: "Guides"
+nav_order: 5
 ---
 
 # Troubleshooting

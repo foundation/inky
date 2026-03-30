@@ -1,6 +1,8 @@
 ---
 raw: true
 title: "Data Merging"
+nav_group: "Features"
+nav_order: 3
 ---
 
 # Data Merging

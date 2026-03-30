@@ -1,6 +1,8 @@
 ---
 raw: true
 title: "Language Bindings"
+nav_group: "Guides"
+nav_order: 2
 ---
 
 # Language Bindings

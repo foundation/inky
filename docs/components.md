@@ -1,6 +1,8 @@
 ---
 raw: true
 title: "Component Reference"
+nav_group: "Features"
+nav_order: 1
 ---
 
 # Component Reference

@@ -1,6 +1,8 @@
 ---
 raw: true
 title: "Email Development Guide"
+nav_group: "Guides"
+nav_order: 1
 ---
 
 # Email Development Guide
