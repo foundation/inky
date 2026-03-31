@@ -215,6 +215,7 @@ jobs:
     name: Publish to npm
     needs: [release]
     runs-on: ubuntu-latest
+    environment: release
     permissions:
       contents: read
       id-token: write
@@ -233,13 +234,6 @@ jobs:
         run: |
           tar xzf inky-nodejs.tar.gz
           cd node
-          # wasm-pack generates package.json with crate name — fix for npm
-          node -e "
-            const pkg = require('./package.json');
-            pkg.name = 'inky';
-            pkg.repository = { type: 'git', url: 'https://github.com/foundation/inky.git' };
-            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
           VERSION=$(node -p "require('./package.json').version")
           if echo "$VERSION" | grep -qE '(alpha|beta|rc|dev)'; then
             npm publish --access public --tag beta --provenance
