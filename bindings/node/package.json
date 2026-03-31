@@ -9,5 +9,9 @@
     "inky.d.ts"
   ],
   "main": "inky.js",
-  "types": "inky.d.ts"
+  "types": "inky.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foundation/inky.git"
+  }
 }
