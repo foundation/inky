@@ -2,6 +2,13 @@
 
 All notable changes to the Inky project will be documented in this file.
 
+## 2.0.0-beta.7
+
+### Fixed
+
+- Another attempt at fixing the NPM publish via Github Actions. I really love the NPM ecosystem so much. It's just so user friendly!
+
+
 ## 2.0.0-beta.6
 
 ### Fixed
