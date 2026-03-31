@@ -1,6 +1,6 @@
 [package]
 name = "inky-core"
-version = "2.0.0-beta.5"
+version = "2.0.0-beta.6"
 edition = "2021"
 description = "Inky — convert simple HTML into email-safe table markup"
 license = "MIT"
