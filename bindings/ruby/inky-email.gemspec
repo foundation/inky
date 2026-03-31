@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = "inky-email"
-  s.version     = "2.0.0-beta.7"
+  s.version     = "2.0.0-beta.8"
   s.summary     = "Transform email templates into email-safe HTML"
   s.description = "Inky converts simple HTML with custom components into email-safe table markup. Powered by Rust via Fiddle."
   s.authors     = ["ZURB"]

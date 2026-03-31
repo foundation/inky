@@ -2,6 +2,12 @@
 
 All notable changes to the Inky project will be documented in this file.
 
+## 2.0.0-beta.8
+
+### Fixed
+
+- I give up on OIDC auth for NPM. Moving to tokens even though they expire every 90 days.
+
 ## 2.0.0-beta.7
 
 ### Fixed

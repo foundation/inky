@@ -231,14 +231,16 @@ jobs:
           path: .
 
       - name: Extract and publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           tar xzf inky-nodejs.tar.gz
           cd node
           VERSION=$(node -p "require('./package.json').version")
           if echo "$VERSION" | grep -qE '(alpha|beta|rc|dev)'; then
-            npm publish --access public --tag beta --provenance
+            npm publish --access public --tag beta
           else
-            npm publish --access public --provenance
+            npm publish --access public
           fi
 
   publish-pypi:

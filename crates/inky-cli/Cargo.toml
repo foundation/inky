@@ -1,6 +1,6 @@
 [package]
 name = "inky-cli"
-version = "2.0.0-beta.7"
+version = "2.0.0-beta.8"
 edition = "2021"
 description = "Inky CLI — transform, migrate, and validate email templates"
 license = "MIT"
@@ -13,7 +13,7 @@ name = "inky"
 path = "src/main.rs"
 
 [dependencies]
-inky-core = { version = "2.0.0-beta.7", path = "../inky-core", features = ["css-inlining", "templating", "serialize"] }
+inky-core = { version = "2.0.0-beta.8", path = "../inky-core", features = ["css-inlining", "templating", "serialize"] }
 clap = { version = "4", features = ["derive"] }
 glob = "0.3"
 colored = "2"
