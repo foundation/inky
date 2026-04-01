@@ -1,6 +1,7 @@
 ---
 raw: true
 title: "Language Bindings"
+description: "Official Inky bindings for Node.js, PHP, Python, Ruby, and Go. Transform Inky markup to email HTML in any language."
 nav_group: "Guides"
 nav_order: 2
 ---

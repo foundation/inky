@@ -1,6 +1,7 @@
 ---
 raw: true
 title: "Email Development Guide"
+description: "Practical guide to building HTML emails that render correctly across every major client. Tips for images, fonts, and testing."
 nav_group: "Guides"
 nav_order: 1
 ---

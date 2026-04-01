@@ -1,6 +1,7 @@
 ---
 raw: true
 title: "Data Merging"
+description: "Merge JSON data into Inky templates using MiniJinja. Preview emails with real data or generate final output with variables."
 nav_group: "Features"
 nav_order: 3
 ---

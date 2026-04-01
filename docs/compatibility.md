@@ -1,6 +1,7 @@
 ---
 raw: true
 title: "Email Client Compatibility"
+description: "Email client support matrix for Inky output. Covers desktop, mobile, and web clients with rendering engine details."
 nav_group: "Guides"
 nav_order: 4
 ---

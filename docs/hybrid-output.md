@@ -1,6 +1,7 @@
 ---
 raw: true
 title: "Hybrid Output Mode"
+description: "Generate div-based layouts for modern email clients with automatic Outlook table fallbacks via MSO conditional comments."
 nav_group: "Features"
 nav_order: 4
 ---

@@ -1,6 +1,7 @@
 ---
 raw: true
 title: "Component Reference"
+description: "Reference for all 27 Inky components — container, row, column, button, callout, card, hero, social, and more."
 nav_group: "Features"
 nav_order: 1
 ---

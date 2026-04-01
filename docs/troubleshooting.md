@@ -1,6 +1,7 @@
 ---
 raw: true
 title: "Troubleshooting"
+description: "Solutions for common Inky issues — build errors, rendering problems, Outlook quirks, and CSS inlining troubleshooting."
 nav_group: "Guides"
 nav_order: 5
 ---

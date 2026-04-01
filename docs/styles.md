@@ -1,6 +1,7 @@
 ---
 raw: true
 title: "Style Reference"
+description: "Inky's built-in SCSS framework for responsive email styles. Override variables for colors, typography, spacing, and dark mode."
 nav_group: "Features"
 nav_order: 2
 ---

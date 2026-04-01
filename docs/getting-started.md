@@ -1,6 +1,7 @@
 ---
 raw: true
 title: "Installation & Usage"
+description: "Install Inky via Homebrew, npm, or Cargo. Scaffold an email project, build templates, and preview with live reload."
 nav_group: "Getting Started"
 nav_order: 1
 ---

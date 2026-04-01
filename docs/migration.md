@@ -1,6 +1,7 @@
 ---
 raw: true
 title: "Migration Guide: v1 to v2"
+description: "Migrate from Foundation for Emails (Inky v1) to Inky v2. Covers syntax changes, removed features, and upgrade steps."
 nav_group: "Guides"
 nav_order: 3
 ---
