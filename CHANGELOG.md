@@ -2,6 +2,17 @@
 
 All notable changes to the Inky project will be documented in this file.
 
+## 2.0.0-beta.9
+
+### Changed
+
+- **`theme.scss` now compiles as real SCSS.** User theme files are concatenated with the framework and handed to the compiler as a single unit, replacing the regex-based variable scraper. Maps, `@each` loops, mixins, custom selectors, and anything else valid in SCSS now works — previously only simple `$var: value;` overrides were honored and everything else was silently dropped. Framework SCSS switched from `@use`/`@forward` to `@import` so user variables override framework `!default` values without needing explicit `with (...)` syntax.
+- **Unified SCSS source tree.** The orphaned root `/scss/` tree has been removed. `crates/inky-cli/scss/` is now the single source of truth, matching what `Cargo.toml`'s `include` field already shipped.
+
+### Fixed
+
+- **`bindings/node/package.json` no longer drifts after each `runtests` run.** Added `repository` field to `crates/inky-wasm/Cargo.toml` so `wasm-pack build` emits it into the generated `package.json` instead of stripping it.
+
 ## 2.0.0-beta.8
 
 ### Fixed
