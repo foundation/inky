@@ -2,20 +2,20 @@
 // foundation.get.foundation
 // Licensed under MIT Open Source
 
-@use 'settings';
-@use 'util';
-@use 'global';
-@use 'components/normalize';
-@use 'grid/grid';
-@use 'grid/block-grid';
-@use 'components/alignment';
-@use 'components/visibility';
-@use 'components/typography';
-@use 'components/button';
-@use 'components/callout';
-@use 'components/thumbnail';
-@use 'components/menu';
-@use 'components/divider';
-@use 'components/outlook-first';
-@use 'components/media-query';
-@use 'components/dark-mode';
+@import 'settings';
+@import 'util';
+@import 'global';
+@import 'components/normalize';
+@import 'grid/grid';
+@import 'grid/block-grid';
+@import 'components/alignment';
+@import 'components/visibility';
+@import 'components/typography';
+@import 'components/button';
+@import 'components/callout';
+@import 'components/thumbnail';
+@import 'components/menu';
+@import 'components/divider';
+@import 'components/outlook-first';
+@import 'components/media-query';
+@import 'components/dark-mode';

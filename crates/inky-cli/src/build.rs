@@ -81,10 +81,10 @@ pub fn process_template(
     }
 
     if ctx.framework_css {
-        let (cleaned, overrides) = scss::extract_scss_overrides(&html, base_path);
+        let (cleaned, user_scss) = scss::extract_scss_sources(&html, base_path);
         html = cleaned;
 
-        let css = scss::compile_framework_scss(&overrides).unwrap_or_else(|e| {
+        let css = scss::compile_framework_scss(&user_scss).unwrap_or_else(|e| {
             handle_error(ctx.error_mode, &format!("SCSS compilation failed: {}", e))
         });
 
@@ -93,7 +93,7 @@ pub fn process_template(
         // Inject color-scheme meta tags for dark mode support
         html = inject_color_scheme_meta(&html);
     } else {
-        let (cleaned, _) = scss::extract_scss_overrides(&html, base_path);
+        let (cleaned, _) = scss::extract_scss_sources(&html, base_path);
         html = cleaned;
     }
 

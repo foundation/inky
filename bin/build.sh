@@ -20,7 +20,7 @@ fi
 echo ""
 echo "=== Compiling SCSS ==="
 mkdir -p build
-if sass scss/inky.scss build/inky.css 2>&1; then
+if sass crates/inky-cli/scss/inky.scss build/inky.css 2>&1; then
   echo "  -> build/inky.css"
 else
   echo "SCSS build failed"
