@@ -141,7 +141,7 @@ fn strip_comments(html: &str) -> String {
     RE_COMMENT
         .replace_all(html, |caps: &regex::Captures| {
             let comment = &caps[0];
-            if comment.starts_with("<!--[if ") || comment.starts_with("<![endif]") {
+            if comment.starts_with("<!--[if ") || comment.contains("<![endif]") {
                 comment.to_string()
             } else {
                 String::new()
@@ -233,4 +233,28 @@ fn collapse_blank_lines(html: &str) -> String {
 
 fn do_collapse(s: &str) -> String {
     RE_BLANK_LINES.replace_all(s, "\n").to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn strip_comments_removes_regular_comments() {
+        let html = "<p>a</p><!-- note --><p>b</p>";
+        assert_eq!(strip_comments(html), "<p>a</p><p>b</p>");
+    }
+
+    #[test]
+    fn strip_comments_preserves_mso_conditionals() {
+        let html = "<!--[if mso]><table></table><![endif]-->";
+        assert_eq!(strip_comments(html), html);
+    }
+
+    #[test]
+    fn strip_comments_preserves_downlevel_revealed_pair() {
+        // Emitted by inky-core's <not-outlook> and bulletproof buttons.
+        let html = r##"<!--[if !mso]><!--><a href="#">btn</a><!--<![endif]-->"##;
+        assert_eq!(strip_comments(html), html);
+    }
 }
