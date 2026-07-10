@@ -24,6 +24,7 @@ pub fn cmd_serve(
     input: PathBuf,
     build_ctx: crate::build::BuildContext,
     data_path: Option<PathBuf>,
+    host: String,
     port: u16,
 ) {
     if !input.is_dir() {
@@ -52,7 +53,7 @@ pub fn cmd_serve(
 
     build_all_templates(&input, &config, &build_ctx, merge_data.as_ref(), &templates);
 
-    let addr = format!("0.0.0.0:{}", port);
+    let addr = format!("{}:{}", host, port);
     let server = tiny_http::Server::http(&addr).unwrap_or_else(|e| {
         eprintln!(
             "{} Failed to start server on {}: {}",
@@ -63,7 +64,19 @@ pub fn cmd_serve(
         std::process::exit(1);
     });
 
-    eprintln!("\n  {} http://localhost:{}", "serving".green().bold(), port);
+    let display_host = if host == "0.0.0.0" { "localhost" } else { host.as_str() };
+    eprintln!(
+        "\n  {} http://{}:{}",
+        "serving".green().bold(),
+        display_host,
+        port
+    );
+    if host == "0.0.0.0" {
+        eprintln!(
+            "  {} listening on all interfaces — templates are visible to your network",
+            "note:".yellow().bold()
+        );
+    }
     eprintln!("  {} {}", "watching".cyan().bold(), input.display());
     eprintln!("  press {} to stop\n", "Ctrl+C".bold());
 
@@ -370,7 +383,8 @@ fn inject_reload_script(html: &str) -> String {
 })();
 </script>"#;
 
-    if let Some(pos) = html.to_lowercase().rfind("</body>") {
+    let body_re = regex::Regex::new(r"(?i)</body>").unwrap();
+    if let Some(pos) = body_re.find_iter(html).last().map(|m| m.start()) {
         let mut result = String::with_capacity(html.len() + script.len() + 1);
         result.push_str(&html[..pos]);
         result.push_str(script);
@@ -380,5 +394,20 @@ fn inject_reload_script(html: &str) -> String {
     } else {
         // No </body> tag, append at the end
         format!("{}\n{}", html, script)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn inject_reload_script_multibyte_body_offset() {
+        let html = "<html><body>İİİ content</body></html>";
+        let out = inject_reload_script(html);
+        let script_pos = out.find("<script>").unwrap();
+        let body_close = out.find("</body>").unwrap();
+        assert!(script_pos < body_close);
+        assert!(out.contains("İİİ content"));
     }
 }

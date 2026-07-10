@@ -173,6 +173,10 @@ enum Commands {
         #[arg(short, long, default_value_t = 3000)]
         port: u16,
 
+        /// Host address to bind (use 0.0.0.0 to expose on your network)
+        #[arg(long, default_value = "127.0.0.1")]
+        host: String,
+
         /// Number of columns in the grid (default: 12)
         #[arg(long)]
         columns: Option<u32>,
@@ -294,6 +298,7 @@ fn main() {
         Commands::Serve {
             input,
             port,
+            host,
             columns,
             no_inline_css,
             no_framework_css,
@@ -321,7 +326,7 @@ fn main() {
                 plain_text: false,
                 json: false,
             };
-            serve::cmd_serve(input, serve_ctx, data, port)
+            serve::cmd_serve(input, serve_ctx, data, host, port)
         }
         Commands::SpamCheck { input, json } => cmd_spam_check(input, json),
     }
