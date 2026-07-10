@@ -36,6 +36,28 @@ pub fn cmd_init(name: Option<String>) {
         }
     }
 
+    // Bare `inky init` scaffolds into the current directory: refuse to
+    // overwrite anything we would create, before writing a single file.
+    if name.is_none() {
+        let existing: Vec<&str> = SCAFFOLD_FILES
+            .iter()
+            .map(|(p, _)| *p)
+            .chain(AGENT_SYMLINKS.iter().map(|(p, _)| *p))
+            .filter(|p| project_dir.join(p).symlink_metadata().is_ok())
+            .collect();
+        if !existing.is_empty() {
+            eprintln!(
+                "{} These files already exist and would be overwritten:",
+                "error:".red().bold()
+            );
+            for p in &existing {
+                eprintln!("    {}", p);
+            }
+            eprintln!("  Move or remove them first, or run `inky init <name>` to scaffold into a new directory.");
+            process::exit(1);
+        }
+    }
+
     // Create directory structure
     let dirs = [
         "src/layouts",
@@ -61,19 +83,7 @@ pub fn cmd_init(name: Option<String>) {
     }
 
     // Write files
-    let files: Vec<(&str, &str)> = vec![
-        ("inky.config.json", CONFIG_JSON),
-        ("AGENT.md", AGENT_MD),
-        ("src/layouts/default.html", LAYOUT_DEFAULT),
-        ("src/styles/theme.scss", STYLES_THEME),
-        ("src/partials/header.inky", PARTIAL_HEADER),
-        ("src/partials/footer.inky", PARTIAL_FOOTER),
-        ("src/components/cta.inky", COMPONENT_CTA),
-        ("src/emails/welcome.inky", EMAIL_WELCOME),
-        ("data/welcome.json", DATA_WELCOME),
-    ];
-
-    for (rel_path, content) in &files {
+    for (rel_path, content) in &SCAFFOLD_FILES {
         let full = project_dir.join(rel_path);
         fs::write(&full, content).unwrap_or_else(|e| {
             eprintln!(
@@ -87,12 +97,6 @@ pub fn cmd_init(name: Option<String>) {
     }
 
     // Create agent.md symlinks for various AI tools
-    let agent_symlinks: Vec<(&str, &str)> = vec![
-        ("CLAUDE.md", "AGENT.md"),
-        (".cursorrules", "AGENT.md"),
-        (".github/copilot-instructions.md", "../AGENT.md"),
-    ];
-
     // .github directory is needed for Copilot symlink
     let github_dir = project_dir.join(".github");
     fs::create_dir_all(&github_dir).unwrap_or_else(|e| {
@@ -105,17 +109,16 @@ pub fn cmd_init(name: Option<String>) {
         process::exit(1);
     });
 
-    for (link_path, target) in &agent_symlinks {
+    for (link_path, target) in &AGENT_SYMLINKS {
         let full = project_dir.join(link_path);
-        symlink(target, &full).unwrap_or_else(|e| {
+        if let Err(e) = symlink(target, &full) {
             eprintln!(
-                "{} Failed to create symlink {}: {}",
-                "error:".red().bold(),
+                "  {} Could not create symlink {} ({}); continuing",
+                "warning:".yellow().bold(),
                 full.display(),
                 e
             );
-            process::exit(1);
-        });
+        }
     }
 
     // Print summary
@@ -124,7 +127,7 @@ pub fn cmd_init(name: Option<String>) {
     if name.is_some() {
         print_created(&format!("{}/", display_root));
     }
-    for (rel_path, _) in &files {
+    for (rel_path, _) in &SCAFFOLD_FILES {
         print_created(rel_path);
     }
 
@@ -144,6 +147,24 @@ pub fn cmd_init(name: Option<String>) {
 fn print_created(path: &str) {
     eprintln!("  {} {}", "created".green().bold(), path);
 }
+
+const SCAFFOLD_FILES: [(&str, &str); 9] = [
+    ("inky.config.json", CONFIG_JSON),
+    ("AGENT.md", AGENT_MD),
+    ("src/layouts/default.html", LAYOUT_DEFAULT),
+    ("src/styles/theme.scss", STYLES_THEME),
+    ("src/partials/header.inky", PARTIAL_HEADER),
+    ("src/partials/footer.inky", PARTIAL_FOOTER),
+    ("src/components/cta.inky", COMPONENT_CTA),
+    ("src/emails/welcome.inky", EMAIL_WELCOME),
+    ("data/welcome.json", DATA_WELCOME),
+];
+
+const AGENT_SYMLINKS: [(&str, &str); 3] = [
+    ("CLAUDE.md", "AGENT.md"),
+    (".cursorrules", "AGENT.md"),
+    (".github/copilot-instructions.md", "../AGENT.md"),
+];
 
 const CONFIG_JSON: &str = r#"{
   "src": "src/emails",
