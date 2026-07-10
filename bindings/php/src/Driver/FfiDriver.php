@@ -50,10 +50,7 @@ class FfiDriver implements DriverInterface
 
     public function transformWithColumns(string $html, int $columns): string
     {
-        $ptr = $this->ffi->inky_transform_with_columns($html, $columns);
-        $result = FFI::string($ptr);
-        $this->ffi->inky_free($ptr);
-        return $result;
+        return $this->stringResult($this->ffi->inky_transform_with_columns($html, $columns));
     }
 
     public function transformInline(string $html): string
@@ -80,10 +77,7 @@ class FfiDriver implements DriverInterface
 
     public function version(): string
     {
-        $ptr = $this->ffi->inky_version();
-        $result = FFI::string($ptr);
-        $this->ffi->inky_free($ptr);
-        return $result;
+        return $this->stringResult($this->ffi->inky_version());
     }
 
     /**
@@ -91,10 +85,25 @@ class FfiDriver implements DriverInterface
      */
     private function callAndFree(string $fn, string $input): string
     {
-        $ptr = $this->ffi->{$fn}($input);
-        $result = FFI::string($ptr);
-        $this->ffi->inky_free($ptr);
-        return $result;
+        return $this->stringResult($this->ffi->{$fn}($input));
+    }
+
+    /**
+     * Copy and free a char* result. A null result signals an internal
+     * engine error (or null input).
+     *
+     * @param mixed $ptr CData pointer returned by libinky
+     */
+    private function stringResult($ptr): string
+    {
+        if ($ptr === null || FFI::isNull($ptr)) {
+            throw new RuntimeException('inky native call failed (null result)');
+        }
+        try {
+            return FFI::string($ptr);
+        } finally {
+            $this->ffi->inky_free($ptr);
+        }
     }
 
     private static function findHeader(): ?string
