@@ -146,12 +146,7 @@ pub fn check_low_contrast(html: &str) -> Vec<Diagnostic> {
 
         if ratio < threshold {
             let text: String = el.text().collect();
-            let snippet = text.trim();
-            let snippet = if snippet.len() > 30 {
-                format!("{}...", &snippet[..30])
-            } else {
-                snippet.to_string()
-            };
+            let snippet = crate::validate::truncate_snippet(&text, 30);
             diags.push(Diagnostic::warning(
                 "low-contrast",
                 format!(

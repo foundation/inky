@@ -227,8 +227,11 @@ pub fn compile_framework_scss(user_scss: &str) -> Result<String, Box<grass::Erro
 pub fn inject_css_into_html(html: &str, css: &str) -> String {
     let style_block = format!("<style type=\"text/css\">\n{}</style>", css);
 
-    // Try to insert before </head>
-    if let Some(pos) = html.to_lowercase().find("</head>") {
+    // Try to insert before </head>. Case-insensitive regex rather than
+    // to_lowercase(): lowercasing can change byte lengths (e.g. 'İ'),
+    // which would misplace the offset or split a char boundary.
+    let head_re = Regex::new(r"(?i)</head>").unwrap();
+    if let Some(pos) = head_re.find(html).map(|m| m.start()) {
         let mut result = String::with_capacity(html.len() + style_block.len());
         result.push_str(&html[..pos]);
         result.push_str(&style_block);
@@ -394,5 +397,17 @@ $global-width: 640px;
         let result = inject_css_into_html(html, "p { color: blue; }");
         assert!(result.contains("<style type=\"text/css\">"));
         assert!(result.contains("p { color: blue; }"));
+    }
+
+    #[test]
+    fn inject_css_multibyte_head_offset() {
+        // 'İ' lowercases to 2 chars / 3 bytes; byte offsets from a
+        // lowercased copy would land mid-char in the original.
+        let html = "<html><head><title>İstanbul İİİ</title></head><body></body></html>";
+        let out = inject_css_into_html(html, "body{color:#000}\n");
+        let style_pos = out.find("<style").unwrap();
+        let head_close = out.find("</head>").unwrap();
+        assert!(style_pos < head_close);
+        assert!(out.contains("İstanbul"));
     }
 }

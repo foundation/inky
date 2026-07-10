@@ -85,17 +85,13 @@ pub(crate) fn check_button_no_href(html: &str, config: &Config) -> Vec<Diagnosti
         for (i, el) in doc.select(&sel).enumerate() {
             if el.value().attr("href").is_none() {
                 let text = el.text().collect::<String>();
-                let snippet = if text.len() > 40 {
-                    format!("{}...", &text[..40])
-                } else {
-                    text
-                };
+                let snippet = crate::validate::truncate_snippet(&text, 40);
                 diags.push(Diagnostic::error(
                     "button-no-href",
                     format!(
                         "Button #{} missing href attribute: \"{}\"",
                         i + 1,
-                        snippet.trim()
+                        snippet
                     ),
                 ));
             }
@@ -683,5 +679,12 @@ mod tests {
         let html = r#"<img src="photo.jpg" width="600" alt="test">"#;
         let diags = validate_output(html);
         assert!(!diags.iter().any(|d| d.rule == "img-no-width"));
+    }
+
+    #[test]
+    fn button_snippet_multibyte_no_panic() {
+        let html = format!("<button>{}</button>", "ü".repeat(45));
+        let diags = check_button_no_href(&html, &Config::default());
+        assert_eq!(diags.len(), 1);
     }
 }

@@ -69,7 +69,12 @@ pub fn contrast_ratio(c1: &Color, c2: &Color) -> f64 {
 pub use crate::attrs::extract_css_property;
 
 fn parse_hex(s: &str) -> Option<Color> {
-    let hex = &s[1..]; // strip '#'
+    let hex = s.get(1..)?; // strip '#'
+    // Reject non-ASCII up front: the length checks and fixed-offset slices
+    // below assume 1 byte == 1 hex digit.
+    if !hex.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return None;
+    }
     match hex.len() {
         3 => {
             // #RGB
@@ -411,5 +416,12 @@ mod tests {
             extract_css_property(style, "background"),
             Some("#ff0000".to_string())
         );
+    }
+
+    #[test]
+    fn parse_hex_non_ascii_returns_none() {
+        assert!(Color::parse("#aé").is_none());
+        assert!(Color::parse("#aéaé").is_none());
+        assert!(Color::parse("#").is_none());
     }
 }

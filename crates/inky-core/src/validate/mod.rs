@@ -97,3 +97,33 @@ pub fn validate_spam(html: &str) -> Vec<Diagnostic> {
 
 // Re-export check_low_contrast for direct use
 pub use output::check_low_contrast;
+
+/// Trim and truncate to at most `max_chars` characters (not bytes),
+/// appending "..." when truncated. Safe for multi-byte UTF-8 content.
+pub(crate) fn truncate_snippet(text: &str, max_chars: usize) -> String {
+    let trimmed = text.trim();
+    if trimmed.chars().count() > max_chars {
+        let cut: String = trimmed.chars().take(max_chars).collect();
+        format!("{}...", cut)
+    } else {
+        trimmed.to_string()
+    }
+}
+
+#[cfg(test)]
+mod snippet_tests {
+    use super::truncate_snippet;
+
+    #[test]
+    fn truncates_by_chars_not_bytes() {
+        let s = "ü".repeat(50); // 100 bytes, 50 chars
+        let out = truncate_snippet(&s, 40);
+        assert_eq!(out.chars().count(), 43); // 40 chars + "..."
+        assert!(out.ends_with("..."));
+    }
+
+    #[test]
+    fn short_text_untouched() {
+        assert_eq!(truncate_snippet("  hi  ", 40), "hi");
+    }
+}
