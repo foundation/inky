@@ -61,32 +61,51 @@ def _get_lib():
 
     _lib = ctypes.CDLL(lib_path)
 
-    # Configure function signatures
+    # All inky_* functions return an owned char* that must be freed with
+    # inky_free. restype MUST be c_void_p (not c_char_p): ctypes converts
+    # c_char_p results to bytes and discards the pointer, which would make
+    # the string impossible to free (a leak on every call).
     _lib.inky_transform.argtypes = [ctypes.c_char_p]
-    _lib.inky_transform.restype = ctypes.c_char_p
+    _lib.inky_transform.restype = ctypes.c_void_p
 
     _lib.inky_transform_with_columns.argtypes = [ctypes.c_char_p, ctypes.c_uint32]
-    _lib.inky_transform_with_columns.restype = ctypes.c_char_p
+    _lib.inky_transform_with_columns.restype = ctypes.c_void_p
 
     _lib.inky_transform_inline.argtypes = [ctypes.c_char_p]
-    _lib.inky_transform_inline.restype = ctypes.c_char_p
+    _lib.inky_transform_inline.restype = ctypes.c_void_p
 
     _lib.inky_migrate.argtypes = [ctypes.c_char_p]
-    _lib.inky_migrate.restype = ctypes.c_char_p
+    _lib.inky_migrate.restype = ctypes.c_void_p
 
     _lib.inky_migrate_with_details.argtypes = [ctypes.c_char_p]
-    _lib.inky_migrate_with_details.restype = ctypes.c_char_p
+    _lib.inky_migrate_with_details.restype = ctypes.c_void_p
 
     _lib.inky_validate.argtypes = [ctypes.c_char_p]
-    _lib.inky_validate.restype = ctypes.c_char_p
+    _lib.inky_validate.restype = ctypes.c_void_p
 
     _lib.inky_version.argtypes = []
-    _lib.inky_version.restype = ctypes.c_char_p
+    _lib.inky_version.restype = ctypes.c_void_p
 
-    _lib.inky_free.argtypes = [ctypes.c_char_p]
+    _lib.inky_free.argtypes = [ctypes.c_void_p]
     _lib.inky_free.restype = None
 
     return _lib
+
+
+class InkyError(RuntimeError):
+    """Raised when the native inky library reports an error."""
+
+
+def _call_str(fn, *args) -> str:
+    """Call a native char*-returning function; copy, free, and decode it."""
+    lib = _get_lib()
+    ptr = fn(*args)
+    if not ptr:
+        raise InkyError("inky native call failed (null result)")
+    try:
+        return ctypes.string_at(ptr).decode("utf-8")
+    finally:
+        lib.inky_free(ptr)
 
 
 def transform(html: str, columns: int = 12) -> str:
@@ -102,10 +121,8 @@ def transform(html: str, columns: int = 12) -> str:
     lib = _get_lib()
     encoded = html.encode("utf-8")
     if columns != 12:
-        result = lib.inky_transform_with_columns(encoded, columns)
-    else:
-        result = lib.inky_transform(encoded)
-    return result.decode("utf-8")
+        return _call_str(lib.inky_transform_with_columns, encoded, columns)
+    return _call_str(lib.inky_transform, encoded)
 
 
 def transform_inline(html: str) -> str:
@@ -118,8 +135,7 @@ def transform_inline(html: str) -> str:
         Transformed HTML with CSS inlined.
     """
     lib = _get_lib()
-    result = lib.inky_transform_inline(html.encode("utf-8"))
-    return result.decode("utf-8")
+    return _call_str(lib.inky_transform_inline, html.encode("utf-8"))
 
 
 def migrate(html: str) -> str:
@@ -132,8 +148,7 @@ def migrate(html: str) -> str:
         Migrated v2 HTML string.
     """
     lib = _get_lib()
-    result = lib.inky_migrate(html.encode("utf-8"))
-    return result.decode("utf-8")
+    return _call_str(lib.inky_migrate, html.encode("utf-8"))
 
 
 def migrate_with_details(html: str) -> dict:
@@ -146,8 +161,7 @@ def migrate_with_details(html: str) -> dict:
         Dict with 'html' (migrated HTML) and 'changes' (list of descriptions).
     """
     lib = _get_lib()
-    result = lib.inky_migrate_with_details(html.encode("utf-8"))
-    return json.loads(result.decode("utf-8"))
+    return json.loads(_call_str(lib.inky_migrate_with_details, html.encode("utf-8")))
 
 
 def validate(html: str) -> list:
@@ -160,8 +174,7 @@ def validate(html: str) -> list:
         List of dicts with 'severity', 'rule', and 'message' fields.
     """
     lib = _get_lib()
-    result = lib.inky_validate(html.encode("utf-8"))
-    return json.loads(result.decode("utf-8"))
+    return json.loads(_call_str(lib.inky_validate, html.encode("utf-8")))
 
 
 def version() -> str:
@@ -171,5 +184,4 @@ def version() -> str:
         Version string (e.g. "2.0.0").
     """
     lib = _get_lib()
-    result = lib.inky_version()
-    return result.decode("utf-8")
+    return _call_str(lib.inky_version)
