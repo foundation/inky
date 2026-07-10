@@ -10,6 +10,9 @@ require "json"
 module Inky
   VERSION = "2.0.0"
 
+  # Raised when the native inky library reports an error.
+  class Error < StandardError; end
+
   module Native
     extend Fiddle::Importer
 
@@ -55,17 +58,37 @@ module Inky
     extern "void inky_free(char*)"
   end
 
+  # Copy and free a char* result from libinky. A null pointer signals an
+  # internal engine error (or null input).
+  def self.string_result(ptr)
+    raise Error, "inky native call failed (null result)" if ptr.null?
+
+    begin
+      ptr.to_s
+    ensure
+      Native.inky_free(ptr)
+    end
+  end
+  private_class_method :string_result
+
+  def self.check_html!(html)
+    raise TypeError, "html must be a String, got #{html.class}" unless html.is_a?(String)
+  end
+  private_class_method :check_html!
+
   # Transform Inky HTML into email-safe table markup.
   #
   # @param html [String] Inky template HTML
   # @param columns [Integer] Number of grid columns (default: 12)
   # @return [String] Transformed HTML
   def self.transform(html, columns: 12)
-    if columns != 12
-      Native.inky_transform_with_columns(html, columns).to_s
-    else
-      Native.inky_transform(html).to_s
-    end
+    check_html!(html)
+    ptr = if columns != 12
+            Native.inky_transform_with_columns(html, columns)
+          else
+            Native.inky_transform(html)
+          end
+    string_result(ptr)
   end
 
   # Transform Inky HTML and inline CSS from <style> blocks.
@@ -73,7 +96,8 @@ module Inky
   # @param html [String] Inky template HTML with <style> blocks
   # @return [String] Transformed HTML with CSS inlined
   def self.transform_inline(html)
-    Native.inky_transform_inline(html).to_s
+    check_html!(html)
+    string_result(Native.inky_transform_inline(html))
   end
 
   # Migrate v1 Inky syntax to v2.
@@ -81,7 +105,8 @@ module Inky
   # @param html [String] v1 Inky template HTML
   # @return [String] Migrated v2 HTML
   def self.migrate(html)
-    Native.inky_migrate(html).to_s
+    check_html!(html)
+    string_result(Native.inky_migrate(html))
   end
 
   # Migrate v1 syntax and return detailed results.
@@ -89,7 +114,8 @@ module Inky
   # @param html [String] v1 Inky template HTML
   # @return [Hash] Hash with :html and :changes keys
   def self.migrate_with_details(html)
-    json = Native.inky_migrate_with_details(html).to_s
+    check_html!(html)
+    json = string_result(Native.inky_migrate_with_details(html))
     JSON.parse(json, symbolize_names: true)
   end
 
@@ -98,7 +124,8 @@ module Inky
   # @param html [String] Inky template HTML
   # @return [Array<Hash>] Array of hashes with :severity, :rule, :message keys
   def self.validate(html)
-    json = Native.inky_validate(html).to_s
+    check_html!(html)
+    json = string_result(Native.inky_validate(html))
     JSON.parse(json, symbolize_names: true)
   end
 
@@ -106,6 +133,6 @@ module Inky
   #
   # @return [String] Version string
   def self.version
-    Native.inky_version().to_s
+    string_result(Native.inky_version())
   end
 end
