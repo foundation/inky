@@ -6,6 +6,8 @@ pub mod include;
 #[cfg(feature = "css-inlining")]
 pub mod inline;
 pub mod migrate;
+#[cfg(feature = "pipeline")]
+pub mod pipeline;
 pub mod plaintext;
 mod render;
 #[cfg(feature = "pipeline")]

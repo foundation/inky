@@ -9,7 +9,7 @@ mod watch;
 use clap::{Parser, Subcommand};
 use colored::Colorize;
 use inky_core::validate::{self, Diagnostic, Severity};
-use inky_core::{Config, Inky, OutputMode};
+use inky_core::{Config, OutputMode};
 use serde::Serialize;
 use std::ffi::OsStr;
 use std::fs;
@@ -512,13 +512,10 @@ fn cmd_build(
         bulletproof_buttons: build_ctx.bulletproof_buttons,
         ..Config::default()
     };
-    let inky = Inky::with_config(config.clone());
-
     let has_warnings = match input {
         Some(path) => {
             if path.is_dir() {
                 build_directory(
-                    &inky,
                     &path,
                     output.as_deref(),
                     build_ctx,
@@ -534,7 +531,7 @@ fn cmd_build(
                     data_source,
                 );
                 let result = build::process_template(
-                    &inky,
+                    &config,
                     &html,
                     build_ctx,
                     base.as_deref(),
@@ -583,7 +580,7 @@ fn cmd_build(
                 _ => None,
             };
             let result =
-                build::process_template(&inky, &html, build_ctx, cwd.as_deref(), global_data);
+                build::process_template(&config, &html, build_ctx, cwd.as_deref(), global_data);
 
             if json {
                 let mut diagnostics = validate::validate_source(&html, &config);
@@ -666,7 +663,6 @@ fn print_validation_warnings(
 }
 
 fn build_directory(
-    inky: &Inky,
     input_dir: &Path,
     output_dir: Option<&Path>,
     build_ctx: &build::BuildContext,
@@ -693,7 +689,7 @@ fn build_directory(
         let file_data = resolve_data_for_file(file, input_dir, data_source);
         let base = file.parent().map(Path::to_path_buf);
         let result =
-            build::process_template(inky, &html, build_ctx, base.as_deref(), file_data.as_ref());
+            build::process_template(config, &html, build_ctx, base.as_deref(), file_data.as_ref());
 
         if json {
             let mut diagnostics = validate::validate_source(&html, config);
@@ -793,7 +789,6 @@ fn cmd_validate(input: Option<PathBuf>, json: bool) {
         bulletproof_buttons: cfg.bulletproof_buttons,
         ..Config::default()
     };
-    let inky = Inky::with_config(config.clone());
     let validate_ctx = build::BuildContext {
         inline_css: true,
         framework_css: true,
@@ -839,7 +834,7 @@ fn cmd_validate(input: Option<PathBuf>, json: bool) {
                 let file_data = resolve_data_for_file(file, input_dir, &data_source);
                 let base = file.parent().map(Path::to_path_buf);
                 let output_html = build::process_template(
-                    &inky,
+                    &config,
                     &source_html,
                     &validate_ctx,
                     base.as_deref(),
@@ -882,7 +877,7 @@ fn cmd_validate(input: Option<PathBuf>, json: bool) {
             let html = read_stdin();
             let cwd = std::env::current_dir().ok();
             let output_html =
-                build::process_template(&inky, &html, &validate_ctx, cwd.as_deref(), None);
+                build::process_template(&config, &html, &validate_ctx, cwd.as_deref(), None);
 
             let mut diagnostics = validate::validate_source(&html, &config);
             diagnostics.extend(validate::validate_output(&output_html));
@@ -964,7 +959,6 @@ fn resolve_data_for_file(
 
 fn cmd_spam_check(input: Option<PathBuf>, json: bool) {
     let config = Config::default();
-    let inky = Inky::with_config(config.clone());
     let spam_ctx = build::BuildContext {
         inline_css: true,
         framework_css: true,
@@ -997,7 +991,7 @@ fn cmd_spam_check(input: Option<PathBuf>, json: bool) {
                 let html = read_file(file);
                 let base = file.parent().map(Path::to_path_buf);
                 let result =
-                    build::process_template(&inky, &html, &spam_ctx, base.as_deref(), None);
+                    build::process_template(&config, &html, &spam_ctx, base.as_deref(), None);
                 let diagnostics = validate::validate_spam(&result);
 
                 if json {
@@ -1028,7 +1022,7 @@ fn cmd_spam_check(input: Option<PathBuf>, json: bool) {
         None => {
             let html = read_stdin();
             let cwd = std::env::current_dir().ok();
-            let result = build::process_template(&inky, &html, &spam_ctx, cwd.as_deref(), None);
+            let result = build::process_template(&config, &html, &spam_ctx, cwd.as_deref(), None);
             let diagnostics = validate::validate_spam(&result);
             let has_issues = !diagnostics.is_empty();
 

@@ -8,7 +8,7 @@ use std::time::Duration;
 use colored::Colorize;
 use notify_debouncer_mini::{new_debouncer, DebouncedEventKind};
 
-use inky_core::{Config, Inky};
+use inky_core::Config;
 
 use crate::build;
 
@@ -156,7 +156,6 @@ fn build_all_templates(
     merge_data: Option<&serde_json::Value>,
     templates: &Arc<RwLock<HashMap<String, RenderedTemplate>>>,
 ) {
-    let inky = Inky::with_config(config.clone());
     let files = crate::util::find_files(input, crate::util::TEMPLATE_EXTENSIONS);
 
     let mut state = templates.write().unwrap();
@@ -167,7 +166,7 @@ fn build_all_templates(
         match std::fs::read_to_string(file) {
             Ok(html) => {
                 let result =
-                    build::process_template(&inky, &html, build_ctx, file.parent(), merge_data);
+                    build::process_template(config, &html, build_ctx, file.parent(), merge_data);
                 eprintln!("  {} {}", "built".green().bold(), name);
                 state.insert(name, RenderedTemplate { html: result });
             }

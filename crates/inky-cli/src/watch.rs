@@ -5,7 +5,7 @@ use std::time::Duration;
 use colored::Colorize;
 use notify_debouncer_mini::{new_debouncer, DebouncedEventKind};
 
-use inky_core::{Config, Inky};
+use inky_core::Config;
 
 pub fn cmd_watch(
     input: PathBuf,
@@ -227,7 +227,6 @@ fn do_full_build(
     build_ctx: &crate::build::BuildContext,
     merge_data: Option<&serde_json::Value>,
 ) {
-    let inky = Inky::with_config(config.clone());
     let files = find_template_files(input);
 
     if files.is_empty() {
@@ -241,7 +240,7 @@ fn do_full_build(
 
     let mut built = 0;
     for file in &files {
-        match build_file(&inky, file, input, output, config, build_ctx, merge_data) {
+        match build_file(file, input, output, config, build_ctx, merge_data) {
             Ok(dest) => {
                 let timestamp = current_time();
                 eprintln!(
@@ -270,12 +269,9 @@ fn rebuild_single_file(
     build_ctx: &crate::build::BuildContext,
     merge_data: Option<&serde_json::Value>,
 ) {
-    let inky = Inky::with_config(config.clone());
     let timestamp = current_time();
 
-    match build_file(
-        &inky, file, input_dir, output_dir, config, build_ctx, merge_data,
-    ) {
+    match build_file(file, input_dir, output_dir, config, build_ctx, merge_data) {
         Ok(dest) => {
             eprintln!(
                 "  [{}] {} {} → {}",
@@ -298,7 +294,6 @@ fn rebuild_single_file(
 }
 
 fn build_file(
-    inky: &Inky,
     file: &Path,
     input_dir: &Path,
     output_dir: &Path,
@@ -318,7 +313,7 @@ fn build_file(
         eprintln!("  {} {} [{}] {}", label, file.display(), d.rule, d.message);
     }
 
-    let result = crate::build::process_template(inky, &html, build_ctx, file.parent(), merge_data);
+    let result = crate::build::process_template(config, &html, build_ctx, file.parent(), merge_data);
 
     let dest = to_output_path(file, input_dir, output_dir);
     if let Some(parent) = dest.parent() {

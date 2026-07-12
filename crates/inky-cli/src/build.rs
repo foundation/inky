@@ -1,28 +1,15 @@
 use std::path::Path;
-use std::sync::LazyLock;
 
 use colored::Colorize;
-use regex::Regex;
-
-static RE_COMMENT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?s)<!--.*?-->").unwrap());
-static RE_TABLE_TAGS: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"(?i)(</?(table|tbody|tr|td|th)[\s>])").unwrap());
-static RE_CLOSING_TAGS: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"(?m)(^</(?:table|tbody|tr|td|th)>\n){2,}").unwrap());
-static RE_LEADING_WS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?m)^\s+<").unwrap());
-static RE_HEAD: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?i)<head[^>]*>").unwrap());
-static RE_PRE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?si)<pre[^>]*>.*?</pre>").unwrap());
-static RE_BLANK_LINES: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n\s*\n(\s*\n)*").unwrap());
-
-use inky_core::scss;
-use inky_core::Inky;
+use inky_core::pipeline::{Pipeline, PipelineOptions};
+use inky_core::Config;
 
 /// How to handle errors during the build pipeline.
 #[derive(Clone, Copy)]
 pub enum ErrorMode {
     /// Exit the process on error (for `inky build`)
     Exit,
-    /// Log the error and continue with empty/fallback output (for `inky watch`)
+    /// Log the error and continue with empty output (for `inky watch`)
     Continue,
 }
 
@@ -40,223 +27,42 @@ pub struct BuildContext {
     pub json: bool,
 }
 
-fn handle_error(mode: ErrorMode, msg: &str) -> String {
-    eprintln!("{} {}", "error:".red().bold(), msg);
-    match mode {
-        ErrorMode::Exit => std::process::exit(1),
-        ErrorMode::Continue => String::new(),
+impl BuildContext {
+    pub fn pipeline_options(&self) -> PipelineOptions {
+        PipelineOptions {
+            inline_css: self.inline_css,
+            framework_css: self.framework_css,
+            components_dir: self
+                .components_dir
+                .clone()
+                .unwrap_or_else(|| "components".to_string()),
+        }
     }
 }
 
-/// Full build pipeline: layout → custom components → includes → merge data → extract SCSS overrides → compile framework CSS → inject → transform → inline → cleanup.
+/// Temporary compatibility wrapper over `inky_core::pipeline::Pipeline`.
+/// Tasks 3–5 move callers onto `builder::Builder`; Task 6 deletes this.
 pub fn process_template(
-    inky: &Inky,
+    config: &Config,
     html: &str,
     ctx: &BuildContext,
     base_path: Option<&Path>,
     merge_data: Option<&serde_json::Value>,
 ) -> String {
-    // Resolve <layout> tag, then custom components, then <include> tags
-    let mut html = if let Some(base) = base_path {
-        let with_layout = inky_core::include::process_layout(html, base)
-            .unwrap_or_else(|e| handle_error(ctx.error_mode, &e));
-        let with_components = inky_core::include::process_custom_components(
-            &with_layout,
-            base,
-            ctx.components_dir.as_deref().unwrap_or("components"),
-        )
-        .unwrap_or_else(|e| handle_error(ctx.error_mode, &e));
-        inky_core::include::process_includes(&with_components, base)
-            .unwrap_or_else(|e| handle_error(ctx.error_mode, &e))
-    } else {
-        html.to_string()
-    };
-
-    // MiniJinja template merge (after includes, before transform)
-    if let Some(data) = merge_data {
-        html = inky_core::templating::render_template(&html, data, false).unwrap_or_else(|e| {
-            handle_error(ctx.error_mode, &format!("Template merge failed: {}", e))
-        });
-    }
-
-    if ctx.framework_css {
-        let (cleaned, user_scss, warnings) = scss::extract_scss_sources(&html, base_path);
-        for w in &warnings {
-            eprintln!("  {} {}", "warning:".yellow().bold(), w);
+    let pipeline = Pipeline::new(config.clone(), ctx.pipeline_options());
+    match pipeline.process(html, base_path, merge_data) {
+        Ok(processed) => {
+            for w in &processed.warnings {
+                eprintln!("  {} {}", "warning:".yellow().bold(), w);
+            }
+            processed.html
         }
-        html = cleaned;
-
-        let css = scss::compile_framework_scss(&user_scss).unwrap_or_else(|e| {
-            handle_error(ctx.error_mode, &format!("SCSS compilation failed: {}", e))
-        });
-
-        html = scss::inject_css_into_html(&html, &css);
-
-        // Inject color-scheme meta tags for dark mode support
-        html = inject_color_scheme_meta(&html);
-    } else {
-        let (cleaned, _, _) = scss::extract_scss_sources(&html, base_path);
-        html = cleaned;
-    }
-
-    let result = if ctx.inline_css {
-        inky.transform_and_inline(&html, base_path)
-            .unwrap_or_else(|e| {
-                eprintln!("{} CSS inlining failed: {}", "error:".red().bold(), e);
-                match ctx.error_mode {
-                    ErrorMode::Exit => std::process::exit(1),
-                    ErrorMode::Continue => html.clone(),
-                }
-            })
-    } else {
-        inky.transform(&html)
-    };
-
-    let result = strip_comments(&result);
-    let result = break_at_rules(&result);
-    let result = break_long_lines(&result);
-    let result = strip_leading_whitespace(&result);
-    let result = collapse_closing_tags(&result);
-    collapse_blank_lines(&result)
-}
-
-static RE_STYLE_CONTENT: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"(?s)(<style>)(.*?)(</style>)").unwrap());
-
-/// Break long lines inside <style> blocks by inserting newlines
-/// before @media rules and between CSS rule groups.
-fn break_at_rules(html: &str) -> String {
-    RE_STYLE_CONTENT
-        .replace_all(html, |caps: &regex::Captures| {
-            let css = &caps[2];
-            let css = css.replace(" @media", "\n@media");
-            // Break between CSS rules (}selector{) but keep }} together
-            let css = css.replace("}", "}\n");
-            let css = css.replace("}\n}", "}}");
-            format!("{}{}{}", &caps[1], css.trim(), &caps[3])
-        })
-        .to_string()
-}
-
-/// Strip HTML comments, preserving MSO conditional comments.
-fn strip_comments(html: &str) -> String {
-    RE_COMMENT
-        .replace_all(html, |caps: &regex::Captures| {
-            let comment = &caps[0];
-            if comment.starts_with("<!--[if ") || comment.contains("<![endif]") {
-                comment.to_string()
-            } else {
-                String::new()
+        Err(e) => {
+            eprintln!("{} {}", "error:".red().bold(), e);
+            match ctx.error_mode {
+                ErrorMode::Exit => std::process::exit(1),
+                ErrorMode::Continue => String::new(),
             }
-        })
-        .to_string()
-}
-
-/// Insert newlines before and after table structure tags to prevent lines
-/// exceeding RFC 2822's 998-character limit. Whitespace between table
-/// elements (<table>, <tbody>, <tr>, <td>, <th>) is ignored by email clients,
-/// so this is safe and does not affect rendering.
-fn break_long_lines(html: &str) -> String {
-    RE_TABLE_TAGS
-        .replace_all(html, |caps: &regex::Captures| {
-            let tag = &caps[0];
-            if tag.starts_with("</") {
-                // Closing tag: newline before it
-                format!("\n{}", tag)
-            } else {
-                // Opening tag: newline before it
-                format!("\n{}", tag)
-            }
-        })
-        .to_string()
-}
-
-/// Collapse consecutive lines that contain only closing table tags into a single line.
-/// e.g., `</th>\n</tr>\n</tbody>\n</table>\n` becomes `</th></tr></tbody></table>\n`
-fn collapse_closing_tags(html: &str) -> String {
-    RE_CLOSING_TAGS
-        .replace_all(html, |caps: &regex::Captures| {
-            let s = &caps[0];
-            // Join all closing tags, keep one trailing newline
-            let joined: String = s.lines().collect::<Vec<_>>().join("");
-            format!("{}\n", joined)
-        })
-        .to_string()
-}
-
-/// Strip leading whitespace from lines that start with an HTML tag.
-fn strip_leading_whitespace(html: &str) -> String {
-    RE_LEADING_WS.replace_all(html, "<").to_string()
-}
-
-/// Inject `<meta name="color-scheme">` and `<meta name="supported-color-schemes">`
-/// into `<head>` if dark mode styles are present and the meta tags aren't already there.
-fn inject_color_scheme_meta(html: &str) -> String {
-    // Only inject if dark mode styles exist in the output
-    if !html.contains("prefers-color-scheme") {
-        return html.to_string();
-    }
-
-    // Don't inject if the user already has them
-    if html.contains("color-scheme") {
-        return html.to_string();
-    }
-
-    let meta_tags = r#"<meta name="color-scheme" content="light dark">
-<meta name="supported-color-schemes" content="light dark">"#;
-
-    // Insert after opening <head> tag
-    if let Some(m) = RE_HEAD.find(html) {
-        let mut result = String::with_capacity(html.len() + meta_tags.len() + 2);
-        result.push_str(&html[..m.end()]);
-        result.push('\n');
-        result.push_str(meta_tags);
-        result.push_str(&html[m.end()..]);
-        return result;
-    }
-
-    html.to_string()
-}
-
-/// Remove consecutive blank lines, preserving content inside <pre> blocks.
-fn collapse_blank_lines(html: &str) -> String {
-    let mut result = String::with_capacity(html.len());
-    let mut last_end = 0;
-
-    for m in RE_PRE.find_iter(html) {
-        result.push_str(&do_collapse(&html[last_end..m.start()]));
-        result.push_str(m.as_str());
-        last_end = m.end();
-    }
-
-    result.push_str(&do_collapse(&html[last_end..]));
-    result
-}
-
-fn do_collapse(s: &str) -> String {
-    RE_BLANK_LINES.replace_all(s, "\n").to_string()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn strip_comments_removes_regular_comments() {
-        let html = "<p>a</p><!-- note --><p>b</p>";
-        assert_eq!(strip_comments(html), "<p>a</p><p>b</p>");
-    }
-
-    #[test]
-    fn strip_comments_preserves_mso_conditionals() {
-        let html = "<!--[if mso]><table></table><![endif]-->";
-        assert_eq!(strip_comments(html), html);
-    }
-
-    #[test]
-    fn strip_comments_preserves_downlevel_revealed_pair() {
-        // Emitted by inky-core's <not-outlook> and bulletproof buttons.
-        let html = r##"<!--[if !mso]><!--><a href="#">btn</a><!--<![endif]-->"##;
-        assert_eq!(strip_comments(html), html);
+        }
     }
 }
