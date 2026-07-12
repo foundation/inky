@@ -1,20 +1,17 @@
-use scraper::ElementRef;
-
-use super::helpers::inner_html;
-use crate::attrs::{get_attr, get_attrs, get_classes};
+use super::El;
 
 /// `<card image="photo.jpg" title="Card Title" href="...">Card body text</card>`
 ///
 /// Renders a card component with optional image, title, and body content.
-pub fn make_card(element: &ElementRef) -> String {
-    let attrs = get_attrs(element);
-    let image = get_attr(element, "image");
-    let title = get_attr(element, "title");
-    let href = get_attr(element, "href");
-    let inner = inner_html(element);
+pub fn make_card(el: &El) -> String {
+    let attrs = el.attrs();
+    let image = el.attr("image");
+    let title = el.attr("title");
+    let href = el.attr("href");
+    let inner = el.inner();
 
     let mut classes = vec!["card".to_string()];
-    classes.extend(get_classes(element));
+    classes.extend(el.classes());
     let class_str = classes.join(" ");
 
     let mut content = String::new();

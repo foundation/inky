@@ -1,6 +1,9 @@
 use scraper::ElementRef;
 
-pub fn make_center(element: &ElementRef) -> String {
+use super::El;
+
+pub fn make_center(el: &El) -> String {
+    let element = &el.element;
     let mut html = String::new();
     html.push_str("<center data-parsed=\"\">");
 

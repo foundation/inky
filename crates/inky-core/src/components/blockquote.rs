@@ -1,21 +1,18 @@
-use scraper::ElementRef;
-
-use super::helpers::inner_html;
-use crate::attrs::{get_attr, get_attrs, get_classes};
+use super::El;
 
 /// `<blockquote cite="Author Name" color="#999999">Quoted text here</blockquote>`
 ///
 /// Renders a styled blockquote with a left border and optional citation.
 /// Note: This transforms the custom `<blockquote>` element (registered as a
 /// component tag) into email-safe table markup, not a standard HTML blockquote.
-pub fn make_blockquote(element: &ElementRef) -> String {
-    let attrs = get_attrs(element);
-    let cite = get_attr(element, "cite");
-    let color = get_attr(element, "color").unwrap_or_else(|| "#cccccc".to_string());
-    let inner = inner_html(element);
+pub fn make_blockquote(el: &El) -> String {
+    let attrs = el.attrs();
+    let cite = el.attr("cite");
+    let color = el.attr("color").unwrap_or_else(|| "#cccccc".to_string());
+    let inner = el.inner();
 
     let mut classes = vec!["blockquote".to_string()];
-    classes.extend(get_classes(element));
+    classes.extend(el.classes());
     let class_str = classes.join(" ");
 
     let mut content = format!(

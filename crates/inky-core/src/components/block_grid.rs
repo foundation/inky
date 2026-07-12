@@ -1,15 +1,12 @@
-use scraper::ElementRef;
-
-use super::helpers::inner_html;
-use crate::attrs::{get_attr, get_classes};
+use super::El;
 use crate::config::{Config, OutputMode};
 
-pub fn make_block_grid(element: &ElementRef, config: &Config) -> String {
-    let up = get_attr(element, "up").unwrap_or_default();
+pub fn make_block_grid(el: &El, config: &Config) -> String {
+    let up = el.attr("up").unwrap_or_default();
     let mut classes = vec!["block-grid".to_string(), format!("up-{}", up)];
-    classes.extend(get_classes(element));
+    classes.extend(el.classes());
     let class_str = classes.join(" ");
-    let inner = inner_html(element);
+    let inner = el.inner();
 
     match config.output_mode {
         OutputMode::Table => {

@@ -1,20 +1,17 @@
-use scraper::ElementRef;
-
-use super::helpers::inner_html;
-use crate::attrs::{get_attr, get_attrs, get_classes};
+use super::El;
 
 /// `<social align="center"><social-link platform="facebook" href="...">Facebook</social-link></social>`
 ///
 /// Renders a horizontal row of social media icon links.
-pub fn make_social(element: &ElementRef) -> String {
-    let attrs = get_attrs(element);
-    let inner = inner_html(element);
+pub fn make_social(el: &El) -> String {
+    let attrs = el.attrs();
+    let inner = el.inner();
 
     let mut classes = vec!["social".to_string()];
-    classes.extend(get_classes(element));
+    classes.extend(el.classes());
     let class_str = classes.join(" ");
 
-    let align = get_attr(element, "align").unwrap_or_else(|| "center".to_string());
+    let align = el.attr("align").unwrap_or_else(|| "center".to_string());
 
     format!(
         r#"<table role="presentation"{} class="{}" align="{}"><tbody><tr><td><table role="presentation" align="{}"><tbody><tr>{}</tr></tbody></table></td></tr></tbody></table>"#,
@@ -48,12 +45,12 @@ const SOCIAL_PLATFORMS: &[(&str, &str)] = &[
 /// `<social-link platform="facebook" href="..." icon="custom.png">Facebook</social-link>`
 ///
 /// Renders a single social media icon link within a `<social>` row.
-pub fn make_social_link(element: &ElementRef) -> String {
-    let href = get_attr(element, "href").unwrap_or_else(|| "#".to_string());
-    let platform = get_attr(element, "platform").unwrap_or_default();
-    let icon = get_attr(element, "icon");
-    let inner = inner_html(element);
-    let color = get_attr(element, "color");
+pub fn make_social_link(el: &El) -> String {
+    let href = el.attr("href").unwrap_or_else(|| "#".to_string());
+    let platform = el.attr("platform").unwrap_or_default();
+    let icon = el.attr("icon");
+    let inner = el.inner().to_string();
+    let color = el.attr("color");
 
     let bg_color = color.unwrap_or_else(|| {
         SOCIAL_PLATFORMS

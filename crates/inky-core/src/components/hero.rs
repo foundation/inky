@@ -1,20 +1,17 @@
-use scraper::ElementRef;
-
-use super::helpers::inner_html;
-use crate::attrs::{get_attr, get_classes};
+use super::El;
 
 /// `<hero background="hero.jpg" width="600" height="400">Content</hero>`
 ///
 /// Full-width background image section with overlaid content.
 /// Uses VML for Outlook support, CSS background-image for modern clients.
-pub fn make_hero(element: &ElementRef) -> String {
-    let background = get_attr(element, "background").unwrap_or_default();
-    let width = get_attr(element, "width").unwrap_or_else(|| "600".to_string());
-    let height = get_attr(element, "height").unwrap_or_else(|| "400".to_string());
-    let inner = inner_html(element);
+pub fn make_hero(el: &El) -> String {
+    let background = el.attr("background").unwrap_or_default();
+    let width = el.attr("width").unwrap_or_else(|| "600".to_string());
+    let height = el.attr("height").unwrap_or_else(|| "400".to_string());
+    let inner = el.inner();
 
     let mut classes = vec!["hero".to_string()];
-    classes.extend(get_classes(element));
+    classes.extend(el.classes());
     let class_str = classes.join(" ");
 
     let mut html = String::new();

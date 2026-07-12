@@ -1,17 +1,15 @@
-use scraper::ElementRef;
-
-use crate::attrs::get_attr;
+use super::El;
 
 /// `<video src="movie.mp4" poster="poster.jpg" href="https://example.com/watch" width="600">`
 ///
 /// Generates HTML5 `<video>` with poster image and `<img>` fallback.
 /// Apple Mail/iOS play the video; all others show the poster linked to `href`.
-pub fn make_video(element: &ElementRef) -> String {
-    let src = get_attr(element, "src").unwrap_or_default();
-    let poster = get_attr(element, "poster").unwrap_or_default();
-    let href = get_attr(element, "href").unwrap_or_else(|| src.clone());
-    let width = get_attr(element, "width").unwrap_or_else(|| "600".to_string());
-    let alt = get_attr(element, "alt").unwrap_or_else(|| "Video".to_string());
+pub fn make_video(el: &El) -> String {
+    let src = el.attr("src").unwrap_or_default();
+    let poster = el.attr("poster").unwrap_or_default();
+    let href = el.attr("href").unwrap_or_else(|| src.clone());
+    let width = el.attr("width").unwrap_or_else(|| "600".to_string());
+    let alt = el.attr("alt").unwrap_or_else(|| "Video".to_string());
 
     let mut html = String::new();
 

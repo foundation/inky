@@ -109,7 +109,12 @@ impl Inky {
             }
 
             // Transform the component
-            let new_html = match transform_component(&element, &self.config) {
+            let el = components::El::new(element, element.inner_html());
+            let ctx = components::RenderCtx {
+                config: &self.config,
+                inside_center: false,
+            };
+            let new_html = match transform_component(&el, &ctx) {
                 Some(html) => html,
                 None => break,
             };
@@ -296,8 +301,9 @@ fn transform_all_columns(html: &str, config: &Config, actual_tag: &str) -> Strin
         let doc = Html::parse_fragment(col_html);
         let sel = Selector::parse(tag).unwrap();
         if let Some(element) = doc.select(&sel).next() {
+            let el = components::El::new(element, element.inner_html());
             let transformed = components::transform_column_with_position(
-                &element, config, col_count, is_first, is_last,
+                &el, config, col_count, is_first, is_last,
             );
             result.push_str(&transformed);
         } else {

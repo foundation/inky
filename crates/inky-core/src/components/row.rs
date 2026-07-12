@@ -1,13 +1,11 @@
-use scraper::ElementRef;
-
-use super::helpers::{build_classes, inner_html};
-use crate::attrs::get_attrs;
+use super::helpers::build_classes;
+use super::El;
 use crate::config::{Config, OutputMode};
 
-pub fn make_row(element: &ElementRef, config: &Config) -> String {
-    let attrs = get_attrs(element);
-    let classes = build_classes("row", element);
-    let inner = inner_html(element);
+pub fn make_row(el: &El, config: &Config) -> String {
+    let attrs = el.attrs();
+    let classes = build_classes("row", el);
+    let inner = el.inner();
 
     match config.output_mode {
         OutputMode::Table => {

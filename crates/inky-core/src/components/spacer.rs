@@ -1,17 +1,15 @@
-use scraper::ElementRef;
+use super::El;
 
-use crate::attrs::{get_attr, get_attrs, get_classes};
-
-pub fn make_spacer(element: &ElementRef) -> String {
-    let attrs = get_attrs(element);
-    let element_classes = get_classes(element);
+pub fn make_spacer(el: &El) -> String {
+    let attrs = el.attrs();
+    let element_classes = el.classes();
     let mut classes = vec!["spacer".to_string()];
     classes.extend(element_classes);
     let class_str = classes.join(" ");
 
     // Accept both v2 (height, sm, lg) and v1 (size, size-sm, size-lg) attribute names
-    let size_sm = get_attr(element, "sm").or_else(|| get_attr(element, "size-sm"));
-    let size_lg = get_attr(element, "lg").or_else(|| get_attr(element, "size-lg"));
+    let size_sm = el.attr("sm").or_else(|| el.attr("size-sm"));
+    let size_lg = el.attr("lg").or_else(|| el.attr("size-lg"));
 
     if size_sm.is_some() || size_lg.is_some() {
         let mut html = String::new();
@@ -30,8 +28,9 @@ pub fn make_spacer(element: &ElementRef) -> String {
         html
     } else {
         // Accept both v2 (height) and v1 (size) attribute names
-        let size = get_attr(element, "height")
-            .or_else(|| get_attr(element, "size"))
+        let size = el
+            .attr("height")
+            .or_else(|| el.attr("size"))
             .unwrap_or_else(|| "16".to_string());
         format!(
             r#"<table role="presentation"{} class="{}" aria-hidden="true"><tbody><tr><td height="{}" style="font-size:{}px;line-height:{}px;">&nbsp;</td></tr></tbody></table>"#,

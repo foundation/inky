@@ -1,7 +1,4 @@
-use scraper::ElementRef;
-
-use super::helpers::inner_html;
-use crate::attrs::{get_attr, get_attrs, get_classes};
+use super::El;
 
 /// Known alert types and their default background colors.
 const ALERT_TYPES: &[(&str, &str)] = &[
@@ -15,14 +12,14 @@ const ALERT_TYPES: &[(&str, &str)] = &[
 ///
 /// Renders a styled alert/notification banner. Supports types:
 /// success, warning, error, info. Custom colors via `color` attribute.
-pub fn make_alert(element: &ElementRef) -> String {
-    let attrs = get_attrs(element);
-    let alert_type = get_attr(element, "type").unwrap_or_else(|| "info".to_string());
-    let color = get_attr(element, "color");
-    let inner = inner_html(element);
+pub fn make_alert(el: &El) -> String {
+    let attrs = el.attrs();
+    let alert_type = el.attr("type").unwrap_or_else(|| "info".to_string());
+    let color = el.attr("color");
+    let inner = el.inner();
 
     let mut classes = vec!["alert".to_string(), format!("alert-{}", alert_type)];
-    classes.extend(get_classes(element));
+    classes.extend(el.classes());
     let class_str = classes.join(" ");
 
     let bg_color = color.unwrap_or_else(|| {

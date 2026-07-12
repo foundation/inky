@@ -1,16 +1,14 @@
-use scraper::ElementRef;
+use super::helpers::build_classes;
+use super::{El, RenderCtx};
 
-use super::helpers::{build_classes, inner_html};
-use crate::attrs::{get_attr, get_attrs, get_classes};
-
-pub fn make_menu(element: &ElementRef) -> String {
-    let attrs = get_attrs(element);
-    let inner = inner_html(element);
+pub fn make_menu(el: &El) -> String {
+    let attrs = el.attrs();
+    let inner = el.inner();
 
     // Build classes: base "menu" + element classes + v2 direction attribute
     let mut classes = vec!["menu".to_string()];
-    classes.extend(get_classes(element));
-    if let Some(direction) = get_attr(element, "direction") {
+    classes.extend(el.classes());
+    if let Some(direction) = el.attr("direction") {
         classes.push(direction);
     }
     let class_str = classes.join(" ");
@@ -21,15 +19,16 @@ pub fn make_menu(element: &ElementRef) -> String {
     )
 }
 
-pub fn make_menu_item(element: &ElementRef) -> String {
-    let attrs = get_attrs(element);
-    let href = get_attr(element, "href").unwrap_or_default();
-    let target = match get_attr(element, "target") {
+pub fn make_menu_item(el: &El, ctx: &RenderCtx) -> String {
+    let _ = ctx; // used in Task 4 (float-center inside <center>)
+    let attrs = el.attrs();
+    let href = el.attr("href").unwrap_or_default();
+    let target = match el.attr("target") {
         Some(t) => format!(" target={}", t),
         None => String::new(),
     };
-    let classes = build_classes("menu-item", element);
-    let inner = inner_html(element);
+    let classes = build_classes("menu-item", el);
+    let inner = el.inner();
     format!(
         r#"<th{} class="{}"><a href="{}"{}>{}</a></th>"#,
         attrs, classes, href, target, inner

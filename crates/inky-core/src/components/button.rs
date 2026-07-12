@@ -1,37 +1,34 @@
-use scraper::ElementRef;
-
-use super::helpers::inner_html;
-use crate::attrs::{get_attr, get_attrs, get_classes, has_class};
+use super::El;
 use crate::config::Config;
 
-pub fn make_button(element: &ElementRef, config: &Config) -> String {
-    let attrs = get_attrs(element);
-    let inner_text = inner_html(element);
-    let href = get_attr(element, "href").unwrap_or_default();
+pub fn make_button(el: &El, config: &Config) -> String {
+    let attrs = el.attrs();
+    let inner_text = el.inner().to_string();
+    let href = el.attr("href").unwrap_or_default();
 
-    let target = match get_attr(element, "target") {
+    let target = match el.attr("target") {
         Some(t) => format!(" target={}", t),
         None => String::new(),
     };
 
     // Build classes: base "button" + element classes + v2 size/color attributes
     let mut classes = vec!["button".to_string()];
-    classes.extend(get_classes(element));
-    if let Some(size) = get_attr(element, "size") {
+    classes.extend(el.classes());
+    if let Some(size) = el.attr("size") {
         classes.push(size);
     }
-    if let Some(color) = get_attr(element, "color") {
+    if let Some(color) = el.attr("color") {
         classes.push(color);
     }
     let class_str = classes.join(" ");
 
     // Check if this button should use bulletproof VML
-    let bulletproof = has_attr(element, "bulletproof") || config.bulletproof_buttons;
+    let bulletproof = el.has_attr("bulletproof") || config.bulletproof_buttons;
 
     if bulletproof && !href.is_empty() {
-        make_bulletproof_button(element, &href, &target, &inner_text, &attrs, &class_str)
+        make_bulletproof_button(&href, &target, &inner_text, &attrs, &class_str, el)
     } else {
-        make_table_button(&href, &target, &inner_text, &attrs, &class_str, element)
+        make_table_button(&href, &target, &inner_text, &attrs, &class_str, el)
     }
 }
 
@@ -42,7 +39,7 @@ fn make_table_button(
     inner_text: &str,
     attrs: &str,
     class_str: &str,
-    element: &ElementRef,
+    el: &El,
 ) -> String {
     let mut inner = inner_text.to_string();
 
@@ -51,7 +48,7 @@ fn make_table_button(
     }
 
     let expander;
-    if has_class(element, "expand") || has_class(element, "expanded") {
+    if el.has_class("expand") || el.has_class("expanded") {
         inner = format!("<center>{}</center>", inner);
         expander = "\n<td class=\"expander\" aria-hidden=\"true\"></td>";
     } else {
@@ -67,19 +64,19 @@ fn make_table_button(
 /// Bulletproof VML button: MSO conditional with v:roundrect for Outlook,
 /// standard table button for everything else.
 fn make_bulletproof_button(
-    element: &ElementRef,
     href: &str,
     target: &str,
     inner_text: &str,
     attrs: &str,
     class_str: &str,
+    el: &El,
 ) -> String {
     // Read optional VML-specific attributes with sensible defaults
-    let width = get_attr(element, "width").unwrap_or_else(|| "200".to_string());
-    let height = get_attr(element, "height").unwrap_or_else(|| "40".to_string());
-    let radius = get_attr(element, "radius").unwrap_or_else(|| "3".to_string());
-    let bg_color = get_attr(element, "bg-color").unwrap_or_else(|| "#1a73b5".to_string());
-    let text_color = get_attr(element, "text-color").unwrap_or_else(|| "#ffffff".to_string());
+    let width = el.attr("width").unwrap_or_else(|| "200".to_string());
+    let height = el.attr("height").unwrap_or_else(|| "40".to_string());
+    let radius = el.attr("radius").unwrap_or_else(|| "3".to_string());
+    let bg_color = el.attr("bg-color").unwrap_or_else(|| "#1a73b5".to_string());
+    let text_color = el.attr("text-color").unwrap_or_else(|| "#ffffff".to_string());
 
     // Convert radius px to arcsize percentage (arcsize = radius / (height/2) * 100)
     let arcsize = radius
@@ -90,7 +87,7 @@ fn make_bulletproof_button(
         .unwrap_or_else(|| "10%".to_string());
 
     // Build the standard table button for non-MSO clients
-    let table_button = make_table_button(href, target, inner_text, attrs, class_str, element);
+    let table_button = make_table_button(href, target, inner_text, attrs, class_str, el);
 
     format!(
         r#"<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{href}" style="height:{height}px;v-text-anchor:middle;width:{width}px;" arcsize="{arcsize}" strokecolor="{bg_color}" fillcolor="{bg_color}"><w:anchorlock/><center style="color:{text_color};font-family:sans-serif;font-size:16px;font-weight:bold;">{text}</center></v:roundrect><![endif]--><!--[if !mso]><!-->{table_button}<!--<![endif]-->"#,
@@ -103,8 +100,4 @@ fn make_bulletproof_button(
         text = inner_text,
         table_button = table_button,
     )
-}
-
-fn has_attr(element: &ElementRef, name: &str) -> bool {
-    element.value().attr(name).is_some()
 }

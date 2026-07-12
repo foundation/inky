@@ -1,19 +1,16 @@
-use scraper::ElementRef;
-
-use super::helpers::inner_html;
-use crate::attrs::{get_attr, get_attrs, get_classes};
+use super::El;
 
 /// `<badge color="#e74c3c">New</badge>`
 ///
 /// Renders a small inline badge/pill label, useful for status indicators or tags.
-pub fn make_badge(element: &ElementRef) -> String {
-    let attrs = get_attrs(element);
-    let color = get_attr(element, "color").unwrap_or_else(|| "#333333".to_string());
-    let text_color = get_attr(element, "text-color").unwrap_or_else(|| "#ffffff".to_string());
-    let inner = inner_html(element);
+pub fn make_badge(el: &El) -> String {
+    let attrs = el.attrs();
+    let color = el.attr("color").unwrap_or_else(|| "#333333".to_string());
+    let text_color = el.attr("text-color").unwrap_or_else(|| "#ffffff".to_string());
+    let inner = el.inner();
 
     let mut classes = vec!["badge".to_string()];
-    classes.extend(get_classes(element));
+    classes.extend(el.classes());
     let class_str = classes.join(" ");
 
     format!(

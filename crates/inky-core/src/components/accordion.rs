@@ -1,18 +1,15 @@
-use scraper::ElementRef;
-
-use super::helpers::inner_html;
-use crate::attrs::{get_attr, get_attrs, get_classes};
+use super::El;
 
 /// `<accordion><accordion-item title="Section 1">Content</accordion-item></accordion>`
 ///
 /// Renders a CSS-only accordion using the checkbox hack.
 /// Each item is a toggleable section with a title bar and collapsible content.
-pub fn make_accordion(element: &ElementRef) -> String {
-    let attrs = get_attrs(element);
-    let inner = inner_html(element);
+pub fn make_accordion(el: &El) -> String {
+    let attrs = el.attrs();
+    let inner = el.inner();
 
     let mut classes = vec!["accordion".to_string()];
-    classes.extend(get_classes(element));
+    classes.extend(el.classes());
     let class_str = classes.join(" ");
 
     format!(
@@ -24,12 +21,12 @@ pub fn make_accordion(element: &ElementRef) -> String {
 /// `<accordion-item title="Section Title">Content here</accordion-item>`
 ///
 /// A single collapsible section within an accordion.
-pub fn make_accordion_item(element: &ElementRef) -> String {
-    let title = get_attr(element, "title").unwrap_or_else(|| "Untitled".to_string());
-    let inner = inner_html(element);
+pub fn make_accordion_item(el: &El) -> String {
+    let title = el.attr("title").unwrap_or_else(|| "Untitled".to_string());
+    let inner = el.inner();
 
     let mut classes = vec!["accordion-item".to_string()];
-    classes.extend(get_classes(element));
+    classes.extend(el.classes());
     let class_str = classes.join(" ");
 
     format!(

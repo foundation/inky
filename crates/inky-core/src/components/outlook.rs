@@ -1,13 +1,11 @@
-use scraper::ElementRef;
+use super::El;
 
-use super::helpers::inner_html;
-
-pub fn make_outlook(element: &ElementRef) -> String {
-    let inner = inner_html(element);
+pub fn make_outlook(el: &El) -> String {
+    let inner = el.inner();
     format!("<!--[if mso]>\n{}\n<![endif]-->", inner)
 }
 
-pub fn make_not_outlook(element: &ElementRef) -> String {
-    let inner = inner_html(element);
+pub fn make_not_outlook(el: &El) -> String {
+    let inner = el.inner();
     format!("<!--[if !mso]><!-->\n{}\n<!--<![endif]-->", inner)
 }
