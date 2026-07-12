@@ -1,4 +1,5 @@
 mod build;
+mod builder;
 mod config;
 mod init;
 mod migrate;
@@ -6,6 +7,7 @@ mod serve;
 pub mod util;
 mod watch;
 
+use builder::{Builder, DataSource};
 use clap::{Parser, Subcommand};
 use colored::Colorize;
 use inky_core::validate::{self, Diagnostic, Severity};
@@ -441,16 +443,6 @@ fn resolve_config(
     }
 }
 
-/// Resolved data source for template merging.
-enum DataSource {
-    /// No data — merge tags pass through untouched.
-    None,
-    /// Single JSON file applied to all templates.
-    File(serde_json::Value),
-    /// Directory of per-template JSON files (e.g., data/welcome.json for welcome.inky).
-    Directory(PathBuf),
-}
-
 /// Detect whether a data path is a file or directory and return the appropriate source.
 fn resolve_data_source(path: Option<&Path>) -> DataSource {
     let Some(path) = path else {
@@ -497,6 +489,13 @@ fn load_merge_data(path: Option<&Path>) -> Option<serde_json::Value> {
     Some(data)
 }
 
+/// Print pipeline warnings to stderr with a colored `warning:` prefix.
+fn print_warnings(warnings: &[String]) {
+    for w in warnings {
+        eprintln!("  {} {}", "warning:".yellow().bold(), w);
+    }
+}
+
 fn cmd_build(
     input: Option<PathBuf>,
     output: Option<PathBuf>,
@@ -505,69 +504,55 @@ fn cmd_build(
     data_source: &DataSource,
 ) {
     let json = build_ctx.json;
-    let plain_text = build_ctx.plain_text;
     let config = Config {
         column_count: build_ctx.columns,
         output_mode: build_ctx.output_mode,
         bulletproof_buttons: build_ctx.bulletproof_buttons,
         ..Config::default()
     };
+    let builder = Builder::new(config, build_ctx.pipeline_options(), build_ctx.plain_text);
+
     let has_warnings = match input {
         Some(path) => {
             if path.is_dir() {
-                build_directory(
-                    &path,
-                    output.as_deref(),
-                    build_ctx,
-                    &config,
-                    data_source,
-                )
+                build_directory(&path, output.as_deref(), build_ctx, &builder, data_source)
             } else {
-                let base = path.parent().map(Path::to_path_buf);
-                let html = read_file(&path);
-                let file_data = resolve_data_for_file(
-                    &path,
-                    path.parent().unwrap_or(Path::new(".")),
-                    data_source,
-                );
-                let result = build::process_template(
-                    &config,
-                    &html,
-                    build_ctx,
-                    base.as_deref(),
-                    file_data.as_ref(),
-                );
-
-                if json {
-                    let mut diagnostics = validate::validate_source(&html, &config);
-                    diagnostics.extend(validate::validate_output(&result));
-                    let has_warnings = !diagnostics.is_empty();
-                    let results = vec![JsonFileResult {
-                        path: path.display().to_string(),
-                        html: Some(result),
-                        diagnostics,
-                    }];
-                    print_json_output(&results);
-                    has_warnings
-                } else {
-                    let warnings = print_validation_warnings(&html, &result, &config, &path);
-                    // If no output specified and input is .inky, write to .html
-                    let out = output.clone().or_else(|| {
-                        if path.extension().and_then(OsStr::to_str) == Some("inky") {
-                            Some(path.with_extension("html"))
+                let input_dir = path.parent().unwrap_or(Path::new("."));
+                match builder.build_file(&path, input_dir, data_source) {
+                    Ok(built) => {
+                        print_warnings(&built.warnings);
+                        if json {
+                            let has_warnings = !built.diagnostics.is_empty();
+                            let results = vec![JsonFileResult {
+                                path: path.display().to_string(),
+                                html: Some(built.html),
+                                diagnostics: built.diagnostics,
+                            }];
+                            print_json_output(&results);
+                            has_warnings
                         } else {
-                            None
-                        }
-                    });
-                    write_output(&result, out.as_deref());
-                    if plain_text {
-                        if let Some(ref out_path) = out {
-                            let txt = inky_core::plaintext::html_to_plain_text(&result);
-                            let txt_path = out_path.with_extension("txt");
-                            write_output(&txt, Some(&txt_path));
+                            print_diagnostics(&built.diagnostics, &path.display().to_string());
+                            let has_warnings = !built.diagnostics.is_empty();
+                            // If no output specified and input is .inky, write to .html
+                            let out = output.clone().or_else(|| {
+                                if path.extension().and_then(OsStr::to_str) == Some("inky") {
+                                    Some(path.with_extension("html"))
+                                } else {
+                                    None
+                                }
+                            });
+                            write_output(&built.html, out.as_deref());
+                            if let (Some(txt), Some(ref out_path)) = (&built.plain_text, &out) {
+                                let txt_path = out_path.with_extension("txt");
+                                write_output(txt, Some(&txt_path));
+                            }
+                            has_warnings
                         }
                     }
-                    warnings
+                    Err(e) => {
+                        eprintln!("{} {}: {}", "error:".red().bold(), path.display(), e);
+                        process::exit(1);
+                    }
                 }
             }
         }
@@ -579,25 +564,29 @@ fn cmd_build(
                 DataSource::File(ref d) => Some(d),
                 _ => None,
             };
-            let result =
-                build::process_template(&config, &html, build_ctx, cwd.as_deref(), global_data);
-
-            if json {
-                let mut diagnostics = validate::validate_source(&html, &config);
-                diagnostics.extend(validate::validate_output(&result));
-                let has_warnings = !diagnostics.is_empty();
-                let results = vec![JsonFileResult {
-                    path: "stdin".to_string(),
-                    html: Some(result),
-                    diagnostics,
-                }];
-                print_json_output(&results);
-                has_warnings
-            } else {
-                let warnings =
-                    print_validation_warnings(&html, &result, &config, Path::new("stdin"));
-                write_output(&result, output.as_deref());
-                warnings
+            match builder.build_source(&html, cwd.as_deref(), global_data) {
+                Ok(built) => {
+                    print_warnings(&built.warnings);
+                    if json {
+                        let has_warnings = !built.diagnostics.is_empty();
+                        let results = vec![JsonFileResult {
+                            path: "stdin".to_string(),
+                            html: Some(built.html),
+                            diagnostics: built.diagnostics,
+                        }];
+                        print_json_output(&results);
+                        has_warnings
+                    } else {
+                        print_diagnostics(&built.diagnostics, "stdin");
+                        let has_warnings = !built.diagnostics.is_empty();
+                        write_output(&built.html, output.as_deref());
+                        has_warnings
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} stdin: {}", "error:".red().bold(), e);
+                    process::exit(1);
+                }
             }
         }
     };
@@ -648,30 +637,16 @@ fn print_diagnostics(diagnostics: &[Diagnostic], path: &str) {
     }
 }
 
-/// Run validation on source and output HTML, print any warnings to stderr.
-/// Returns true if any diagnostics were found.
-fn print_validation_warnings(
-    source_html: &str,
-    output_html: &str,
-    config: &Config,
-    path: &Path,
-) -> bool {
-    let mut diagnostics = validate::validate_source(source_html, config);
-    diagnostics.extend(validate::validate_output(output_html));
-    print_diagnostics(&diagnostics, &path.display().to_string());
-    !diagnostics.is_empty()
-}
-
 fn build_directory(
     input_dir: &Path,
     output_dir: Option<&Path>,
     build_ctx: &build::BuildContext,
-    config: &Config,
+    builder: &Builder,
     data_source: &DataSource,
 ) -> bool {
     let json = build_ctx.json;
     let plain_text = build_ctx.plain_text;
-    let files = find_template_files(input_dir);
+    let files = builder::find_template_files(input_dir, output_dir);
     let mut has_warnings = false;
     let mut json_results: Vec<JsonFileResult> = Vec::new();
 
@@ -685,22 +660,23 @@ fn build_directory(
     }
 
     for file in &files {
-        let html = read_file(file);
-        let file_data = resolve_data_for_file(file, input_dir, data_source);
-        let base = file.parent().map(Path::to_path_buf);
-        let result =
-            build::process_template(config, &html, build_ctx, base.as_deref(), file_data.as_ref());
+        let built = match builder.build_file(file, input_dir, data_source) {
+            Ok(built) => built,
+            Err(e) => {
+                eprintln!("{} {}: {}", "error:".red().bold(), file.display(), e);
+                process::exit(1);
+            }
+        };
+        print_warnings(&built.warnings);
 
         if json {
-            let mut diagnostics = validate::validate_source(&html, config);
-            diagnostics.extend(validate::validate_output(&result));
-            if !diagnostics.is_empty() {
+            if !built.diagnostics.is_empty() {
                 has_warnings = true;
             }
             json_results.push(JsonFileResult {
                 path: file.display().to_string(),
-                html: Some(result),
-                diagnostics,
+                html: Some(built.html),
+                diagnostics: built.diagnostics,
             });
         } else {
             let out_path = match output_dir {
@@ -724,7 +700,7 @@ fn build_directory(
 
             match out_path {
                 Some(dest) => {
-                    fs::write(&dest, &result).unwrap_or_else(|e| {
+                    fs::write(&dest, &built.html).unwrap_or_else(|e| {
                         eprintln!(
                             "{} Failed to write {}: {}",
                             "error:".red().bold(),
@@ -733,7 +709,8 @@ fn build_directory(
                         );
                         process::exit(1);
                     });
-                    if print_validation_warnings(&html, &result, config, &dest) {
+                    print_diagnostics(&built.diagnostics, &dest.display().to_string());
+                    if !built.diagnostics.is_empty() {
                         has_warnings = true;
                     }
                     eprintln!(
@@ -743,20 +720,21 @@ fn build_directory(
                         dest.display()
                     );
                     if plain_text {
-                        let txt = inky_core::plaintext::html_to_plain_text(&result);
-                        let txt_path = dest.with_extension("txt");
-                        fs::write(&txt_path, &txt).unwrap_or_else(|e| {
-                            eprintln!(
-                                "{} Failed to write {}: {}",
-                                "error:".red().bold(),
-                                txt_path.display(),
-                                e
-                            );
-                        });
+                        if let Some(ref txt) = built.plain_text {
+                            let txt_path = dest.with_extension("txt");
+                            fs::write(&txt_path, txt).unwrap_or_else(|e| {
+                                eprintln!(
+                                    "{} Failed to write {}: {}",
+                                    "error:".red().bold(),
+                                    txt_path.display(),
+                                    e
+                                );
+                            });
+                        }
                     }
                 }
                 None => {
-                    println!("<!-- {} -->\n{}\n", file.display(), result);
+                    println!("<!-- {} -->\n{}\n", file.display(), built.html);
                 }
             }
         }
@@ -800,13 +778,14 @@ fn cmd_validate(input: Option<PathBuf>, json: bool) {
         plain_text: false,
         json,
     };
+    let builder = Builder::new(config, validate_ctx.pipeline_options(), false);
 
     match input {
         Some(input) => {
             let input_path = cfg.input.unwrap_or(input);
 
             let files = if input_path.is_dir() {
-                find_template_files(&input_path)
+                builder::find_template_files(&input_path, None)
             } else {
                 vec![input_path.clone()]
             };
@@ -830,35 +809,28 @@ fn cmd_validate(input: Option<PathBuf>, json: bool) {
             let mut json_results: Vec<JsonFileResult> = Vec::new();
 
             for file in &files {
-                let source_html = read_file(file);
-                let file_data = resolve_data_for_file(file, input_dir, &data_source);
-                let base = file.parent().map(Path::to_path_buf);
-                let output_html = build::process_template(
-                    &config,
-                    &source_html,
-                    &validate_ctx,
-                    base.as_deref(),
-                    file_data.as_ref(),
-                );
-
-                let mut diagnostics = validate::validate_source(&source_html, &config);
-                diagnostics.extend(validate::validate_output(&output_html));
-
-                if json {
-                    if !diagnostics.is_empty() {
-                        has_errors = true;
+                match builder.build_file(file, input_dir, &data_source) {
+                    Ok(built) => {
+                        print_warnings(&built.warnings);
+                        if json {
+                            if !built.diagnostics.is_empty() {
+                                has_errors = true;
+                            }
+                            json_results.push(JsonFileResult {
+                                path: file.display().to_string(),
+                                html: None,
+                                diagnostics: built.diagnostics,
+                            });
+                        } else if !built.diagnostics.is_empty() {
+                            has_errors = true;
+                            print_diagnostics(&built.diagnostics, &file.display().to_string());
+                        } else {
+                            eprintln!("  {} {}", "ok".green().bold(), file.display());
+                        }
                     }
-                    json_results.push(JsonFileResult {
-                        path: file.display().to_string(),
-                        html: None,
-                        diagnostics,
-                    });
-                } else {
-                    if !diagnostics.is_empty() {
+                    Err(e) => {
                         has_errors = true;
-                        print_diagnostics(&diagnostics, &file.display().to_string());
-                    } else {
-                        eprintln!("  {} {}", "ok".green().bold(), file.display());
+                        eprintln!("{} {}: {}", "error:".red().bold(), file.display(), e);
                     }
                 }
             }
@@ -876,25 +848,35 @@ fn cmd_validate(input: Option<PathBuf>, json: bool) {
         None => {
             let html = read_stdin();
             let cwd = std::env::current_dir().ok();
-            let output_html =
-                build::process_template(&config, &html, &validate_ctx, cwd.as_deref(), None);
+            let has_errors;
+            let mut json_results: Vec<JsonFileResult> = Vec::new();
 
-            let mut diagnostics = validate::validate_source(&html, &config);
-            diagnostics.extend(validate::validate_output(&output_html));
-            let has_errors = !diagnostics.is_empty();
+            match builder.build_source(&html, cwd.as_deref(), None) {
+                Ok(built) => {
+                    print_warnings(&built.warnings);
+                    has_errors = !built.diagnostics.is_empty();
+                    if json {
+                        json_results.push(JsonFileResult {
+                            path: "stdin".to_string(),
+                            html: None,
+                            diagnostics: built.diagnostics,
+                        });
+                    } else {
+                        print_diagnostics(&built.diagnostics, "stdin");
+                        if !has_errors {
+                            eprintln!("  {} stdin", "ok".green().bold());
+                        }
+                    }
+                }
+                Err(e) => {
+                    has_errors = true;
+                    eprintln!("{} stdin: {}", "error:".red().bold(), e);
+                }
+            }
 
             if json {
-                let results = vec![JsonFileResult {
-                    path: "stdin".to_string(),
-                    html: None,
-                    diagnostics,
-                }];
-                print_json_output(&results);
+                print_json_output(&json_results);
             } else {
-                print_diagnostics(&diagnostics, "stdin");
-                if !has_errors {
-                    eprintln!("  {} stdin", "ok".green().bold());
-                }
                 eprintln!("\n  Validated 1 file(s)");
             }
 
@@ -903,10 +885,6 @@ fn cmd_validate(input: Option<PathBuf>, json: bool) {
             }
         }
     }
-}
-
-fn find_template_files(dir: &Path) -> Vec<PathBuf> {
-    util::find_files(dir, util::TEMPLATE_EXTENSIONS)
 }
 
 fn to_output_path(input: &Path, input_dir: &Path, output_dir: &Path) -> PathBuf {
@@ -923,53 +901,9 @@ fn read_stdin() -> String {
     html
 }
 
-fn read_file(path: &std::path::Path) -> String {
-    fs::read_to_string(path).unwrap_or_else(|e| {
-        eprintln!(
-            "{} Failed to read {}: {}",
-            "error:".red().bold(),
-            path.display(),
-            e
-        );
-        process::exit(1);
-    })
-}
-
-/// Resolve merge data for a specific template file based on the data source.
-fn resolve_data_for_file(
-    file: &Path,
-    input_dir: &Path,
-    data_source: &DataSource,
-) -> Option<serde_json::Value> {
-    match data_source {
-        DataSource::None => None,
-        DataSource::File(data) => Some(data.clone()),
-        DataSource::Directory(dir) => {
-            let relative = file.strip_prefix(input_dir).ok()?;
-            let json_path = dir.join(relative).with_extension("json");
-            if json_path.is_file() {
-                let content = fs::read_to_string(&json_path).ok()?;
-                serde_json::from_str(&content).ok()
-            } else {
-                None
-            }
-        }
-    }
-}
-
 fn cmd_spam_check(input: Option<PathBuf>, json: bool) {
     let config = Config::default();
-    let spam_ctx = build::BuildContext {
-        inline_css: true,
-        framework_css: true,
-        components_dir: None,
-        error_mode: build::ErrorMode::Continue,
-        output_mode: OutputMode::Table,
-        columns: 12,
-        bulletproof_buttons: false,
-        plain_text: false,
-        json,
-    };
+    let builder = Builder::new(config, inky_core::pipeline::PipelineOptions::default(), false);
 
     match input {
         Some(input) => {
@@ -977,7 +911,7 @@ fn cmd_spam_check(input: Option<PathBuf>, json: bool) {
             let mut json_results: Vec<JsonFileResult> = Vec::new();
 
             let files = if input.is_dir() {
-                find_template_files(&input)
+                builder::find_template_files(&input, None)
             } else {
                 vec![input]
             };
@@ -988,11 +922,15 @@ fn cmd_spam_check(input: Option<PathBuf>, json: bool) {
             }
 
             for file in &files {
-                let html = read_file(file);
-                let base = file.parent().map(Path::to_path_buf);
-                let result =
-                    build::process_template(&config, &html, &spam_ctx, base.as_deref(), None);
-                let diagnostics = validate::validate_spam(&result);
+                let built = match builder.build_file(file, file.parent().unwrap_or(Path::new(".")), &DataSource::None) {
+                    Ok(built) => built,
+                    Err(e) => {
+                        eprintln!("{} {}: {}", "error:".red().bold(), file.display(), e);
+                        process::exit(1);
+                    }
+                };
+                print_warnings(&built.warnings);
+                let diagnostics = validate::validate_spam(&built.html);
 
                 if json {
                     if !diagnostics.is_empty() {
@@ -1022,8 +960,15 @@ fn cmd_spam_check(input: Option<PathBuf>, json: bool) {
         None => {
             let html = read_stdin();
             let cwd = std::env::current_dir().ok();
-            let result = build::process_template(&config, &html, &spam_ctx, cwd.as_deref(), None);
-            let diagnostics = validate::validate_spam(&result);
+            let built = match builder.build_source(&html, cwd.as_deref(), None) {
+                Ok(built) => built,
+                Err(e) => {
+                    eprintln!("{} stdin: {}", "error:".red().bold(), e);
+                    process::exit(1);
+                }
+            };
+            print_warnings(&built.warnings);
+            let diagnostics = validate::validate_spam(&built.html);
             let has_issues = !diagnostics.is_empty();
 
             if json {
