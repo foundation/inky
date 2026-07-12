@@ -1,3 +1,6 @@
+//! Framework SCSS compilation: embeds the Inky SCSS tree, extracts user
+//! SCSS from templates, compiles via grass, and injects the CSS.
+
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use std::io;
@@ -155,8 +158,10 @@ impl grass::Fs for EmbeddedFs {
 /// Linked files are concatenated first, then inline `<style>` blocks — so inline
 /// SCSS can override linked theme values.
 ///
-/// Returns (html_with_scss_elements_removed, concatenated_user_scss).
-pub fn extract_scss_sources(html: &str, base_path: Option<&Path>) -> (String, String) {
+/// Returns (html_with_scss_elements_removed, concatenated_user_scss, warnings).
+pub fn extract_scss_sources(html: &str, base_path: Option<&Path>) -> (String, String, Vec<String>) {
+    let mut warnings: Vec<String> = Vec::new();
+
     let html_comment_re = Regex::new(r"(?s)<!--.*?-->").unwrap();
     let style_re =
         Regex::new(r#"(?si)<style\s+type\s*=\s*["']text/scss["']\s*>(.*?)</style>"#).unwrap();
@@ -179,12 +184,12 @@ pub fn extract_scss_sources(html: &str, base_path: Option<&Path>) -> (String, St
                     }
                 }
                 Err(e) => {
-                    eprintln!(
-                        "  warning: Failed to read SCSS file '{}' (resolved to '{}'): {}",
+                    warnings.push(format!(
+                        "Failed to read SCSS file '{}' (resolved to '{}'): {}",
                         href,
                         scss_path.display(),
                         e
-                    );
+                    ));
                 }
             }
         }
@@ -203,7 +208,7 @@ pub fn extract_scss_sources(html: &str, base_path: Option<&Path>) -> (String, St
 
     let cleaned = style_re.replace_all(html, "").to_string();
     let cleaned = link_re.replace_all(&cleaned, "").to_string();
-    (cleaned, combined)
+    (cleaned, combined, warnings)
 }
 
 /// Compile the embedded Inky framework SCSS together with user SCSS.
@@ -326,7 +331,7 @@ $global-width: 640px;
 <body><p>Hello</p></body>
 </html>"#;
 
-        let (cleaned, scss) = extract_scss_sources(html, None);
+        let (cleaned, scss, _warnings) = extract_scss_sources(html, None);
         assert!(scss.contains("$primary-color: #ff0000;"));
         assert!(scss.contains("$global-width: 640px;"));
         assert!(!cleaned.contains("text/scss"));
@@ -336,7 +341,7 @@ $global-width: 640px;
     #[test]
     fn test_extract_no_scss_blocks() {
         let html = "<html><body><p>No scss here</p></body></html>";
-        let (cleaned, scss) = extract_scss_sources(html, None);
+        let (cleaned, scss, _warnings) = extract_scss_sources(html, None);
         assert!(scss.is_empty());
         assert_eq!(cleaned, html);
     }
@@ -354,7 +359,7 @@ $global-width: 640px;
 
         let html =
             r#"<html><head><link rel="stylesheet" href="theme.scss"></head><body></body></html>"#;
-        let (cleaned, scss) = extract_scss_sources(html, Some(&dir));
+        let (cleaned, scss, _warnings) = extract_scss_sources(html, Some(&dir));
 
         assert!(scss.contains("$primary-color: #cc0000;"));
         assert!(scss.contains("$global-width: 700px;"));
@@ -375,12 +380,24 @@ $global-width: 640px;
 <link rel="stylesheet" href="theme.scss">
 <style type="text/scss">$primary-color: #00aa00;</style>
 </head><body></body></html>"#;
-        let (_, scss) = extract_scss_sources(html, Some(&dir));
+        let (_, scss, _warnings) = extract_scss_sources(html, Some(&dir));
 
         let linked_pos = scss.find("#aa0000").expect("linked value missing");
         let inline_pos = scss.find("#00aa00").expect("inline value missing");
         assert!(linked_pos < inline_pos, "linked should precede inline");
 
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_extract_missing_linked_file_warns() {
+        let dir = std::env::temp_dir().join("inky-test-scss-missing");
+        std::fs::create_dir_all(&dir).unwrap();
+        let html = r#"<html><head><link rel="stylesheet" href="nope.scss"></head><body></body></html>"#;
+        let (_, scss, warnings) = extract_scss_sources(html, Some(&dir));
+        assert!(scss.is_empty());
+        assert_eq!(warnings.len(), 1);
+        assert!(warnings[0].contains("nope.scss"));
         std::fs::remove_dir_all(&dir).ok();
     }
 

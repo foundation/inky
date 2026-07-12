@@ -14,9 +14,8 @@ static RE_HEAD: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?i)<head[^>]*>"
 static RE_PRE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?si)<pre[^>]*>.*?</pre>").unwrap());
 static RE_BLANK_LINES: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n\s*\n(\s*\n)*").unwrap());
 
+use inky_core::scss;
 use inky_core::Inky;
-
-use crate::scss;
 
 /// How to handle errors during the build pipeline.
 #[derive(Clone, Copy)]
@@ -81,7 +80,10 @@ pub fn process_template(
     }
 
     if ctx.framework_css {
-        let (cleaned, user_scss) = scss::extract_scss_sources(&html, base_path);
+        let (cleaned, user_scss, warnings) = scss::extract_scss_sources(&html, base_path);
+        for w in &warnings {
+            eprintln!("  {} {}", "warning:".yellow().bold(), w);
+        }
         html = cleaned;
 
         let css = scss::compile_framework_scss(&user_scss).unwrap_or_else(|e| {
@@ -93,7 +95,7 @@ pub fn process_template(
         // Inject color-scheme meta tags for dark mode support
         html = inject_color_scheme_meta(&html);
     } else {
-        let (cleaned, _) = scss::extract_scss_sources(&html, base_path);
+        let (cleaned, _, _) = scss::extract_scss_sources(&html, base_path);
         html = cleaned;
     }
 

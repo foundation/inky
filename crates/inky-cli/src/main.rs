@@ -2,7 +2,6 @@ mod build;
 mod config;
 mod init;
 mod migrate;
-mod scss;
 mod serve;
 pub mod util;
 mod watch;

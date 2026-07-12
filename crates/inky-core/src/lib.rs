@@ -8,6 +8,8 @@ pub mod inline;
 pub mod migrate;
 pub mod plaintext;
 mod render;
+#[cfg(feature = "pipeline")]
+pub mod scss;
 #[cfg(feature = "templating")]
 pub mod templating;
 pub mod validate;
