@@ -1,9 +1,3 @@
-// `render()` is not yet called from `transform()` — that wiring lands in
-// Task 5 — so this whole module is only reachable via its own unit tests,
-// which trips clippy's dead-code lint on an ordinary (non-test) build.
-// Remove this once Task 5 wires `render()` into `transform()`.
-#![allow(dead_code)]
-
 use std::borrow::Cow;
 use std::sync::LazyLock;
 

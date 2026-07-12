@@ -15,18 +15,12 @@ pub mod validate;
 use std::sync::LazyLock;
 
 use regex::Regex;
-use scraper::{Html, Selector};
 
 static RE_MERGE_TAGS: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(<%[=#-]?.*?%>|\{%-?.*?-?%\})").unwrap());
 static RE_RAW_BLOCKS: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?s)(?:\n *)?< *raw *>(.*?)</ *raw *>(?: *\n)?").unwrap());
-static RE_CENTER: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"(?s)<center[^>]*>(.*?)</center>").unwrap());
-static RE_MENU_ITEM: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r#"(<th\s[^>]*class=")menu-item(")"#).unwrap());
 
-use components::transform_component;
 pub use config::{ComponentNames, Config, OutputMode};
 
 /// The Inky parser. Converts simple HTML tags into email-safe table markup.
@@ -49,101 +43,30 @@ impl Inky {
 
     /// Transform Inky HTML into email-safe table HTML.
     pub fn transform(&self, html: &str) -> String {
-        // Step 0a: Protect template merge tags from html5ever mangling
+        // Protect template merge tags from html5ever mangling
         let (merge_tags, html) = protect_merge_tags(html);
 
-        // Step 0b: Pre-process <image> tags (html5ever converts <image> to <img>)
+        // Extract <raw> blocks BEFORE any other preprocessing so raw
+        // content (including <image> tags) is truly untouched
+        let (raws, html) = extract_raws(&html);
+
+        // Pre-process <image> tags (html5ever converts <image> to <img>)
         let html = preprocess_image_tags(&html);
 
-        // Step 1: Extract <raw> blocks and replace with placeholders
-        let (raws, working_html) = extract_raws(&html);
+        // Preserve <td> content inside <block-grid> from html5ever stripping
+        let html = preserve_block_grid_tds(&html, &self.config.components.block_grid);
 
-        // Step 1b: Preserve <td> content inside <block-grid> from html5ever stripping
-        let working_html =
-            preserve_block_grid_tds(&working_html, &self.config.components.block_grid);
+        // Expand `<tag/>` to `<tag></tag>`: HTML parsing ignores the
+        // self-closing slash on non-void elements, which would make the
+        // component swallow everything after it
+        let html = expand_self_closing_components(&html, &self.config);
 
-        // Step 2: Iteratively transform custom components
-        let mut current = working_html;
+        // Single parse + bottom-up render
+        let current = render::render(&html, &self.config);
 
-        loop {
-            // Parse HTML fresh each iteration since the DOM changes
-            let doc = Html::parse_fragment(&current);
-            let tags = self.config.components.all_tags();
-
-            // Build a selector for all custom component tags
-            // <center> needs special handling to avoid infinite loops
-            let selector_str = tags
-                .iter()
-                .map(|tag| {
-                    if *tag == self.config.components.center || *tag == self.config.components.video
-                    {
-                        format!("{}:not([data-parsed])", tag)
-                    } else {
-                        tag.to_string()
-                    }
-                })
-                .collect::<Vec<_>>()
-                .join(", ");
-
-            let selector = match Selector::parse(&selector_str) {
-                Ok(s) => s,
-                Err(_) => break,
-            };
-
-            // Find the first matching component
-            let first_match = doc.select(&selector).next();
-            let Some(element) = first_match else {
-                break;
-            };
-
-            let tag_name = element.value().name().to_string();
-
-            // Columns need special handling: process all sibling columns at once
-            // because html5ever restructures <th> output into tables, breaking sibling detection
-            if tag_name == self.config.components.columns || tag_name == "columns" {
-                let replaced = transform_all_columns(&current, &self.config, &tag_name);
-                if replaced == current {
-                    break;
-                }
-                current = replaced;
-                continue;
-            }
-
-            // Transform the component
-            let el = components::El::new(element, element.inner_html());
-            let ctx = components::RenderCtx {
-                config: &self.config,
-                inside_center: false,
-            };
-            let new_html = match transform_component(&el, &ctx) {
-                Some(html) => html,
-                None => break,
-            };
-
-            // Use regex to find the original tag in the source string.
-            // html5ever reorders attributes, so we can't match the serialized output directly.
-            let replaced = replace_first_tag(&current, &tag_name, &new_html);
-            if replaced == current {
-                // No replacement made — avoid infinite loop
-                break;
-            }
-            current = replaced;
-        }
-
-        // Step 3: Add float-center to .menu-item elements inside <center> tags
-        current = add_float_center_to_centered_menu_items(&current);
-
-        // Step 4: Restore protected block-grid <td> tags
-        current = restore_block_grid_tds(&current);
-
-        // Step 5: Remove data-parsed attributes (both forms: with and without ="")
-        current = current.replace(" data-parsed=\"\"", "");
-        current = current.replace(" data-parsed", "");
-
-        // Step 6: Re-inject raw blocks
+        // Restore protected content
+        let current = restore_block_grid_tds(&current);
         let current = re_inject_raws(&current, &raws);
-
-        // Step 7: Restore protected merge tags
         restore_merge_tags(&current, &merge_tags)
     }
 
@@ -195,210 +118,20 @@ impl Default for Inky {
     }
 }
 
-/// Find the end position of the matching close tag, tracking nested open/close depth.
-/// `pos` should point to just after the opening tag. Returns the byte offset just past
-/// the matching `</tag>`, or `None` if no matching close tag is found.
-fn find_matching_close(
-    html: &str,
-    open_re: &Regex,
-    close_re: &Regex,
-    mut pos: usize,
-) -> Option<usize> {
-    let mut depth = 1;
-    loop {
-        let next_open = open_re
-            .find(&html[pos..])
-            .map(|m| (pos + m.start(), pos + m.end()));
-        let next_close = close_re
-            .find(&html[pos..])
-            .map(|m| (pos + m.start(), pos + m.end()));
-
-        match (next_open, next_close) {
-            (Some((os, oe)), Some((cs, ce))) => {
-                if cs < os {
-                    depth -= 1;
-                    if depth == 0 {
-                        return Some(ce);
-                    }
-                    pos = ce;
-                } else {
-                    depth += 1;
-                    pos = oe;
-                }
-            }
-            (None, Some((_cs, ce))) => {
-                depth -= 1;
-                if depth == 0 {
-                    return Some(ce);
-                }
-                pos = ce;
-            }
-            _ => return None,
-        }
-    }
-}
-
-/// Transform all adjacent <columns> tags in a group, handling first/last/sibling-count correctly.
-/// This is needed because html5ever restructures <th> elements into table structures,
-/// breaking sibling detection when processing columns one at a time.
-fn transform_all_columns(html: &str, config: &Config, actual_tag: &str) -> String {
-    let tag = actual_tag;
-    let escaped = regex::escape(tag);
-
-    let open_re = Regex::new(&format!(r"<{}(?:\s[^>]*)?>", escaped)).unwrap();
-    let close_re = Regex::new(&format!(r"</{}>", escaped)).unwrap();
-
-    // Find the first top-level <columns> opening tag
-    let first_open = match open_re.find(html) {
-        Some(m) => m,
-        None => return html.to_string(),
-    };
-
-    // Find all top-level column spans (with depth tracking for nested columns)
-    let mut columns: Vec<(usize, usize)> = Vec::new(); // (start, end) of each column
-    let mut search_start = first_open.start();
-
-    while let Some(open_match) = open_re.find(&html[search_start..]) {
-        let col_start = search_start + open_match.start();
-        let after_open = search_start + open_match.end();
-
-        if let Some(close_end) = find_matching_close(html, &open_re, &close_re, after_open) {
-            columns.push((col_start, close_end));
-            search_start = close_end;
-        } else {
-            break;
-        }
-
-        // Check if the next non-whitespace content after this column is another <columns>
-        let after = &html[search_start..];
-        let trimmed = after.trim_start();
-        if !trimmed.starts_with(&format!("<{}", tag)) {
-            break; // No more adjacent columns
-        }
-    }
-
-    if columns.is_empty() {
-        return html.to_string();
-    }
-
-    let col_count = columns.len() as u32;
-    let group_start = columns[0].0;
-    let group_end = columns[columns.len() - 1].1;
-
-    // Transform each column with position info
-    let mut result = String::new();
-    let mut prev_end = group_start;
-
-    for (i, &(start, end)) in columns.iter().enumerate() {
-        // Preserve whitespace between columns
-        if start > prev_end {
-            result.push_str(&html[prev_end..start]);
-        }
-
-        let col_html = &html[start..end];
-        let is_first = i == 0;
-        let is_last = i == columns.len() - 1;
-
-        let doc = Html::parse_fragment(col_html);
-        let sel = Selector::parse(tag).unwrap();
-        if let Some(element) = doc.select(&sel).next() {
-            let el = components::El::new(element, element.inner_html());
-            let transformed = components::transform_column_with_position(
-                &el, config, col_count, is_first, is_last,
-            );
-            result.push_str(&transformed);
-        } else {
-            result.push_str(col_html);
-        }
-
-        prev_end = end;
-    }
-
-    format!("{}{}{}", &html[..group_start], result, &html[group_end..])
-}
-
-/// Replace the first occurrence of a custom tag (with its content) in the source HTML.
-/// Handles nested tags correctly by tracking depth.
-fn replace_first_tag(html: &str, tag_name: &str, replacement: &str) -> String {
-    let escaped = regex::escape(tag_name);
-
-    // Find opening tags
-    let open_pattern = format!(r"<{}(?:\s[^>]*)?>", escaped);
-    let close_pattern = format!(r"</{}>", escaped);
-    let self_close_pattern = format!(r"<{}(?:\s[^>]*)?\s*/>", escaped);
-
-    let open_re = Regex::new(&open_pattern).unwrap();
-    let close_re = Regex::new(&close_pattern).unwrap();
-    let self_close_re = Regex::new(&self_close_pattern).unwrap();
-
-    // Try self-closing first
-    if let Some(m) = self_close_re.find(html) {
-        // Make sure this isn't also matched as an opening tag with content
-        let has_close_after = close_re.find(&html[m.start()..]).is_some();
-        if !has_close_after {
-            return format!("{}{}{}", &html[..m.start()], replacement, &html[m.end()..]);
-        }
-    }
-
-    // Find all opening tag positions
-    let opens: Vec<(usize, usize)> = open_re
-        .find_iter(html)
-        .map(|m| (m.start(), m.end()))
-        .collect();
-
-    if opens.is_empty() {
-        return html.to_string();
-    }
-
-    // For each opening tag, find its matching closing tag (tracking nesting depth)
-    for &(open_start, open_end) in &opens {
-        let open_str = &html[open_start..open_end];
-
-        // For <center> and <video>, skip tags that already have data-parsed
-        if (tag_name == "center" || tag_name == "video") && open_str.contains("data-parsed") {
-            continue;
-        }
-
-        if let Some(close_end) = find_matching_close(html, &open_re, &close_re, open_end) {
-            return format!(
-                "{}{}{}",
-                &html[..open_start],
-                replacement,
-                &html[close_end..]
-            );
-        }
-
-        // No matching close tag — treat the open tag alone
-        return format!(
-            "{}{}{}",
-            &html[..open_start],
-            replacement,
-            &html[open_end..]
-        );
-    }
-
-    html.to_string()
-}
-
-/// Add float-center class to .menu-item elements inside <center> tags.
-/// This matches the JS behavior: element.find('item, .menu-item').addClass('float-center')
-/// We do this as a post-processing step because <center> is transformed before <item>,
-/// so at center-transform time, the menu items haven't been converted to .menu-item yet.
-fn add_float_center_to_centered_menu_items(html: &str) -> String {
-    RE_CENTER
-        .replace_all(html, |caps: &regex::Captures| {
-            let inner = &caps[1];
-            let updated = RE_MENU_ITEM.replace_all(inner, |mcaps: &regex::Captures| {
-                format!("{}menu-item float-center{}", &mcaps[1], &mcaps[2])
-            });
-            format!(
-                "<center{}>{}</center>",
-                // Preserve any attributes on the center tag
-                &caps[0][7..caps[0].find('>').unwrap()],
-                updated
-            )
-        })
-        .to_string()
+/// Expand self-closing component tags (`<spacer/>` → `<spacer></spacer>`).
+/// The HTML5 parser ignores `/>` on non-void elements, so without this the
+/// element would stay open and swallow all following content.
+fn expand_self_closing_components(html: &str, config: &Config) -> String {
+    let mut tags = config.components.all_tags();
+    // Longest first so "columns" wins over "column" in the alternation
+    tags.sort_by_key(|t| std::cmp::Reverse(t.len()));
+    let alternation = tags
+        .iter()
+        .map(|t| regex::escape(t))
+        .collect::<Vec<_>>()
+        .join("|");
+    let re = Regex::new(&format!(r"(?i)<({})((?:\s[^>]*?)?)\s*/>", alternation)).unwrap();
+    re.replace_all(html, "<$1$2></$1>").to_string()
 }
 
 /// Preserve <td> content inside <block-grid> tags from being stripped by html5ever.
@@ -418,8 +151,8 @@ fn preserve_block_grid_tds(html: &str, block_grid_tag: &str) -> String {
         let close = &caps[3];
         // Wrap each <td>...</td> in a raw placeholder to protect from html5ever
         let protected = inner
-            .replace("<td>", "###BGTD###")
-            .replace("</td>", "###/BGTD###");
+            .replace("<td>", "###bgtd###")
+            .replace("</td>", "###/bgtd###");
         format!("{}{}{}", open, protected, close)
     })
     .to_string()
@@ -427,8 +160,8 @@ fn preserve_block_grid_tds(html: &str, block_grid_tag: &str) -> String {
 
 /// Restore <td> tags that were protected from html5ever stripping.
 fn restore_block_grid_tds(html: &str) -> String {
-    html.replace("###BGTD###", "<td>")
-        .replace("###/BGTD###", "</td>")
+    html.replace("###bgtd###", "<td>")
+        .replace("###/bgtd###", "</td>")
 }
 
 /// Pre-process `<image>` tags into their final HTML output.
@@ -537,22 +270,22 @@ fn restore_placeholders(html: &str, saved: &[String], prefix: &str) -> String {
 
 /// Protect template merge tags that look like HTML (ERB/EJS/ASP tags) from html5ever.
 fn protect_merge_tags(html: &str) -> (Vec<String>, String) {
-    extract_with_placeholders(html, &RE_MERGE_TAGS, "MERGE", 0)
+    extract_with_placeholders(html, &RE_MERGE_TAGS, "merge", 0)
 }
 
 /// Restore protected merge tags from placeholders.
 fn restore_merge_tags(html: &str, tags: &[String]) -> String {
-    restore_placeholders(html, tags, "MERGE")
+    restore_placeholders(html, tags, "merge")
 }
 
 /// Extract `<raw>` blocks from HTML, replacing them with placeholders.
 fn extract_raws(html: &str) -> (Vec<String>, String) {
-    extract_with_placeholders(html, &RE_RAW_BLOCKS, "RAW", 1)
+    extract_with_placeholders(html, &RE_RAW_BLOCKS, "raw", 1)
 }
 
 /// Re-inject raw block content back into placeholders.
 fn re_inject_raws(html: &str, raws: &[String]) -> String {
-    restore_placeholders(html, raws, "RAW")
+    restore_placeholders(html, raws, "raw")
 }
 
 /// Convenience function to transform HTML with default settings.
@@ -569,12 +302,12 @@ mod tests {
         let input = "before<raw>keep me</raw>after";
         let (raws, result) = extract_raws(input);
         assert_eq!(raws, vec!["keep me"]);
-        assert_eq!(result, "before###RAW0###after");
+        assert_eq!(result, "before###raw0###after");
     }
 
     #[test]
     fn test_re_inject_raws() {
-        let html = "before###RAW0###after";
+        let html = "before###raw0###after";
         let raws = vec!["keep me".to_string()];
         assert_eq!(re_inject_raws(html, &raws), "beforekeep meafter");
     }
@@ -626,7 +359,7 @@ mod tests {
         let input = "before<raw><button>not transformed</button></raw>after";
         let result = transform(input);
         assert!(result.contains("<button>not transformed</button>"));
-        assert!(!result.contains("###RAW"));
+        assert!(!result.contains("###raw"));
     }
 
     #[test]
@@ -650,7 +383,7 @@ mod tests {
         let input = "Hello <%= name %> world";
         let (tags, result) = protect_merge_tags(input);
         assert_eq!(tags, vec!["<%= name %>"]);
-        assert_eq!(result, "Hello ###MERGE0### world");
+        assert_eq!(result, "Hello ###merge0### world");
     }
 
     #[test]
@@ -658,9 +391,9 @@ mod tests {
         let input = "<%= first %> and <% second %> and {% third %}";
         let (tags, result) = protect_merge_tags(input);
         assert_eq!(tags.len(), 3);
-        assert!(result.contains("###MERGE0###"));
-        assert!(result.contains("###MERGE1###"));
-        assert!(result.contains("###MERGE2###"));
+        assert!(result.contains("###merge0###"));
+        assert!(result.contains("###merge1###"));
+        assert!(result.contains("###merge2###"));
     }
 
     #[test]
@@ -686,8 +419,8 @@ mod tests {
         let input = "a<raw>first</raw>b<raw>second</raw>c";
         let (raws, result) = extract_raws(input);
         assert_eq!(raws, vec!["first", "second"]);
-        assert!(result.contains("###RAW0###"));
-        assert!(result.contains("###RAW1###"));
+        assert!(result.contains("###raw0###"));
+        assert!(result.contains("###raw1###"));
         let restored = re_inject_raws(&result, &raws);
         assert!(restored.contains("first"));
         assert!(restored.contains("second"));
@@ -704,103 +437,20 @@ mod tests {
         assert!(restored.contains("<table><tr><td>Keep</td></tr></table>"));
     }
 
-    // --- replace_first_tag ---
-
-    #[test]
-    fn test_replace_first_tag_simple() {
-        let html = "<button>Click</button>";
-        let result = replace_first_tag(html, "button", "REPLACED");
-        assert_eq!(result, "REPLACED");
-    }
-
-    #[test]
-    fn test_replace_first_tag_with_surrounding() {
-        let html = "before<button>Click</button>after";
-        let result = replace_first_tag(html, "button", "REPLACED");
-        assert_eq!(result, "beforeREPLACEDafter");
-    }
-
-    #[test]
-    fn test_replace_first_tag_nested() {
-        // Should replace the outermost tag, not be confused by nested same-name tags
-        let html = "<div><div>inner</div></div>trailing";
-        let result = replace_first_tag(html, "div", "REPLACED");
-        assert_eq!(result, "REPLACEDtrailing");
-    }
-
-    #[test]
-    fn test_replace_first_tag_self_closing() {
-        let html = "before<divider />after";
-        let result = replace_first_tag(html, "divider", "REPLACED");
-        assert_eq!(result, "beforeREPLACEDafter");
-    }
-
-    #[test]
-    fn test_replace_first_tag_with_attributes() {
-        let html = r#"before<button href="http://example.com" class="big">Click</button>after"#;
-        let result = replace_first_tag(html, "button", "REPLACED");
-        assert_eq!(result, "beforeREPLACEDafter");
-    }
-
-    #[test]
-    fn test_replace_first_tag_no_match() {
-        let html = "<div>content</div>";
-        let result = replace_first_tag(html, "button", "REPLACED");
-        assert_eq!(result, html);
-    }
-
-    #[test]
-    fn test_replace_first_tag_only_first() {
-        let html = "<spacer></spacer><spacer></spacer>";
-        let result = replace_first_tag(html, "spacer", "X");
-        assert_eq!(result, "X<spacer></spacer>");
-    }
-
-    // --- transform_all_columns ---
-
-    #[test]
-    fn test_transform_all_columns_single() {
-        let html = "<row><column>Content</column></row>";
-        let config = Config::default();
-        let result = transform_all_columns(html, &config, "column");
-        // Should transform the column into table markup
-        assert!(result.contains("class=\""));
-        assert!(result.contains("Content"));
-    }
-
-    #[test]
-    fn test_transform_all_columns_multiple_adjacent() {
-        let html = "<row><column>First</column><column>Second</column></row>";
-        let config = Config::default();
-        let result = transform_all_columns(html, &config, "column");
-        assert!(result.contains("First"));
-        assert!(result.contains("Second"));
-        // Both columns should be transformed (no raw <column> tags left)
-        assert!(!result.contains("<column>"));
-    }
-
-    #[test]
-    fn test_transform_all_columns_no_columns() {
-        let html = "<row><div>No columns</div></row>";
-        let config = Config::default();
-        let result = transform_all_columns(html, &config, "column");
-        assert_eq!(result, html);
-    }
-
     // --- preserve_block_grid_tds / restore_block_grid_tds ---
 
     #[test]
     fn test_preserve_block_grid_tds() {
         let html = "<block-grid><td>Item 1</td><td>Item 2</td></block-grid>";
         let result = preserve_block_grid_tds(html, "block-grid");
-        assert!(result.contains("###BGTD###"));
-        assert!(result.contains("###/BGTD###"));
+        assert!(result.contains("###bgtd###"));
+        assert!(result.contains("###/bgtd###"));
         assert!(!result.contains("<td>"));
     }
 
     #[test]
     fn test_restore_block_grid_tds() {
-        let html = "###BGTD###Item###/BGTD###";
+        let html = "###bgtd###Item###/bgtd###";
         let result = restore_block_grid_tds(html);
         assert_eq!(result, "<td>Item</td>");
     }
@@ -847,22 +497,6 @@ mod tests {
         assert!(!result.contains("width="));
     }
 
-    // --- add_float_center_to_centered_menu_items ---
-
-    #[test]
-    fn test_float_center_added_to_menu_item_in_center() {
-        let html = r#"<center><th class="menu-item">Item</th></center>"#;
-        let result = add_float_center_to_centered_menu_items(html);
-        assert!(result.contains("menu-item float-center"));
-    }
-
-    #[test]
-    fn test_float_center_not_added_outside_center() {
-        let html = r#"<th class="menu-item">Item</th>"#;
-        let result = add_float_center_to_centered_menu_items(html);
-        assert!(!result.contains("float-center"));
-    }
-
     // --- Full pipeline integration for columns ---
 
     #[test]
@@ -892,5 +526,71 @@ mod tests {
         assert!(result.contains("small-6"));
         assert!(result.contains("large-8"));
         assert!(result.contains("large-4"));
+    }
+
+    // --- Phase 2 regression tests: bugs in the old string-replacement engine ---
+
+    #[test]
+    fn self_closing_component_does_not_swallow_content() {
+        let result = transform(r#"a<spacer height="10"/>b"#);
+        assert!(result.contains("a"));
+        assert!(result.contains("font-size:10px"));
+        assert!(result.ends_with('b'), "content after self-closing tag lost: {result}");
+    }
+
+    #[test]
+    fn capitalized_tag_does_not_halt_transformation() {
+        let result = transform(r#"<Button href="https://x.dev">Go</Button><row>r</row>"#);
+        assert!(result.contains(r#"class="button""#));
+        assert!(result.contains(r#"class="row""#));
+    }
+
+    #[test]
+    fn component_tag_in_attribute_value_untouched() {
+        let result = transform(r#"<p title="see <button>">x</p>"#);
+        assert_eq!(result, r#"<p title="see <button>">x</p>"#);
+    }
+
+    #[test]
+    fn comment_between_columns_keeps_grid_math() {
+        let result = transform("<row><column>A</column><!-- note --><column>B</column></row>");
+        assert_eq!(result.matches("large-6").count(), 2);
+    }
+
+    #[test]
+    fn components_inside_outlook_are_transformed() {
+        let result = transform(r##"<outlook><button href="#">B</button></outlook>"##);
+        assert!(result.contains("<!--[if mso]>"));
+        assert!(result.contains(r#"class="button""#));
+    }
+
+    #[test]
+    fn raw_protects_image_tags() {
+        let result = transform(r#"<raw><image src="x.png"></raw>"#);
+        assert!(result.contains(r#"<image src="x.png">"#));
+        assert!(!result.contains("<img"));
+    }
+
+    #[test]
+    fn data_parsed_like_attributes_survive() {
+        let result = transform(r#"<p data-parsed-mode="strict" data-parsed="x">y</p>"#);
+        assert!(result.contains(r#"data-parsed-mode="strict""#));
+        assert!(result.contains(r#"data-parsed="x""#));
+    }
+
+    #[test]
+    fn full_document_with_doctype_transforms_body() {
+        let input = r#"<!DOCTYPE html><html><head><title>T</title></head><body><button href="https://x.dev">Go</button></body></html>"#;
+        let result = transform(input);
+        assert!(result.starts_with("<!DOCTYPE html>"));
+        assert!(result.contains("<head><title>T</title></head>"));
+        assert!(result.contains(r#"class="button""#));
+        assert!(!result.contains("<button "));
+    }
+
+    #[test]
+    fn merge_tag_as_attribute_survives() {
+        let result = transform("<row <%= extra %>>c</row>");
+        assert!(result.contains("<%= extra %>"), "merge tag lost: {result}");
     }
 }

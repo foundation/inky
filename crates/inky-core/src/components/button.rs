@@ -41,14 +41,26 @@ fn make_table_button(
     class_str: &str,
     el: &El,
 ) -> String {
-    let mut inner = inner_text.to_string();
+    let is_expanded = el.has_class("expand") || el.has_class("expanded");
 
+    let mut inner = inner_text.to_string();
     if !href.is_empty() {
-        inner = format!(r#"<a{} href="{}"{}>{}</a>"#, attrs, href, target, inner);
+        // Expanded buttons wrap the link in <center>; the old engine's
+        // re-scan used to add align/float-center to the <a> — emit them
+        // directly now that output is never re-processed.
+        let center_attrs = if is_expanded {
+            r#" align="center" class="float-center""#
+        } else {
+            ""
+        };
+        inner = format!(
+            r#"<a{} href="{}"{}{}>{}</a>"#,
+            attrs, href, target, center_attrs, inner
+        );
     }
 
     let expander;
-    if el.has_class("expand") || el.has_class("expanded") {
+    if is_expanded {
         inner = format!("<center>{}</center>", inner);
         expander = "\n<td class=\"expander\" aria-hidden=\"true\"></td>";
     } else {

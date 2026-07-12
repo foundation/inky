@@ -6,7 +6,6 @@ mod blockquote;
 mod button;
 mod callout;
 mod card;
-mod center;
 mod column;
 mod container;
 mod divider;
@@ -26,8 +25,8 @@ use scraper::ElementRef;
 
 use crate::config::Config;
 
-// Re-export items used by lib.rs
-pub use column::{is_column_element, transform_column_with_position};
+// Re-export items used by lib.rs / bindings
+pub use column::transform_column_with_position;
 
 /// A component element paired with its already-rendered inner HTML.
 ///
@@ -105,7 +104,6 @@ fn component_table(config: &Config) -> Vec<(&str, ComponentFn)> {
         }),
         (c.menu.as_str(), |el, _| menu::make_menu(el)),
         (c.menu_item.as_str(), |el, ctx| menu::make_menu_item(el, ctx)),
-        (c.center.as_str(), |el, _| center::make_center(el)),
         (c.callout.as_str(), |el, _| callout::make_callout(el)),
         (c.spacer.as_str(), |el, _| spacer::make_spacer(el)),
         (c.wrapper.as_str(), |el, ctx| wrapper::make_wrapper(el, ctx.config)),

@@ -20,9 +20,8 @@ pub fn make_video(el: &El) -> String {
     ));
 
     // HTML5 video tag (Apple Mail / iOS only)
-    // data-parsed prevents the transform loop from re-matching this output <video> tag
     html.push_str(&format!(
-        r#"<video data-parsed width="{}" autoplay muted loop playsinline poster="{}" style="max-width: 100%; display: block;">"#,
+        r#"<video width="{}" autoplay muted loop playsinline poster="{}" style="max-width: 100%; display: block;">"#,
         width, poster
     ));
     html.push_str(&format!(r#"<source src="{}" type="video/mp4">"#, src));

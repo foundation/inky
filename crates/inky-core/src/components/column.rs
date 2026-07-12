@@ -1,5 +1,4 @@
 use super::El;
-use crate::attrs::has_class;
 use crate::config::{Config, OutputMode};
 
 /// Transform a column with explicit position info.
@@ -97,9 +96,7 @@ pub fn make_column(el: &El, config: &Config) -> String {
 /// Check if an element is a column.
 pub fn is_column_element(el: &scraper::ElementRef, config: &Config) -> bool {
     let name = el.value().name();
-    name == config.components.columns
-        || name == "columns"
-        || (name == "th" && has_class(el, "columns"))
+    name == config.components.columns || name == "columns"
 }
 
 fn count_sibling_columns(el: &El, config: &Config) -> u32 {
