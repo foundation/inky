@@ -10,6 +10,7 @@ use ego_tree::NodeRef;
 use regex::Regex;
 use scraper::{ElementRef, Html, Node};
 
+use crate::components::{self, El, RenderCtx};
 use crate::config::Config;
 
 static RE_FULL_DOCUMENT: LazyLock<Regex> =
@@ -104,6 +105,25 @@ fn render_element(node: NodeRef<Node>, walk: Walk, out: &mut String) {
     let element = ElementRef::wrap(node).expect("render_element called on non-element");
     let name = element.value().name();
 
+    // Component dispatch: render children first (bottom-up), then let the
+    // component wrap the finished inner HTML. Output is emitted verbatim
+    // and never re-scanned.
+    if is_component_tag(name, walk.config) {
+        let inner = render_children_to_string(node, walk);
+        let mut el = El::new(element, inner);
+        if walk.center_child {
+            el.extra_classes.push("float-center".to_string());
+        }
+        let ctx = RenderCtx {
+            config: walk.config,
+            inside_center: walk.inside_center,
+        };
+        if let Some(output) = components::transform_component(&el, &ctx) {
+            out.push_str(&output);
+            return;
+        }
+    }
+
     out.push('<');
     out.push_str(name);
     for (key, value) in element.value().attrs() {
@@ -140,6 +160,24 @@ fn render_element(node: NodeRef<Node>, walk: Walk, out: &mut String) {
     out.push_str("</");
     out.push_str(name);
     out.push('>');
+}
+
+/// Render all children of `node` into a fresh string (component inner HTML).
+fn render_children_to_string(node: NodeRef<Node>, walk: Walk) -> String {
+    let child_walk = Walk {
+        center_child: false,
+        ..walk
+    };
+    let mut out = String::new();
+    for child in node.children() {
+        render_node(child, child_walk, &mut out);
+    }
+    out
+}
+
+/// Cheap tag-name membership test to avoid building El for plain elements.
+fn is_component_tag(name: &str, config: &Config) -> bool {
+    config.components.all_tags().contains(&name)
 }
 
 /// Escape text-node content the same way html5ever's serializer does.
@@ -246,11 +284,73 @@ mod tests {
     }
 
     #[test]
-    fn components_pass_through_untransformed_in_this_task() {
-        // Dispatch arrives in Task 3; the serializer alone must not alter them.
-        assert_eq!(
-            r(r#"<button href="x">Go</button>"#),
-            r#"<button href="x">Go</button>"#
-        );
+    fn component_transformed() {
+        let out = r(r#"<button href="https://x.dev">Go</button>"#);
+        assert!(out.contains(r#"class="button""#));
+        assert!(out.contains("https://x.dev"));
+        assert!(!out.contains("<button"));
+    }
+
+    #[test]
+    fn nested_components_transform_bottom_up() {
+        let out = r(r##"<container><row><column><button href="#">Go</button></column></row></container>"##);
+        assert!(out.contains(r#"class="container""#));
+        assert!(out.contains(r#"class="row""#));
+        assert!(out.contains("small-12"));
+        assert!(out.contains(r#"class="button""#));
+        assert!(!out.contains("<container"));
+        assert!(!out.contains("<row"));
+        assert!(!out.contains("<column"));
+        assert!(!out.contains("<button "));
+    }
+
+    #[test]
+    fn capitalized_component_tag_transforms() {
+        // html5ever lowercases tag names; the old regex replacement was
+        // case-sensitive and silently halted the whole document here.
+        let out = r(r#"<Button HREF="https://x.dev">Go</Button><row>r</row>"#);
+        assert!(out.contains(r#"class="button""#));
+        assert!(out.contains(r#"class="row""#));
+        assert!(!out.contains("<Button"));
+    }
+
+    #[test]
+    fn component_tag_inside_attribute_value_untouched() {
+        let out = r(r#"<p title="see <button>">x</p>"#);
+        assert_eq!(out, r#"<p title="see <button>">x</p>"#);
+    }
+
+    #[test]
+    fn components_inside_outlook_transform() {
+        let out = r(r##"<outlook><button href="#">B</button></outlook>"##);
+        assert!(out.contains("<!--[if mso]>"));
+        assert!(out.contains(r#"class="button""#));
+        assert!(!out.contains("<button "));
+    }
+
+    #[test]
+    fn two_columns_split_evenly() {
+        let out = r("<row><column>A</column><column>B</column></row>");
+        assert_eq!(out.matches("large-6").count(), 2);
+        assert!(out.contains("first"));
+        assert!(out.contains("last"));
+    }
+
+    #[test]
+    fn comment_between_columns_does_not_break_grid() {
+        let out = r("<row><column>A</column><!-- note --><column>B</column></row>");
+        assert_eq!(out.matches("large-6").count(), 2);
+        assert!(out.contains("<!-- note -->"));
+    }
+
+    #[test]
+    fn three_columns_split() {
+        let out = r("<row><column>A</column><column>B</column><column>C</column></row>");
+        assert_eq!(out.matches("large-4").count(), 3);
+    }
+
+    #[test]
+    fn unknown_tags_pass_through() {
+        assert_eq!(r("<widget x=\"1\">hi</widget>"), "<widget x=\"1\">hi</widget>");
     }
 }
