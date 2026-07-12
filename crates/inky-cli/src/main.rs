@@ -274,7 +274,8 @@ fn main() {
             let columns = cfg.columns;
             let bp = bulletproof_buttons || cfg.bulletproof_buttons;
             let pt = plain_text || cfg.plain_text;
-            let data = data.or(cfg.data);
+            let data_path = data.or(cfg.data);
+            let data_source = resolve_data_source(data_path.as_deref());
             let input = cfg.input.unwrap_or_else(|| {
                 eprintln!("{} No input directory specified. Use `inky watch <dir>` or set \"src\" in inky.config.json", "error:".red().bold());
                 process::exit(1);
@@ -294,7 +295,7 @@ fn main() {
                 plain_text: pt,
                 json: false,
             };
-            watch::cmd_watch(input, output, watch_ctx, data)
+            watch::cmd_watch(input, output, watch_ctx, data_path, data_source)
         }
         Commands::Serve {
             input,

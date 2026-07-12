@@ -12,6 +12,7 @@ pub fn cmd_watch(
     output: PathBuf,
     build_ctx: crate::build::BuildContext,
     data_path: Option<PathBuf>,
+    data_source: crate::builder::DataSource,
 ) {
     if !input.is_dir() {
         eprintln!(
@@ -34,8 +35,11 @@ pub fn cmd_watch(
         ..Config::default()
     };
 
-    // Load merge data if a data file was provided
-    let merge_data = crate::util::load_json_data(data_path.as_deref());
+    let builder = crate::builder::Builder::new(
+        config,
+        build_ctx.pipeline_options(),
+        build_ctx.plain_text,
+    );
 
     // Initial full build
     eprintln!(
@@ -45,7 +49,7 @@ pub fn cmd_watch(
         output.display()
     );
 
-    do_full_build(&input, &output, &config, &build_ctx, merge_data.as_ref());
+    do_full_build(&input, &output, &builder, &data_source);
 
     eprintln!("  press {} to stop\n", "Ctrl+C".bold());
 
@@ -74,27 +78,29 @@ pub fn cmd_watch(
             std::process::exit(1);
         });
 
-    // Watch the data file for changes
+    // Watch the data path (file or directory) for changes
     if let Some(ref data_file) = data_path {
-        if let Some(parent) = data_file.parent() {
-            let canonical = std::fs::canonicalize(parent).unwrap_or(parent.to_path_buf());
-            eprintln!(
-                "  {} {} (data)",
-                "watching".cyan().bold(),
-                data_file.display()
-            );
-            debouncer
-                .watcher()
-                .watch(&canonical, notify::RecursiveMode::NonRecursive)
-                .unwrap_or_else(|e| {
-                    eprintln!(
-                        "  {} Failed to watch data file directory '{}': {}",
-                        "warning:".yellow().bold(),
-                        canonical.display(),
-                        e
-                    );
-                });
-        }
+        let watch_target = if data_file.is_dir() {
+            data_file.clone()
+        } else {
+            data_file
+                .parent()
+                .map(Path::to_path_buf)
+                .unwrap_or_else(|| data_file.clone())
+        };
+        let canonical = std::fs::canonicalize(&watch_target).unwrap_or(watch_target);
+        eprintln!("  {} {} (data)", "watching".cyan().bold(), data_file.display());
+        debouncer
+            .watcher()
+            .watch(&canonical, notify::RecursiveMode::Recursive)
+            .unwrap_or_else(|e| {
+                eprintln!(
+                    "  {} Failed to watch data path '{}': {}",
+                    "warning:".yellow().bold(),
+                    canonical.display(),
+                    e
+                );
+            });
     }
 
     // Also watch directories containing included partials
@@ -117,7 +123,7 @@ pub fn cmd_watch(
     }
 
     // Event loop
-    let mut merge_data = merge_data;
+    let mut data_source = data_source;
     loop {
         match rx.recv() {
             Ok(Ok(events)) => {
@@ -129,12 +135,14 @@ pub fn cmd_watch(
                 for event in &events {
                     let path = &event.path;
 
-                    // Check if the data file changed
+                    // Check if the data path (file or directory) changed
                     if let Some(ref data_file) = data_path {
                         let canonical_data =
                             std::fs::canonicalize(data_file).unwrap_or(data_file.clone());
                         let canonical_event = std::fs::canonicalize(path).unwrap_or(path.clone());
-                        if canonical_event == canonical_data {
+                        let is_data_event = canonical_event == canonical_data
+                            || (canonical_data.is_dir() && canonical_event.starts_with(&canonical_data));
+                        if is_data_event {
                             data_changed = true;
                             continue;
                         }
@@ -166,11 +174,20 @@ pub fn cmd_watch(
                     }
                 }
 
-                // Reload data file if it changed
+                // Reload data if it changed
                 if data_changed {
                     let timestamp = current_time();
                     eprintln!("  [{}] data file changed, reloading...", timestamp);
-                    merge_data = crate::util::load_json_data(data_path.as_deref());
+                    data_source = match data_path.as_deref() {
+                        Some(p) if p.is_dir() => {
+                            crate::builder::DataSource::Directory(p.to_path_buf())
+                        }
+                        Some(p) => match crate::util::load_json_data(Some(p)) {
+                            Some(v) => crate::builder::DataSource::File(v),
+                            None => crate::builder::DataSource::None,
+                        },
+                        None => crate::builder::DataSource::None,
+                    };
                     needs_full_rebuild = true;
                 }
 
@@ -180,17 +197,10 @@ pub fn cmd_watch(
                         "  [{}] include or file changed, rebuilding all...",
                         timestamp
                     );
-                    do_full_build(&input, &output, &config, &build_ctx, merge_data.as_ref());
+                    do_full_build(&input, &output, &builder, &data_source);
                 } else {
                     for file in &changed_files {
-                        rebuild_single_file(
-                            file,
-                            &input,
-                            &output,
-                            &config,
-                            &build_ctx,
-                            merge_data.as_ref(),
-                        );
+                        rebuild_single_file(file, &input, &output, &builder, &data_source);
                     }
                 }
             }
@@ -223,11 +233,10 @@ fn current_time() -> String {
 fn do_full_build(
     input: &Path,
     output: &Path,
-    config: &Config,
-    build_ctx: &crate::build::BuildContext,
-    merge_data: Option<&serde_json::Value>,
+    builder: &crate::builder::Builder,
+    data_source: &crate::builder::DataSource,
 ) {
-    let files = find_template_files(input);
+    let files = crate::builder::find_template_files(input, Some(output));
 
     if files.is_empty() {
         eprintln!(
@@ -240,7 +249,7 @@ fn do_full_build(
 
     let mut built = 0;
     for file in &files {
-        match build_file(file, input, output, config, build_ctx, merge_data) {
+        match build_file(builder, file, input, output, data_source) {
             Ok(dest) => {
                 let timestamp = current_time();
                 eprintln!(
@@ -265,13 +274,12 @@ fn rebuild_single_file(
     file: &Path,
     input_dir: &Path,
     output_dir: &Path,
-    config: &Config,
-    build_ctx: &crate::build::BuildContext,
-    merge_data: Option<&serde_json::Value>,
+    builder: &crate::builder::Builder,
+    data_source: &crate::builder::DataSource,
 ) {
     let timestamp = current_time();
 
-    match build_file(file, input_dir, output_dir, config, build_ctx, merge_data) {
+    match build_file(builder, file, input_dir, output_dir, data_source) {
         Ok(dest) => {
             eprintln!(
                 "  [{}] {} {} → {}",
@@ -294,18 +302,18 @@ fn rebuild_single_file(
 }
 
 fn build_file(
+    builder: &crate::builder::Builder,
     file: &Path,
     input_dir: &Path,
     output_dir: &Path,
-    config: &Config,
-    build_ctx: &crate::build::BuildContext,
-    merge_data: Option<&serde_json::Value>,
+    data_source: &crate::builder::DataSource,
 ) -> Result<PathBuf, String> {
-    let html = std::fs::read_to_string(file).map_err(|e| format!("Failed to read: {}", e))?;
+    let built = builder.build_file(file, input_dir, data_source)?;
 
-    // Run validation
-    let diagnostics = inky_core::validate::validate(&html, config);
-    for d in &diagnostics {
+    for w in &built.warnings {
+        eprintln!("  {} {}", "warning:".yellow().bold(), w);
+    }
+    for d in &built.diagnostics {
         let label = match d.severity {
             inky_core::validate::Severity::Warning => "warn".yellow().bold(),
             inky_core::validate::Severity::Error => "error".red().bold(),
@@ -313,20 +321,19 @@ fn build_file(
         eprintln!("  {} {} [{}] {}", label, file.display(), d.rule, d.message);
     }
 
-    let result = crate::build::process_template(config, &html, build_ctx, file.parent(), merge_data);
-
     let dest = to_output_path(file, input_dir, output_dir);
     if let Some(parent) = dest.parent() {
         std::fs::create_dir_all(parent)
             .map_err(|e| format!("Failed to create directory: {}", e))?;
     }
-    std::fs::write(&dest, &result).map_err(|e| format!("Failed to write: {}", e))?;
+    std::fs::write(&dest, &built.html).map_err(|e| format!("Failed to write: {}", e))?;
+    if let Some(ref txt) = built.plain_text {
+        let txt_path = dest.with_extension("txt");
+        std::fs::write(&txt_path, txt)
+            .map_err(|e| format!("Failed to write {}: {}", txt_path.display(), e))?;
+    }
 
     Ok(dest)
-}
-
-fn find_template_files(dir: &Path) -> Vec<PathBuf> {
-    crate::util::find_files(dir, crate::util::TEMPLATE_EXTENSIONS)
 }
 
 fn to_output_path(input: &Path, input_dir: &Path, output_dir: &Path) -> PathBuf {
