@@ -4,6 +4,7 @@
 // Remove this once Task 5 wires `render()` into `transform()`.
 #![allow(dead_code)]
 
+use std::borrow::Cow;
 use std::sync::LazyLock;
 
 use ego_tree::NodeRef;
@@ -105,6 +106,34 @@ fn render_element(node: NodeRef<Node>, walk: Walk, out: &mut String) {
     let element = ElementRef::wrap(node).expect("render_element called on non-element");
     let name = element.value().name();
 
+    // <center> decorates its children rather than replacing itself.
+    if name == walk.config.components.center {
+        out.push('<');
+        out.push_str(name);
+        for (key, value) in element.value().attrs() {
+            out.push(' ');
+            out.push_str(key);
+            if !value.is_empty() {
+                out.push_str("=\"");
+                out.push_str(&escape_attr(value));
+                out.push('"');
+            }
+        }
+        out.push('>');
+        let inner_walk = Walk {
+            inside_center: true,
+            center_child: true,
+            ..walk
+        };
+        for child in node.children() {
+            render_node(child, inner_walk, out);
+        }
+        out.push_str("</");
+        out.push_str(name);
+        out.push('>');
+        return;
+    }
+
     // Component dispatch: render children first (bottom-up), then let the
     // component wrap the finished inner HTML. Output is emitted verbatim
     // and never re-scanned.
@@ -124,15 +153,33 @@ fn render_element(node: NodeRef<Node>, walk: Walk, out: &mut String) {
         }
     }
 
+    let mut has_align = false;
+    let mut has_class = false;
     out.push('<');
     out.push_str(name);
     for (key, value) in element.value().attrs() {
+        has_align |= key == "align";
+        let mut value = Cow::Borrowed(value);
+        if walk.center_child && key == "class" {
+            has_class = true;
+            if !value.split_whitespace().any(|c| c == "float-center") {
+                value = Cow::Owned(format!("{} float-center", value));
+            }
+        }
         out.push(' ');
         out.push_str(key);
         if !value.is_empty() {
             out.push_str("=\"");
-            out.push_str(&escape_attr(value));
+            out.push_str(&escape_attr(&value));
             out.push('"');
+        }
+    }
+    if walk.center_child {
+        if !has_align {
+            out.push_str(r#" align="center""#);
+        }
+        if !has_class {
+            out.push_str(r#" class="float-center""#);
         }
     }
     out.push('>');
@@ -352,5 +399,53 @@ mod tests {
     #[test]
     fn unknown_tags_pass_through() {
         assert_eq!(r("<widget x=\"1\">hi</widget>"), "<widget x=\"1\">hi</widget>");
+    }
+
+    #[test]
+    fn center_decorates_plain_child() {
+        let out = r("<center><p>hi</p></center>");
+        assert_eq!(
+            out,
+            r#"<center><p align="center" class="float-center">hi</p></center>"#
+        );
+    }
+
+    #[test]
+    fn center_preserves_own_attributes() {
+        let out = r(r#"<center class="x"><p>hi</p></center>"#);
+        assert!(out.starts_with(r#"<center class="x">"#));
+        assert!(!out.contains("data-parsed"));
+    }
+
+    #[test]
+    fn center_respects_existing_align_and_class() {
+        let out = r(r#"<center><p align="left" class="a">hi</p></center>"#);
+        assert!(out.contains(r#"align="left""#));
+        assert!(out.contains(r#"class="a float-center""#));
+    }
+
+    #[test]
+    fn center_adds_float_center_to_component_child() {
+        let out = r(r##"<center><menu><item href="#">A</item></menu></center>"##);
+        // menu is the direct child: its table gets float-center
+        assert!(out.contains(r#"class="menu float-center""#));
+        // the item is a descendant: menu items inside center get float-center
+        assert!(out.contains(r#"class="menu-item float-center""#));
+    }
+
+    #[test]
+    fn menu_item_outside_center_gets_no_float_center() {
+        let out = r(r##"<menu><item href="#">A</item></menu>"##);
+        assert!(out.contains(r#"class="menu-item""#));
+        assert!(!out.contains("float-center"));
+    }
+
+    #[test]
+    fn center_component_child_transforms() {
+        // The old make_center re-emitted raw inner_html, leaving components
+        // inside <center> untransformed until later loop iterations.
+        let out = r(r##"<center><button href="#">Go</button></center>"##);
+        assert!(out.contains(r#"class="button float-center""#));
+        assert!(!out.contains("<button "));
     }
 }

@@ -20,14 +20,16 @@ pub fn make_menu(el: &El) -> String {
 }
 
 pub fn make_menu_item(el: &El, ctx: &RenderCtx) -> String {
-    let _ = ctx; // used in Task 4 (float-center inside <center>)
     let attrs = el.attrs();
     let href = el.attr("href").unwrap_or_default();
     let target = match el.attr("target") {
         Some(t) => format!(" target={}", t),
         None => String::new(),
     };
-    let classes = build_classes("menu-item", el);
+    let mut classes = build_classes("menu-item", el);
+    if ctx.inside_center && !classes.split_whitespace().any(|c| c == "float-center") {
+        classes.push_str(" float-center");
+    }
     let inner = el.inner();
     format!(
         r#"<th{} class="{}"><a href="{}"{}>{}</a></th>"#,
