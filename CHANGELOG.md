@@ -2,6 +2,25 @@
 
 All notable changes to the Inky project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- **The transform engine is now a single-pass DOM transform.** Previously each component was located in a freshly re-parsed document and spliced into the source string with regexes, re-parsing the whole document once per component. The engine now parses once, transforms the tree bottom-up (children before parents), and serializes once. Large templates transform in linear time instead of quadratic.
+- `<center>` output no longer carries a `data-parsed=""` marker attribute, and attributes written on `<center>` itself are now preserved.
+- Output for untouched markup is now re-serialized by the engine: entity escaping is normalized (e.g. a literal `&` becomes `&amp;`), attribute quoting is normalized to double quotes, and invalid table markup is corrected per the HTML5 parsing spec. Use `<raw>` for content that must pass through byte-for-byte.
+
+### Fixed
+
+- A capitalized component tag (`<Button>`) no longer silently halts transformation of the entire document.
+- Component tag names inside attribute values (e.g. `title="see <button>"`) are no longer transformed.
+- An HTML comment between columns no longer breaks grid width math.
+- Components inside `<outlook>` / `<not-outlook>` are now transformed.
+- Self-closing component tags (`<spacer/>`) no longer swallow the content after them.
+- Attributes like `data-parsed-mode` are no longer corrupted by internal marker cleanup.
+- `<raw>` now protects `<image>` tags from preprocessing.
+- Template merge tags used in attribute position (`<row <%= attrs %>>`) now survive the transform.
+
 ## 2.0.0-beta.9
 
 ### Changed
