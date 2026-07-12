@@ -10,6 +10,9 @@ All notable changes to the Inky project will be documented in this file.
 - `<center>` output no longer carries a `data-parsed=""` marker attribute, and attributes written on `<center>` itself are now preserved.
 - Output for untouched markup is now re-serialized by the engine: entity escaping is normalized (e.g. a literal `&` becomes `&amp;`), attribute quoting is normalized to double quotes, and invalid table markup is corrected per the HTML5 parsing spec. Tag and attribute names are also normalized to lowercase (`<SPAN STYLE=...>` becomes `<span style=...>`). Use `<raw>` for content that must pass through byte-for-byte.
 - Template merge tags placed directly between table rows (text position inside `<table>`/`<tbody>`) are relocated by HTML5 parsing rules — wrap row-level template logic in `<raw>`, which now survives those positions.
+- **The full build pipeline now lives in `inky-core`** (`pipeline::Pipeline`, behind the new `pipeline` cargo feature): layout/include resolution, template data merge, framework SCSS compilation and injection, component transform, CSS inlining, and output cleanup. The CLI is now a thin shell over it, and library consumers can produce byte-identical output to `inky build`.
+- `inky build`, `inky watch`, and `inky serve` share one build path. Watch and serve now: support a directory for `--data` (per-template JSON files, as their help text always claimed), print the same validation diagnostics as `inky build`, and on a template error keep the previous output instead of writing an empty file. `inky watch --plain-text` now actually writes `.txt` files.
+- Template discovery skips the output directory, so `"src": ".", "dist": "dist"` no longer re-ingests built files (`dist/dist/dist/…`).
 
 ### Fixed
 
