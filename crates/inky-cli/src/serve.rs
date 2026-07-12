@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc;
@@ -9,8 +9,6 @@ use colored::Colorize;
 use notify_debouncer_mini::{new_debouncer, DebouncedEventKind};
 
 use inky_core::Config;
-
-use crate::build;
 
 /// A rendered template held in memory.
 struct RenderedTemplate {
@@ -24,6 +22,7 @@ pub fn cmd_serve(
     input: PathBuf,
     build_ctx: crate::build::BuildContext,
     data_path: Option<PathBuf>,
+    data_source: crate::builder::DataSource,
     host: String,
     port: u16,
 ) {
@@ -44,14 +43,14 @@ pub fn cmd_serve(
         ..Config::default()
     };
 
-    // Load merge data
-    let merge_data = crate::util::load_json_data(data_path.as_deref());
+    // Dev server serves HTML only.
+    let builder = crate::builder::Builder::new(config, build_ctx.pipeline_options(), false);
 
     // Build all templates into memory
     let templates: Arc<RwLock<HashMap<String, RenderedTemplate>>> =
         Arc::new(RwLock::new(HashMap::new()));
 
-    build_all_templates(&input, &config, &build_ctx, merge_data.as_ref(), &templates);
+    build_all_templates(&input, &builder, &data_source, &templates);
 
     let addr = format!("{}:{}", host, port);
     let server = tiny_http::Server::http(&addr).unwrap_or_else(|e| {
@@ -84,14 +83,13 @@ pub fn cmd_serve(
     let watcher_templates = Arc::clone(&templates);
     let watcher_input = input.clone();
     let watcher_data_path = data_path.clone();
-    let watcher_ctx = build_ctx.clone();
 
     std::thread::spawn(move || {
         run_file_watcher(
             watcher_input,
-            config,
-            watcher_ctx,
+            builder,
             watcher_data_path,
+            data_source,
             watcher_templates,
         );
     });
@@ -151,32 +149,39 @@ pub fn cmd_serve(
 
 fn build_all_templates(
     input: &Path,
-    config: &Config,
-    build_ctx: &crate::build::BuildContext,
-    merge_data: Option<&serde_json::Value>,
+    builder: &crate::builder::Builder,
+    data_source: &crate::builder::DataSource,
     templates: &Arc<RwLock<HashMap<String, RenderedTemplate>>>,
 ) {
-    let files = crate::util::find_files(input, crate::util::TEMPLATE_EXTENSIONS);
+    let files = crate::builder::find_template_files(input, None);
+
+    // Templates that no longer exist on disk stop being served; templates
+    // that fail to build this round keep serving their last good version.
+    let current: HashSet<String> = files.iter().map(|f| template_name(f, input)).collect();
 
     let mut state = templates.write().unwrap();
-    state.clear();
+    state.retain(|name, _| current.contains(name));
 
     for file in &files {
         let name = template_name(file, input);
-        match std::fs::read_to_string(file) {
-            Ok(html) => {
-                let result =
-                    build::process_template(config, &html, build_ctx, file.parent(), merge_data);
+        match builder.build_file(file, input, data_source) {
+            Ok(built) => {
+                for w in &built.warnings {
+                    eprintln!("  {} {}", "warning:".yellow().bold(), w);
+                }
+                for d in &built.diagnostics {
+                    let label = match d.severity {
+                        inky_core::validate::Severity::Warning => "warn".yellow().bold(),
+                        inky_core::validate::Severity::Error => "error".red().bold(),
+                    };
+                    eprintln!("  {} {} [{}] {}", label, name, d.rule, d.message);
+                }
                 eprintln!("  {} {}", "built".green().bold(), name);
-                state.insert(name, RenderedTemplate { html: result });
+                state.insert(name, RenderedTemplate { html: built.html });
             }
             Err(e) => {
-                eprintln!(
-                    "  {} Failed to read {}: {}",
-                    "warning:".yellow().bold(),
-                    file.display(),
-                    e
-                );
+                eprintln!("  {} {}: {}", "error:".red().bold(), name, e);
+                // keep the previous rendered version, if any
             }
         }
     }
@@ -195,9 +200,9 @@ fn template_name(file: &Path, input_dir: &Path) -> String {
 
 fn run_file_watcher(
     input: PathBuf,
-    config: Config,
-    build_ctx: crate::build::BuildContext,
+    builder: crate::builder::Builder,
     data_path: Option<PathBuf>,
+    mut data_source: crate::builder::DataSource,
     templates: Arc<RwLock<HashMap<String, RenderedTemplate>>>,
 ) {
     let (tx, rx) = mpsc::channel();
@@ -224,22 +229,29 @@ fn run_file_watcher(
             std::process::exit(1);
         });
 
-    // Watch data file directory
+    // Watch the data path (file or directory) for changes
     if let Some(ref data_file) = data_path {
-        if let Some(parent) = data_file.parent() {
-            let canonical = std::fs::canonicalize(parent).unwrap_or(parent.to_path_buf());
-            debouncer
-                .watcher()
-                .watch(&canonical, notify::RecursiveMode::NonRecursive)
-                .unwrap_or_else(|e| {
-                    eprintln!(
-                        "  {} Failed to watch data file directory '{}': {}",
-                        "warning:".yellow().bold(),
-                        canonical.display(),
-                        e
-                    );
-                });
-        }
+        let watch_target = if data_file.is_dir() {
+            data_file.clone()
+        } else {
+            data_file
+                .parent()
+                .map(Path::to_path_buf)
+                .unwrap_or_else(|| data_file.clone())
+        };
+        let canonical = std::fs::canonicalize(&watch_target).unwrap_or(watch_target);
+        eprintln!("  {} {} (data)", "watching".cyan().bold(), data_file.display());
+        debouncer
+            .watcher()
+            .watch(&canonical, notify::RecursiveMode::Recursive)
+            .unwrap_or_else(|e| {
+                eprintln!(
+                    "  {} Failed to watch data path '{}': {}",
+                    "warning:".yellow().bold(),
+                    canonical.display(),
+                    e
+                );
+            });
     }
 
     // Watch include directories
@@ -261,8 +273,6 @@ fn run_file_watcher(
         }
     }
 
-    let mut merge_data = crate::util::load_json_data(data_path.as_deref());
-
     loop {
         match rx.recv() {
             Ok(Ok(events)) => {
@@ -272,12 +282,14 @@ fn run_file_watcher(
                 for event in &events {
                     let path = &event.path;
 
-                    // Check if data file changed
+                    // Check if the data path (file or directory) changed
                     if let Some(ref data_file) = data_path {
                         let canonical_data =
                             std::fs::canonicalize(data_file).unwrap_or(data_file.clone());
                         let canonical_event = std::fs::canonicalize(path).unwrap_or(path.clone());
-                        if canonical_event == canonical_data {
+                        let is_data_event = canonical_event == canonical_data
+                            || (canonical_data.is_dir() && canonical_event.starts_with(&canonical_data));
+                        if is_data_event {
                             data_changed = true;
                             continue;
                         }
@@ -294,19 +306,22 @@ fn run_file_watcher(
 
                 if data_changed {
                     eprintln!("  data file changed, reloading...");
-                    merge_data = crate::util::load_json_data(data_path.as_deref());
+                    data_source = match data_path.as_deref() {
+                        Some(p) if p.is_dir() => {
+                            crate::builder::DataSource::Directory(p.to_path_buf())
+                        }
+                        Some(p) => match crate::util::load_json_data(Some(p)) {
+                            Some(v) => crate::builder::DataSource::File(v),
+                            None => crate::builder::DataSource::None,
+                        },
+                        None => crate::builder::DataSource::None,
+                    };
                     needs_rebuild = true;
                 }
 
                 if needs_rebuild {
                     eprintln!("  rebuilding templates...");
-                    build_all_templates(
-                        &input,
-                        &config,
-                        &build_ctx,
-                        merge_data.as_ref(),
-                        &templates,
-                    );
+                    build_all_templates(&input, &builder, &data_source, &templates);
                     VERSION.fetch_add(1, Ordering::Relaxed);
                     eprintln!("  {} templates updated", "done".green().bold());
                 }

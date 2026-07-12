@@ -312,7 +312,8 @@ fn main() {
             let output_mode = cfg.output_mode(hybrid);
             let columns = cfg.columns;
             let bp = bulletproof_buttons || cfg.bulletproof_buttons;
-            let data = data.or(cfg.data);
+            let data_path = data.or(cfg.data);
+            let data_source = resolve_data_source(data_path.as_deref());
             let input = cfg.input.unwrap_or_else(|| {
                 eprintln!("{} No input directory specified. Use `inky serve <dir>` or set \"src\" in inky.config.json", "error:".red().bold());
                 process::exit(1);
@@ -328,7 +329,7 @@ fn main() {
                 plain_text: false,
                 json: false,
             };
-            serve::cmd_serve(input, serve_ctx, data, host, port)
+            serve::cmd_serve(input, serve_ctx, data_path, data_source, host, port)
         }
         Commands::SpamCheck { input, json } => cmd_spam_check(input, json),
     }

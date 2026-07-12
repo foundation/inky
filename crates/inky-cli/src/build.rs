@@ -19,6 +19,9 @@ pub struct BuildContext {
     pub inline_css: bool,
     pub framework_css: bool,
     pub components_dir: Option<String>,
+    // Only read by `process_template`, itself unused as of Task 5. Task 6
+    // deletes both.
+    #[allow(dead_code)]
     pub error_mode: ErrorMode,
     pub output_mode: inky_core::OutputMode,
     pub columns: u32,
@@ -42,6 +45,9 @@ impl BuildContext {
 
 /// Temporary compatibility wrapper over `inky_core::pipeline::Pipeline`.
 /// Tasks 3–5 move callers onto `builder::Builder`; Task 6 deletes this.
+/// As of Task 5, serve.rs (the last caller) has moved off it, so it's
+/// unused — kept (and silenced) until Task 6 removes it outright.
+#[allow(dead_code)]
 pub fn process_template(
     config: &Config,
     html: &str,
