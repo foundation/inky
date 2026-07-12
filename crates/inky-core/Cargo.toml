@@ -14,7 +14,7 @@ templating = ["minijinja", "serde_json"]
 serialize = ["serde", "serde_json"]
 
 [dependencies]
-scraper = "0.22"
+scraper = { version = "0.22", features = ["deterministic"] }
 ego-tree = "0.10"
 regex = "1"
 css-inline = { version = "0.20", default-features = false, optional = true }
