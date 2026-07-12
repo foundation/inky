@@ -8,8 +8,15 @@ use scraper::{ElementRef, Html, Node};
 use crate::components::{self, El, RenderCtx};
 use crate::config::Config;
 
-static RE_FULL_DOCUMENT: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"(?i)<!doctype\s|<html[\s>]").unwrap());
+static RE_FULL_DOCUMENT: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"(?is)^\s*(?:<!--.*?-->\s*)*(?:<!doctype\s|<html[\s>])").unwrap()
+});
+
+/// Maximum DOM depth the recursive renderer descends before falling back to
+/// scraper's own iterative serializer. Real emails are nowhere near this; the
+/// guard prevents stack-overflow aborts in debug/WASM/FFI builds on pathological
+/// input.
+const MAX_RENDER_DEPTH: usize = 500;
 
 /// Elements with no closing tag.
 const VOID_ELEMENTS: &[&str] = &[
@@ -28,6 +35,8 @@ struct Walk<'a> {
     inside_center: bool,
     /// True only for direct element children of a <center> component.
     center_child: bool,
+    /// Current element-recursion depth, used to bound stack growth.
+    depth: usize,
 }
 
 /// Parse `html` once and serialize it back, transforming component tags.
@@ -38,6 +47,7 @@ pub(crate) fn render(html: &str, config: &Config) -> String {
         config,
         inside_center: false,
         center_child: false,
+        depth: 0,
     };
     let mut out = String::with_capacity(html.len() * 2);
     if RE_FULL_DOCUMENT.is_match(html) {
@@ -98,6 +108,21 @@ fn render_node(node: NodeRef<Node>, walk: Walk, out: &mut String) {
 
 fn render_element(node: NodeRef<Node>, walk: Walk, out: &mut String) {
     let element = ElementRef::wrap(node).expect("render_element called on non-element");
+
+    // Depth guard: past the cutoff, hand the entire subtree to scraper's own
+    // iterative serializer (no stack growth). Components below the cutoff pass
+    // through untransformed, which is acceptable degradation on absurd input.
+    if walk.depth >= MAX_RENDER_DEPTH {
+        out.push_str(&element.html());
+        return;
+    }
+    // Every descent from here recurses one element deeper. Bump depth once so
+    // all child-recursion sites below inherit it via `..walk`.
+    let walk = Walk {
+        depth: walk.depth + 1,
+        ..walk
+    };
+
     let name = element.value().name();
 
     // <center> decorates its children rather than replacing itself.
@@ -432,6 +457,22 @@ mod tests {
         let out = r(r##"<menu><item href="#">A</item></menu>"##);
         assert!(out.contains(r#"class="menu-item""#));
         assert!(!out.contains("float-center"));
+    }
+
+    #[test]
+    fn html_in_attribute_does_not_trigger_document_mode() {
+        assert_eq!(r(r##"<p title="<html>">x</p>"##), r##"<p title="<html>">x</p>"##);
+    }
+
+    #[test]
+    fn html_in_comment_does_not_trigger_document_mode() {
+        assert_eq!(r("<!-- <html> --><p>x</p>"), "<!-- <html> --><p>x</p>");
+    }
+
+    #[test]
+    fn leading_comment_before_doctype_still_document_mode() {
+        let input = "<!-- generator --><!DOCTYPE html><html><head></head><body><p>x</p></body></html>";
+        assert_eq!(r(input), input);
     }
 
     #[test]

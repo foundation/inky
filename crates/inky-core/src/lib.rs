@@ -230,14 +230,29 @@ fn preprocess_image_tags(html: &str) -> String {
     .to_string()
 }
 
+/// Build the placeholder token for index `i`. When `comment` is true the token
+/// is wrapped in an HTML comment (`<!--###raw0###-->`) so it survives contexts
+/// where bare text is illegal — inside `<table>`/`<tbody>`/`<tr>` or `<head>`,
+/// HTML5 parsing foster-parents stray text out, which would relocate restored
+/// content. Comments are legal in those positions and round-trip verbatim.
+fn make_placeholder(prefix: &str, i: usize, comment: bool) -> String {
+    if comment {
+        format!("<!--###{}{}###-->", prefix, i)
+    } else {
+        format!("###{}{}###", prefix, i)
+    }
+}
+
 /// Extract matches from HTML, replacing them with numbered placeholders.
 /// `capture_group` selects which regex group to save (0 = whole match, 1+ = sub-group).
+/// When `comment` is true the placeholder is wrapped as an HTML comment.
 /// Returns the saved content and the modified HTML.
 fn extract_with_placeholders(
     html: &str,
     re: &Regex,
     prefix: &str,
     capture_group: usize,
+    comment: bool,
 ) -> (Vec<String>, String) {
     let mut saved = Vec::new();
     let mut result = html.to_string();
@@ -245,7 +260,7 @@ fn extract_with_placeholders(
     while let Some(caps) = re.captures(&result) {
         let full = caps.get(0).unwrap();
         let content = caps.get(capture_group).unwrap_or(full).as_str().to_string();
-        let placeholder = format!("###{}{}###", prefix, saved.len());
+        let placeholder = make_placeholder(prefix, saved.len(), comment);
         result = format!(
             "{}{}{}",
             &result[..full.start()],
@@ -258,11 +273,13 @@ fn extract_with_placeholders(
     (saved, result)
 }
 
-/// Restore placeholders with saved content.
-fn restore_placeholders(html: &str, saved: &[String], prefix: &str) -> String {
+/// Restore placeholders with saved content. `comment` must match the value used
+/// when the placeholders were created so the full token (including any `<!--`
+/// `-->` delimiters) is replaced.
+fn restore_placeholders(html: &str, saved: &[String], prefix: &str, comment: bool) -> String {
     let mut result = html.to_string();
     for (i, content) in saved.iter().enumerate() {
-        let placeholder = format!("###{}{}###", prefix, i);
+        let placeholder = make_placeholder(prefix, i, comment);
         result = result.replace(&placeholder, content);
     }
     result
@@ -270,22 +287,25 @@ fn restore_placeholders(html: &str, saved: &[String], prefix: &str) -> String {
 
 /// Protect template merge tags that look like HTML (ERB/EJS/ASP tags) from html5ever.
 fn protect_merge_tags(html: &str) -> (Vec<String>, String) {
-    extract_with_placeholders(html, &RE_MERGE_TAGS, "merge", 0)
+    // Merge tags can appear in attribute-value position, where a comment form
+    // would be invalid, so they stay as bare-text placeholders.
+    extract_with_placeholders(html, &RE_MERGE_TAGS, "merge", 0, false)
 }
 
 /// Restore protected merge tags from placeholders.
 fn restore_merge_tags(html: &str, tags: &[String]) -> String {
-    restore_placeholders(html, tags, "merge")
+    restore_placeholders(html, tags, "merge", false)
 }
 
 /// Extract `<raw>` blocks from HTML, replacing them with placeholders.
+/// Raw placeholders use the comment form so they survive table/head contexts.
 fn extract_raws(html: &str) -> (Vec<String>, String) {
-    extract_with_placeholders(html, &RE_RAW_BLOCKS, "raw", 1)
+    extract_with_placeholders(html, &RE_RAW_BLOCKS, "raw", 1, true)
 }
 
 /// Re-inject raw block content back into placeholders.
 fn re_inject_raws(html: &str, raws: &[String]) -> String {
-    restore_placeholders(html, raws, "raw")
+    restore_placeholders(html, raws, "raw", true)
 }
 
 /// Convenience function to transform HTML with default settings.
@@ -302,12 +322,12 @@ mod tests {
         let input = "before<raw>keep me</raw>after";
         let (raws, result) = extract_raws(input);
         assert_eq!(raws, vec!["keep me"]);
-        assert_eq!(result, "before###raw0###after");
+        assert_eq!(result, "before<!--###raw0###-->after");
     }
 
     #[test]
     fn test_re_inject_raws() {
-        let html = "before###raw0###after";
+        let html = "before<!--###raw0###-->after";
         let raws = vec!["keep me".to_string()];
         assert_eq!(re_inject_raws(html, &raws), "beforekeep meafter");
     }
@@ -419,8 +439,8 @@ mod tests {
         let input = "a<raw>first</raw>b<raw>second</raw>c";
         let (raws, result) = extract_raws(input);
         assert_eq!(raws, vec!["first", "second"]);
-        assert!(result.contains("###raw0###"));
-        assert!(result.contains("###raw1###"));
+        assert!(result.contains("<!--###raw0###-->"));
+        assert!(result.contains("<!--###raw1###-->"));
         let restored = re_inject_raws(&result, &raws);
         assert!(restored.contains("first"));
         assert!(restored.contains("second"));
@@ -592,5 +612,30 @@ mod tests {
     fn merge_tag_as_attribute_survives() {
         let result = transform("<row <%= extra %>>c</row>");
         assert!(result.contains("<%= extra %>"), "merge tag lost: {result}");
+    }
+
+    #[test]
+    fn raw_preserves_table_rows_in_place() {
+        let result = transform("<table><tbody><raw><tr><td><%= x %></td></tr></raw></tbody></table>");
+        assert!(result.contains("<table><tbody><tr><td><%= x %></td></tr></tbody></table>"), "rows relocated: {result}");
+    }
+
+    #[test]
+    fn raw_stays_inside_head() {
+        let input = "<!DOCTYPE html><html><head><raw><style>.a{color:red}</style></raw></head><body><p>x</p></body></html>";
+        let result = transform(input);
+        let head_end = result.find("</head>").unwrap();
+        let style_pos = result.find("<style>").unwrap();
+        assert!(style_pos < head_end, "raw content moved out of head: {result}");
+    }
+
+    #[test]
+    fn deeply_nested_input_does_not_overflow_stack() {
+        let mut input = String::new();
+        for _ in 0..10_000 { input.push_str("<div>"); }
+        input.push('x');
+        for _ in 0..10_000 { input.push_str("</div>"); }
+        let result = transform(&input);
+        assert!(result.contains('x'));
     }
 }

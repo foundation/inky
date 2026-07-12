@@ -8,7 +8,8 @@ All notable changes to the Inky project will be documented in this file.
 
 - **The transform engine is now a single-pass DOM transform.** Previously each component was located in a freshly re-parsed document and spliced into the source string with regexes, re-parsing the whole document once per component. The engine now parses once, transforms the tree bottom-up (children before parents), and serializes once. Large templates transform in linear time instead of quadratic.
 - `<center>` output no longer carries a `data-parsed=""` marker attribute, and attributes written on `<center>` itself are now preserved.
-- Output for untouched markup is now re-serialized by the engine: entity escaping is normalized (e.g. a literal `&` becomes `&amp;`), attribute quoting is normalized to double quotes, and invalid table markup is corrected per the HTML5 parsing spec. Use `<raw>` for content that must pass through byte-for-byte.
+- Output for untouched markup is now re-serialized by the engine: entity escaping is normalized (e.g. a literal `&` becomes `&amp;`), attribute quoting is normalized to double quotes, and invalid table markup is corrected per the HTML5 parsing spec. Tag and attribute names are also normalized to lowercase (`<SPAN STYLE=...>` becomes `<span style=...>`). Use `<raw>` for content that must pass through byte-for-byte.
+- Template merge tags placed directly between table rows (text position inside `<table>`/`<tbody>`) are relocated by HTML5 parsing rules — wrap row-level template logic in `<raw>`, which now survives those positions.
 
 ### Fixed
 
