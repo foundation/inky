@@ -32,6 +32,7 @@ pub fn cmd_watch(
     let config = Config {
         column_count: build_ctx.columns,
         output_mode: build_ctx.output_mode,
+        bulletproof_buttons: build_ctx.bulletproof_buttons,
         ..Config::default()
     };
 

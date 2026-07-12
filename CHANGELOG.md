@@ -13,6 +13,8 @@ All notable changes to the Inky project will be documented in this file.
 - **The full build pipeline now lives in `inky-core`** (`pipeline::Pipeline`, behind the new `pipeline` cargo feature): layout/include resolution, template data merge, framework SCSS compilation and injection, component transform, CSS inlining, and output cleanup. The CLI is now a thin shell over it, and library consumers can produce byte-identical output to `inky build`.
 - `inky build`, `inky watch`, and `inky serve` share one build path. Watch and serve now: support a directory for `--data` (per-template JSON files, as their help text always claimed), print the same validation diagnostics as `inky build`, and on a template error keep the previous output instead of writing an empty file. `inky watch --plain-text` now actually writes `.txt` files.
 - Template discovery skips the output directory, so `"src": ".", "dist": "dist"` no longer re-ingests built files (`dist/dist/dist/…`).
+- `inky watch` and `inky serve` now exit with an error at startup when `--data` points to a missing or unparseable path, matching `inky build` (previously they warned and continued without data).
+- `inky watch` and `inky serve` now honor `--bulletproof-buttons` (previously the flag was accepted but silently ignored by those two commands).
 
 ### Fixed
 
