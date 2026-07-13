@@ -88,11 +88,7 @@ pub(crate) fn check_button_no_href(html: &str, config: &Config) -> Vec<Diagnosti
                 let snippet = crate::validate::truncate_snippet(&text, 40);
                 diags.push(Diagnostic::error(
                     "button-no-href",
-                    format!(
-                        "Button #{} missing href attribute: \"{}\"",
-                        i + 1,
-                        snippet
-                    ),
+                    format!("Button #{} missing href attribute: \"{}\"", i + 1, snippet),
                 ));
             }
         }

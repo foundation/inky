@@ -64,7 +64,11 @@ pub fn cmd_serve(
         std::process::exit(1);
     });
 
-    let display_host = if host == "0.0.0.0" { "localhost" } else { host.as_str() };
+    let display_host = if host == "0.0.0.0" {
+        "localhost"
+    } else {
+        host.as_str()
+    };
     eprintln!(
         "\n  {} http://{}:{}",
         "serving".green().bold(),
@@ -241,7 +245,11 @@ fn run_file_watcher(
                 .unwrap_or_else(|| data_file.clone())
         };
         let canonical = std::fs::canonicalize(&watch_target).unwrap_or(watch_target);
-        eprintln!("  {} {} (data)", "watching".cyan().bold(), data_file.display());
+        eprintln!(
+            "  {} {} (data)",
+            "watching".cyan().bold(),
+            data_file.display()
+        );
         debouncer
             .watcher()
             .watch(&canonical, notify::RecursiveMode::Recursive)
@@ -289,7 +297,8 @@ fn run_file_watcher(
                             std::fs::canonicalize(data_file).unwrap_or(data_file.clone());
                         let canonical_event = std::fs::canonicalize(path).unwrap_or(path.clone());
                         let is_data_event = canonical_event == canonical_data
-                            || (canonical_data.is_dir() && canonical_event.starts_with(&canonical_data));
+                            || (canonical_data.is_dir()
+                                && canonical_event.starts_with(&canonical_data));
                         if is_data_event {
                             data_changed = true;
                             continue;

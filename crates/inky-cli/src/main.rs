@@ -901,7 +901,11 @@ fn read_stdin() -> String {
 
 fn cmd_spam_check(input: Option<PathBuf>, json: bool) {
     let config = Config::default();
-    let builder = Builder::new(config, inky_core::pipeline::PipelineOptions::default(), false);
+    let builder = Builder::new(
+        config,
+        inky_core::pipeline::PipelineOptions::default(),
+        false,
+    );
 
     match input {
         Some(input) => {
@@ -920,7 +924,11 @@ fn cmd_spam_check(input: Option<PathBuf>, json: bool) {
             }
 
             for file in &files {
-                let built = match builder.build_file(file, file.parent().unwrap_or(Path::new(".")), &DataSource::None) {
+                let built = match builder.build_file(
+                    file,
+                    file.parent().unwrap_or(Path::new(".")),
+                    &DataSource::None,
+                ) {
                     Ok(built) => built,
                     Err(e) => {
                         eprintln!("{} {}: {}", "error:".red().bold(), file.display(), e);

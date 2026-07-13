@@ -70,8 +70,8 @@ pub use crate::attrs::extract_css_property;
 
 fn parse_hex(s: &str) -> Option<Color> {
     let hex = s.get(1..)?; // strip '#'
-    // Reject non-ASCII up front: the length checks and fixed-offset slices
-    // below assume 1 byte == 1 hex digit.
+                           // Reject non-ASCII up front: the length checks and fixed-offset slices
+                           // below assume 1 byte == 1 hex digit.
     if !hex.bytes().all(|b| b.is_ascii_hexdigit()) {
         return None;
     }

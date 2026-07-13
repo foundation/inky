@@ -185,7 +185,8 @@ fn test_migration_idempotent() {
         assert!(
             twice.changes.is_empty(),
             "second migrate reported changes for '{}': {:?}",
-            test.name, twice.changes
+            test.name,
+            twice.changes
         );
     }
 }

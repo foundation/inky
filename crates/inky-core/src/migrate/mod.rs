@@ -133,13 +133,19 @@ struct ClassRule {
 const BUTTON_RULE: ClassRule = ClassRule {
     valued: &[
         ("size", &["tiny", "small", "large"]),
-        ("color", &["primary", "secondary", "success", "alert", "warning"]),
+        (
+            "color",
+            &["primary", "secondary", "success", "alert", "warning"],
+        ),
     ],
     boolean: &["expand", "expanded", "radius", "rounded", "hollow"],
 };
 
 const CALLOUT_RULE: ClassRule = ClassRule {
-    valued: &[("color", &["primary", "secondary", "success", "alert", "warning"])],
+    valued: &[(
+        "color",
+        &["primary", "secondary", "success", "alert", "warning"],
+    )],
     boolean: &[],
 };
 
@@ -482,7 +488,11 @@ mod tests {
         let input = r#"<callout class="primary" id="promo">M</callout>"#;
         let result = migrate(input);
         assert!(result.html.contains(r#"color="primary""#));
-        assert!(result.html.contains(r#"id="promo""#), "attribute dropped: {}", result.html);
+        assert!(
+            result.html.contains(r#"id="promo""#),
+            "attribute dropped: {}",
+            result.html
+        );
     }
 
     #[test]
@@ -490,15 +500,27 @@ mod tests {
         let input = r#"<menu class="vertical" data-url="a/b">x</menu>"#;
         let result = migrate(input);
         assert!(result.html.contains(r#"direction="vertical""#));
-        assert!(result.html.contains(r#"data-url="a/b""#), "value corrupted: {}", result.html);
+        assert!(
+            result.html.contains(r#"data-url="a/b""#),
+            "value corrupted: {}",
+            result.html
+        );
     }
 
     #[test]
     fn data_large_attribute_untouched() {
         let input = r#"<column data-large="4" large="6">x</column>"#;
         let result = migrate(input);
-        assert!(result.html.contains(r#"data-large="4""#), "data-* corrupted: {}", result.html);
-        assert!(result.html.contains(r#"lg="6""#), "real attr unmigrated: {}", result.html);
+        assert!(
+            result.html.contains(r#"data-large="4""#),
+            "data-* corrupted: {}",
+            result.html
+        );
+        assert!(
+            result.html.contains(r#"lg="6""#),
+            "real attr unmigrated: {}",
+            result.html
+        );
         assert!(!result.html.contains("data-lg"));
     }
 
@@ -506,7 +528,11 @@ mod tests {
     fn attr_value_containing_attr_syntax_untouched() {
         let input = r#"<column title="large=6" large="4">x</column>"#;
         let result = migrate(input);
-        assert!(result.html.contains(r#"title="large=6""#), "value rewritten: {}", result.html);
+        assert!(
+            result.html.contains(r#"title="large=6""#),
+            "value rewritten: {}",
+            result.html
+        );
         assert!(result.html.contains(r#"lg="4""#));
     }
 
@@ -530,7 +556,11 @@ mod tests {
     fn single_quoted_values_preserved() {
         let input = "<column large='6'>x</column>";
         let result = migrate(input);
-        assert!(result.html.contains("lg='6'"), "quote style changed: {}", result.html);
+        assert!(
+            result.html.contains("lg='6'"),
+            "quote style changed: {}",
+            result.html
+        );
     }
 
     #[test]
@@ -545,16 +575,23 @@ mod tests {
     fn uppercase_v1_tag_migrated() {
         let input = r#"<COLUMNS LARGE="6">x</COLUMNS>"#;
         let result = migrate(input);
-        assert!(result.html.contains("<column"), "uppercase tag skipped: {}", result.html);
+        assert!(
+            result.html.contains("<column"),
+            "uppercase tag skipped: {}",
+            result.html
+        );
         assert!(result.html.contains(r#"lg="6""#));
         assert!(result.html.contains("</column>"));
     }
 
     #[test]
     fn bytes_outside_migrated_tags_preserved() {
-        let input = "prefix &amp; entities <b>bold</b>\n\t <spacer size=\"4\"></spacer> suffix &lt;";
+        let input =
+            "prefix &amp; entities <b>bold</b>\n\t <spacer size=\"4\"></spacer> suffix &lt;";
         let result = migrate(input);
-        assert!(result.html.starts_with("prefix &amp; entities <b>bold</b>\n\t "));
+        assert!(result
+            .html
+            .starts_with("prefix &amp; entities <b>bold</b>\n\t "));
         assert!(result.html.ends_with(" suffix &lt;"));
         assert!(result.html.contains(r#"<spacer height="4"></spacer>"#));
     }
@@ -604,7 +641,11 @@ mod tests {
         assert!(!result.html.contains("<center>"));
         // one MigrateChange per rule invocation, not per match (matches old behavior)
         assert_eq!(
-            result.changes.iter().filter(|c| c.description.contains("align")).count(),
+            result
+                .changes
+                .iter()
+                .filter(|c| c.description.contains("align"))
+                .count(),
             1
         );
     }
@@ -663,7 +704,11 @@ mod tests {
     fn unterminated_close_tag_never_swallows_bytes() {
         let input = "before\n</columns\n<spacer size=\"4\"></spacer>\nafter";
         let result = migrate(input);
-        assert!(result.html.contains("</columns\n"), "malformed close mangled: {}", result.html);
+        assert!(
+            result.html.contains("</columns\n"),
+            "malformed close mangled: {}",
+            result.html
+        );
         assert!(result.html.contains(r#"height="4""#));
         assert!(result.html.contains("after"));
     }
@@ -688,14 +733,22 @@ mod tests {
         let input = r##"<button class='small has"x' href="#">Go</button>"##;
         let result = migrate(input);
         assert!(result.html.contains(r#"size="small""#));
-        assert!(result.html.contains(r#"class='has"x'"#), "class re-quoting corrupted: {}", result.html);
+        assert!(
+            result.html.contains(r#"class='has"x'"#),
+            "class re-quoting corrupted: {}",
+            result.html
+        );
     }
 
     #[test]
     fn single_quoted_class_attr_keeps_quote_style() {
         let input = "<callout class='primary custom'>M</callout>";
         let result = migrate(input);
-        assert!(result.html.contains("class='custom'"), "quote style changed: {}", result.html);
+        assert!(
+            result.html.contains("class='custom'"),
+            "quote style changed: {}",
+            result.html
+        );
         assert!(result.html.contains(r#"color="primary""#));
     }
 
@@ -703,7 +756,11 @@ mod tests {
     fn self_closing_raw_does_not_swallow_document() {
         let input = r#"<raw/><spacer size="8"></spacer>"#;
         let result = migrate(input);
-        assert!(result.html.contains(r#"height="8""#), "raw/ swallowed the document: {}", result.html);
+        assert!(
+            result.html.contains(r#"height="8""#),
+            "raw/ swallowed the document: {}",
+            result.html
+        );
         assert!(result.html.starts_with("<raw/>"));
     }
 }

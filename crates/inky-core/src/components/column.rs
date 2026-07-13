@@ -41,7 +41,11 @@ pub fn transform_column_with_position(
         classes.push("last".to_string());
     }
 
-    let attrs_str = if attrs.is_empty() { String::new() } else { attrs };
+    let attrs_str = if attrs.is_empty() {
+        String::new()
+    } else {
+        attrs
+    };
 
     match config.output_mode {
         OutputMode::Table => {

@@ -84,8 +84,7 @@ impl Pipeline {
         }
 
         if self.options.framework_css {
-            let (cleaned, user_scss, scss_warnings) =
-                scss::extract_scss_sources(&html, base_path);
+            let (cleaned, user_scss, scss_warnings) = scss::extract_scss_sources(&html, base_path);
             warnings.extend(scss_warnings);
             html = cleaned;
 
@@ -265,7 +264,8 @@ mod tests {
 
     #[test]
     fn framework_css_injected_into_head() {
-        let input = "<html><head><title>T</title></head><body><row><column>x</column></row></body></html>";
+        let input =
+            "<html><head><title>T</title></head><body><row><column>x</column></row></body></html>";
         let out = pipe().process(input, None, None).unwrap();
         // Framework CSS is inlined into elements AND the media-query residue
         // stays in a <style> block in head.
@@ -277,7 +277,11 @@ mod tests {
     fn no_framework_css_option_skips_injection() {
         let p = Pipeline::new(
             Config::default(),
-            PipelineOptions { framework_css: false, inline_css: false, ..Default::default() },
+            PipelineOptions {
+                framework_css: false,
+                inline_css: false,
+                ..Default::default()
+            },
         );
         let out = p.process("<p>hi</p>", None, None).unwrap();
         assert!(!out.html.contains("<style"));
@@ -287,7 +291,11 @@ mod tests {
     fn scss_style_blocks_are_extracted_not_leaked() {
         let p = Pipeline::new(
             Config::default(),
-            PipelineOptions { framework_css: false, inline_css: false, ..Default::default() },
+            PipelineOptions {
+                framework_css: false,
+                inline_css: false,
+                ..Default::default()
+            },
         );
         let input = r#"<style type="text/scss">$x: 1;</style><p>hi</p>"#;
         let out = p.process(input, None, None).unwrap();
@@ -300,9 +308,15 @@ mod tests {
         let data = serde_json::json!({"name": "Joe"});
         let p = Pipeline::new(
             Config::default(),
-            PipelineOptions { framework_css: false, inline_css: false, ..Default::default() },
+            PipelineOptions {
+                framework_css: false,
+                inline_css: false,
+                ..Default::default()
+            },
         );
-        let out = p.process("<p>Hello {{ name }}</p>", None, Some(&data)).unwrap();
+        let out = p
+            .process("<p>Hello {{ name }}</p>", None, Some(&data))
+            .unwrap();
         assert!(out.html.contains("Hello Joe"));
     }
 
@@ -315,7 +329,11 @@ mod tests {
             Some(&dir),
             None,
         );
-        assert!(res.is_err(), "missing layout must be Err, got {:?}", res.map(|p| p.html));
+        assert!(
+            res.is_err(),
+            "missing layout must be Err, got {:?}",
+            res.map(|p| p.html)
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 
@@ -323,7 +341,11 @@ mod tests {
     fn comments_stripped_but_mso_preserved() {
         let p = Pipeline::new(
             Config::default(),
-            PipelineOptions { framework_css: false, inline_css: false, ..Default::default() },
+            PipelineOptions {
+                framework_css: false,
+                inline_css: false,
+                ..Default::default()
+            },
         );
         let input = "<!-- note --><!--[if mso]><table></table><![endif]--><p>x</p>";
         let out = p.process(input, None, None).unwrap();

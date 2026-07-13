@@ -36,11 +36,8 @@ pub fn cmd_watch(
         ..Config::default()
     };
 
-    let builder = crate::builder::Builder::new(
-        config,
-        build_ctx.pipeline_options(),
-        build_ctx.plain_text,
-    );
+    let builder =
+        crate::builder::Builder::new(config, build_ctx.pipeline_options(), build_ctx.plain_text);
 
     // Initial full build
     eprintln!(
@@ -90,7 +87,11 @@ pub fn cmd_watch(
                 .unwrap_or_else(|| data_file.clone())
         };
         let canonical = std::fs::canonicalize(&watch_target).unwrap_or(watch_target);
-        eprintln!("  {} {} (data)", "watching".cyan().bold(), data_file.display());
+        eprintln!(
+            "  {} {} (data)",
+            "watching".cyan().bold(),
+            data_file.display()
+        );
         debouncer
             .watcher()
             .watch(&canonical, notify::RecursiveMode::Recursive)
@@ -142,7 +143,8 @@ pub fn cmd_watch(
                             std::fs::canonicalize(data_file).unwrap_or(data_file.clone());
                         let canonical_event = std::fs::canonicalize(path).unwrap_or(path.clone());
                         let is_data_event = canonical_event == canonical_data
-                            || (canonical_data.is_dir() && canonical_event.starts_with(&canonical_data));
+                            || (canonical_data.is_dir()
+                                && canonical_event.starts_with(&canonical_data));
                         if is_data_event {
                             data_changed = true;
                             continue;

@@ -14,7 +14,11 @@ unsafe fn arg_str(ptr: *const c_char) -> Option<String> {
     if ptr.is_null() {
         return None;
     }
-    Some(unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned())
+    Some(
+        unsafe { CStr::from_ptr(ptr) }
+            .to_string_lossy()
+            .into_owned(),
+    )
 }
 
 /// Run `f`, catching panics so they cannot unwind across the FFI boundary
@@ -75,10 +79,12 @@ pub unsafe extern "C" fn inky_transform_inline(input: *const c_char) -> *mut c_c
     let Some(html) = (unsafe { arg_str(input) }) else {
         return std::ptr::null_mut();
     };
-    ffi_result(move || match Inky::new().transform_and_inline(&html, None) {
-        Ok(r) => r,
-        Err(_) => Inky::new().transform(&html),
-    })
+    ffi_result(
+        move || match Inky::new().transform_and_inline(&html, None) {
+            Ok(r) => r,
+            Err(_) => Inky::new().transform(&html),
+        },
+    )
 }
 
 /// Transform Inky HTML with MiniJinja data merge, then inline CSS.
@@ -95,8 +101,7 @@ pub unsafe extern "C" fn inky_transform_with_data(
     input: *const c_char,
     data_json: *const c_char,
 ) -> *mut c_char {
-    let (Some(html), Some(json_str)) =
-        (unsafe { arg_str(input) }, unsafe { arg_str(data_json) })
+    let (Some(html), Some(json_str)) = (unsafe { arg_str(input) }, unsafe { arg_str(data_json) })
     else {
         return std::ptr::null_mut();
     };

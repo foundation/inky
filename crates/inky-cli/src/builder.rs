@@ -108,8 +108,7 @@ impl Builder {
 /// `exclude_dir` (the output directory). Prevents `"src": ".", "dist": "dist"`
 /// from re-ingesting built output (`dist/dist/dist/…`).
 pub fn find_template_files(input_dir: &Path, exclude_dir: Option<&Path>) -> Vec<PathBuf> {
-    let exclude =
-        exclude_dir.map(|d| std::fs::canonicalize(d).unwrap_or_else(|_| d.to_path_buf()));
+    let exclude = exclude_dir.map(|d| std::fs::canonicalize(d).unwrap_or_else(|_| d.to_path_buf()));
     crate::util::find_files(input_dir, crate::util::TEMPLATE_EXTENSIONS)
         .into_iter()
         .filter(|f| {
@@ -200,7 +199,12 @@ mod tests {
         write(&dir, "a.html", "<p>a</p>");
         write(&dir, "dist/a.html", "<p>built</p>");
         let files = find_template_files(&dir, Some(&dir.join("dist")));
-        assert_eq!(files.len(), 1, "dist/ contents must be excluded: {:?}", files);
+        assert_eq!(
+            files.len(),
+            1,
+            "dist/ contents must be excluded: {:?}",
+            files
+        );
         assert!(files[0].ends_with("a.html") && !files[0].to_string_lossy().contains("dist"));
         std::fs::remove_dir_all(&dir).ok();
     }

@@ -91,10 +91,14 @@ fn component_table(config: &Config) -> Vec<(&str, ComponentFn)> {
     let c = &config.components;
     vec![
         (c.h_line.as_str(), |el, _| divider::make_h_line(el)),
-        (c.columns.as_str(), |el, ctx| column::make_column(el, ctx.config)),
+        (c.columns.as_str(), |el, ctx| {
+            column::make_column(el, ctx.config)
+        }),
         ("columns", |el, ctx| column::make_column(el, ctx.config)),
         (c.row.as_str(), |el, ctx| row::make_row(el, ctx.config)),
-        (c.button.as_str(), |el, ctx| button::make_button(el, ctx.config)),
+        (c.button.as_str(), |el, ctx| {
+            button::make_button(el, ctx.config)
+        }),
         (c.container.as_str(), |el, ctx| {
             container::make_container(el, ctx.config)
         }),
@@ -103,13 +107,19 @@ fn component_table(config: &Config) -> Vec<(&str, ComponentFn)> {
             block_grid::make_block_grid(el, ctx.config)
         }),
         (c.menu.as_str(), |el, _| menu::make_menu(el)),
-        (c.menu_item.as_str(), |el, ctx| menu::make_menu_item(el, ctx)),
+        (c.menu_item.as_str(), |el, ctx| {
+            menu::make_menu_item(el, ctx)
+        }),
         (c.callout.as_str(), |el, _| callout::make_callout(el)),
         (c.spacer.as_str(), |el, _| spacer::make_spacer(el)),
-        (c.wrapper.as_str(), |el, ctx| wrapper::make_wrapper(el, ctx.config)),
+        (c.wrapper.as_str(), |el, ctx| {
+            wrapper::make_wrapper(el, ctx.config)
+        }),
         (c.divider.as_str(), |el, _| divider::make_divider(el)),
         (c.outlook.as_str(), |el, _| outlook::make_outlook(el)),
-        (c.not_outlook.as_str(), |el, _| outlook::make_not_outlook(el)),
+        (c.not_outlook.as_str(), |el, _| {
+            outlook::make_not_outlook(el)
+        }),
         (c.video.as_str(), |el, _| video::make_video(el)),
         (c.preview.as_str(), |el, _| preview::make_preview(el)),
         (c.hero.as_str(), |el, _| hero::make_hero(el)),
@@ -122,7 +132,9 @@ fn component_table(config: &Config) -> Vec<(&str, ComponentFn)> {
         (c.card.as_str(), |el, _| card::make_card(el)),
         (c.alert.as_str(), |el, _| alert::make_alert(el)),
         (c.badge.as_str(), |el, _| badge::make_badge(el)),
-        (c.blockquote.as_str(), |el, _| blockquote::make_blockquote(el)),
+        (c.blockquote.as_str(), |el, _| {
+            blockquote::make_blockquote(el)
+        }),
     ]
 }
 

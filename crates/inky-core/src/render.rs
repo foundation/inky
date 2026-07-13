@@ -8,9 +8,8 @@ use scraper::{ElementRef, Html, Node};
 use crate::components::{self, El, RenderCtx};
 use crate::config::Config;
 
-static RE_FULL_DOCUMENT: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?is)^\s*(?:<!--.*?-->\s*)*(?:<!doctype\s|<html[\s>])").unwrap()
-});
+static RE_FULL_DOCUMENT: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?is)^\s*(?:<!--.*?-->\s*)*(?:<!doctype\s|<html[\s>])").unwrap());
 
 /// Maximum DOM depth the recursive renderer descends before falling back to
 /// scraper's own iterative serializer. Real emails are nowhere near this; the
@@ -20,8 +19,8 @@ const MAX_RENDER_DEPTH: usize = 500;
 
 /// Elements with no closing tag.
 const VOID_ELEMENTS: &[&str] = &[
-    "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta",
-    "param", "source", "track", "wbr",
+    "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source",
+    "track", "wbr",
 ];
 
 /// Elements whose text content is emitted verbatim (no entity escaping).
@@ -58,12 +57,7 @@ pub(crate) fn render(html: &str, config: &Config) -> String {
     } else {
         let doc = Html::parse_fragment(html);
         // parse_fragment wraps content in an auto-created <html> element
-        if let Some(root) = doc
-            .tree
-            .root()
-            .children()
-            .find(|n| n.value().is_element())
-        {
+        if let Some(root) = doc.tree.root().children().find(|n| n.value().is_element()) {
             for child in root.children() {
                 render_node(child, walk, &mut out);
             }
@@ -320,7 +314,10 @@ mod tests {
         // Note: use a void element here. A bare <td> in a body-context
         // fragment gets foster-parented away by the HTML5 parser, and
         // <video>/<button> are component tags (transformed from Task 3 on).
-        assert_eq!(r(r#"<input type="text" disabled>"#), r#"<input type="text" disabled>"#);
+        assert_eq!(
+            r(r#"<input type="text" disabled>"#),
+            r#"<input type="text" disabled>"#
+        );
     }
 
     #[test]
@@ -359,7 +356,9 @@ mod tests {
 
     #[test]
     fn nested_components_transform_bottom_up() {
-        let out = r(r##"<container><row><column><button href="#">Go</button></column></row></container>"##);
+        let out = r(
+            r##"<container><row><column><button href="#">Go</button></column></row></container>"##,
+        );
         assert!(out.contains(r#"class="container""#));
         assert!(out.contains(r#"class="row""#));
         assert!(out.contains("small-12"));
@@ -417,7 +416,10 @@ mod tests {
 
     #[test]
     fn unknown_tags_pass_through() {
-        assert_eq!(r("<widget x=\"1\">hi</widget>"), "<widget x=\"1\">hi</widget>");
+        assert_eq!(
+            r("<widget x=\"1\">hi</widget>"),
+            "<widget x=\"1\">hi</widget>"
+        );
     }
 
     #[test]
@@ -461,7 +463,10 @@ mod tests {
 
     #[test]
     fn html_in_attribute_does_not_trigger_document_mode() {
-        assert_eq!(r(r##"<p title="<html>">x</p>"##), r##"<p title="<html>">x</p>"##);
+        assert_eq!(
+            r(r##"<p title="<html>">x</p>"##),
+            r##"<p title="<html>">x</p>"##
+        );
     }
 
     #[test]
@@ -471,7 +476,8 @@ mod tests {
 
     #[test]
     fn leading_comment_before_doctype_still_document_mode() {
-        let input = "<!-- generator --><!DOCTYPE html><html><head></head><body><p>x</p></body></html>";
+        let input =
+            "<!-- generator --><!DOCTYPE html><html><head></head><body><p>x</p></body></html>";
         assert_eq!(r(input), input);
     }
 

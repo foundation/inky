@@ -88,7 +88,9 @@ fn make_bulletproof_button(
     let height = el.attr("height").unwrap_or_else(|| "40".to_string());
     let radius = el.attr("radius").unwrap_or_else(|| "3".to_string());
     let bg_color = el.attr("bg-color").unwrap_or_else(|| "#1a73b5".to_string());
-    let text_color = el.attr("text-color").unwrap_or_else(|| "#ffffff".to_string());
+    let text_color = el
+        .attr("text-color")
+        .unwrap_or_else(|| "#ffffff".to_string());
 
     // Convert radius px to arcsize percentage (arcsize = radius / (height/2) * 100)
     let arcsize = radius

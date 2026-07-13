@@ -559,7 +559,10 @@ mod tests {
         let result = transform(r#"a<spacer height="10"/>b"#);
         assert!(result.contains("a"));
         assert!(result.contains("font-size:10px"));
-        assert!(result.ends_with('b'), "content after self-closing tag lost: {result}");
+        assert!(
+            result.ends_with('b'),
+            "content after self-closing tag lost: {result}"
+        );
     }
 
     #[test]
@@ -620,8 +623,12 @@ mod tests {
 
     #[test]
     fn raw_preserves_table_rows_in_place() {
-        let result = transform("<table><tbody><raw><tr><td><%= x %></td></tr></raw></tbody></table>");
-        assert!(result.contains("<table><tbody><tr><td><%= x %></td></tr></tbody></table>"), "rows relocated: {result}");
+        let result =
+            transform("<table><tbody><raw><tr><td><%= x %></td></tr></raw></tbody></table>");
+        assert!(
+            result.contains("<table><tbody><tr><td><%= x %></td></tr></tbody></table>"),
+            "rows relocated: {result}"
+        );
     }
 
     #[test]
@@ -630,15 +637,22 @@ mod tests {
         let result = transform(input);
         let head_end = result.find("</head>").unwrap();
         let style_pos = result.find("<style>").unwrap();
-        assert!(style_pos < head_end, "raw content moved out of head: {result}");
+        assert!(
+            style_pos < head_end,
+            "raw content moved out of head: {result}"
+        );
     }
 
     #[test]
     fn deeply_nested_input_does_not_overflow_stack() {
         let mut input = String::new();
-        for _ in 0..10_000 { input.push_str("<div>"); }
+        for _ in 0..10_000 {
+            input.push_str("<div>");
+        }
         input.push('x');
-        for _ in 0..10_000 { input.push_str("</div>"); }
+        for _ in 0..10_000 {
+            input.push_str("</div>");
+        }
         let result = transform(&input);
         assert!(result.contains('x'));
     }

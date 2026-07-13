@@ -393,7 +393,8 @@ $global-width: 640px;
     fn test_extract_missing_linked_file_warns() {
         let dir = std::env::temp_dir().join("inky-test-scss-missing");
         std::fs::create_dir_all(&dir).unwrap();
-        let html = r#"<html><head><link rel="stylesheet" href="nope.scss"></head><body></body></html>"#;
+        let html =
+            r#"<html><head><link rel="stylesheet" href="nope.scss"></head><body></body></html>"#;
         let (_, scss, warnings) = extract_scss_sources(html, Some(&dir));
         assert!(scss.is_empty());
         assert_eq!(warnings.len(), 1);

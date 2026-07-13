@@ -319,8 +319,7 @@ fn find_raw_close(src: &str, from: usize, name: &str) -> Option<usize> {
         if bytes[i..i + nb.len()].eq_ignore_ascii_case(nb) {
             // Boundary: next char must be '>' or whitespace
             let after = i + nb.len();
-            if after < bytes.len() && (bytes[after] == b'>' || bytes[after].is_ascii_whitespace())
-            {
+            if after < bytes.len() && (bytes[after] == b'>' || bytes[after].is_ascii_whitespace()) {
                 return src[after..].find('>').map(|e| after + e + 1);
             }
         }
