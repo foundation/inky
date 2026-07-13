@@ -185,6 +185,9 @@ fn build_all_templates(
                 state.insert(name, RenderedTemplate { html: built.html });
             }
             Err(e) => {
+                for w in &e.warnings {
+                    eprintln!("  {} {}", "warning:".yellow().bold(), w);
+                }
                 eprintln!("  {} {}: {}", "error:".red().bold(), name, e);
                 // keep the previous rendered version, if any
             }

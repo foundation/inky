@@ -5,9 +5,9 @@
 
 use std::path::{Path, PathBuf};
 
-use inky_core::pipeline::{Pipeline, PipelineOptions};
+use inky_core::pipeline::{Pipeline, PipelineError, PipelineOptions};
 use inky_core::validate::{self, Diagnostic};
-use inky_core::Config;
+use inky_core::{Config, InkyError};
 
 /// Resolved data source for template merging.
 pub enum DataSource {
@@ -42,6 +42,7 @@ pub fn resolve_data_for_file(
 }
 
 /// One built template plus everything the caller may want to report or write.
+#[derive(Debug)]
 pub struct BuiltFile {
     pub html: String,
     pub plain_text: Option<String>,
@@ -72,7 +73,7 @@ impl Builder {
         html: &str,
         base_path: Option<&Path>,
         data: Option<&serde_json::Value>,
-    ) -> Result<BuiltFile, String> {
+    ) -> Result<BuiltFile, PipelineError> {
         let processed = self.pipeline.process(html, base_path, data)?;
 
         let mut diagnostics = validate::validate_source(html, self.config());
@@ -96,9 +97,11 @@ impl Builder {
         file: &Path,
         input_dir: &Path,
         data: &DataSource,
-    ) -> Result<BuiltFile, String> {
-        let html = std::fs::read_to_string(file)
-            .map_err(|e| format!("Failed to read {}: {}", file.display(), e))?;
+    ) -> Result<BuiltFile, PipelineError> {
+        let html = std::fs::read_to_string(file).map_err(|e| PipelineError {
+            error: InkyError::Io(format!("Failed to read {}: {}", file.display(), e)),
+            warnings: Vec::new(),
+        })?;
         let file_data = resolve_data_for_file(file, input_dir, data);
         self.build_source(&html, file.parent(), file_data.as_ref())
     }
@@ -218,5 +221,35 @@ mod tests {
             &DataSource::None,
         );
         assert!(res.is_err());
+    }
+
+    #[test]
+    fn builder_error_carries_warnings() {
+        let dir = std::env::temp_dir().join("inky-e5-builder-warn");
+        let _ = std::fs::remove_dir_all(&dir);
+        write(&dir, "src/t.html",
+            "<link rel=\"stylesheet\" href=\"nope.scss\"><style type=\"text/scss\">$broken: {</style><p>x</p>");
+        let b = Builder::new(
+            Config::default(),
+            PipelineOptions { inline_css: false, framework_css: true, ..Default::default() },
+            false,
+        );
+        let err = b.build_file(&dir.join("src/t.html"), &dir.join("src"), &DataSource::None)
+            .unwrap_err();
+        assert_eq!(err.warnings.len(), 1, "warnings must survive build failure");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn builder_read_failure_is_io_error_with_message() {
+        let b = no_css_builder(false);
+        let err = b.build_file(
+            std::path::Path::new("/nonexistent/inky/file.html"),
+            std::path::Path::new("/nonexistent/inky"),
+            &DataSource::None,
+        ).unwrap_err();
+        assert!(matches!(err.error, inky_core::InkyError::Io(_)));
+        assert!(err.to_string().starts_with("Failed to read /nonexistent/inky/file.html"));
+        assert!(err.warnings.is_empty());
     }
 }

@@ -9,7 +9,9 @@ use std::sync::LazyLock;
 
 use regex::Regex;
 
-use crate::{scss, Config, Inky};
+use crate::{scss, Config, Inky, InkyError};
+
+pub use crate::error::PipelineError;
 
 pub struct PipelineOptions {
     pub inline_css: bool,
@@ -27,6 +29,7 @@ impl Default for PipelineOptions {
     }
 }
 
+#[derive(Debug)]
 pub struct Processed {
     pub html: String,
     pub warnings: Vec<String>,
@@ -61,21 +64,21 @@ impl Pipeline {
         html: &str,
         base_path: Option<&Path>,
         data: Option<&serde_json::Value>,
-    ) -> Result<Processed, String> {
+    ) -> Result<Processed, PipelineError> {
         let mut warnings = Vec::new();
 
-        // Task 2 removes these shims
         // Layout → custom components → includes
         let mut html = if let Some(base) = base_path {
-            let with_layout =
-                crate::include::process_layout(html, base).map_err(|e| e.to_string())?;
+            let with_layout = crate::include::process_layout(html, base)
+                .map_err(|e| fail(e, &mut warnings))?;
             let with_components = crate::include::process_custom_components(
                 &with_layout,
                 base,
                 &self.options.components_dir,
             )
-            .map_err(|e| e.to_string())?;
-            crate::include::process_includes(&with_components, base).map_err(|e| e.to_string())?
+            .map_err(|e| fail(e, &mut warnings))?;
+            crate::include::process_includes(&with_components, base)
+                .map_err(|e| fail(e, &mut warnings))?
         } else {
             html.to_string()
         };
@@ -83,7 +86,7 @@ impl Pipeline {
         // MiniJinja template merge (after includes, before transform)
         if let Some(data) = data {
             html = crate::templating::render_template(&html, data, false)
-                .map_err(|e| format!("Template merge failed: {}", e))?;
+                .map_err(|e| fail(e, &mut warnings))?;
         }
 
         if self.options.framework_css {
@@ -92,7 +95,7 @@ impl Pipeline {
             html = cleaned;
 
             let css = scss::compile_framework_scss(&user_scss)
-                .map_err(|e| format!("SCSS compilation failed: {}", e))?;
+                .map_err(|e| fail(e, &mut warnings))?;
 
             html = scss::inject_css_into_html(&html, &css);
             html = inject_color_scheme_meta(&html);
@@ -105,7 +108,7 @@ impl Pipeline {
         let result = if self.options.inline_css {
             self.inky
                 .transform_and_inline(&html, base_path)
-                .map_err(|e| format!("CSS inlining failed: {}", e))?
+                .map_err(|e| fail(e, &mut warnings))?
         } else {
             self.inky.transform(&html)
         };
@@ -118,6 +121,15 @@ impl Pipeline {
         let html = collapse_blank_lines(&result);
 
         Ok(Processed { html, warnings })
+    }
+}
+
+/// Build a [`PipelineError`], moving the warnings collected so far onto it
+/// so they aren't lost on the Err path.
+fn fail(error: InkyError, warnings: &mut Vec<String>) -> PipelineError {
+    PipelineError {
+        error,
+        warnings: std::mem::take(warnings),
     }
 }
 
@@ -354,6 +366,48 @@ mod tests {
         let out = p.process(input, None, None).unwrap();
         assert!(!out.html.contains("note"));
         assert!(out.html.contains("<!--[if mso]>"));
+    }
+
+    #[test]
+    fn pipeline_error_carries_prior_warnings() {
+        // A warning-producing linked SCSS (missing file) followed by a fatal
+        // SCSS compile error: the warning must survive on the Err path.
+        let dir = std::env::temp_dir().join("inky-e5-warn-then-fail");
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = r#"<html><head>
+<link rel="stylesheet" href="nope.scss">
+<style type="text/scss">$broken: {</style>
+</head><body><p>x</p></body></html>"#;
+        let err = pipe().process(input, Some(&dir), None).unwrap_err();
+        assert!(matches!(err.error, crate::InkyError::Scss(_)), "wrong variant: {}", err);
+        assert_eq!(err.warnings.len(), 1, "warning lost on Err path: {:?}", err.warnings);
+        assert!(err.warnings[0].contains("nope.scss"));
+        assert!(err.to_string().starts_with("SCSS compilation failed:"), "prefix changed: {}", err);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn pipeline_template_error_prefix_preserved() {
+        let p = Pipeline::new(
+            Config::default(),
+            PipelineOptions { framework_css: false, inline_css: false, ..Default::default() },
+        );
+        let data = serde_json::json!({});
+        let err = p.process("{% invalid", None, Some(&data)).unwrap_err();
+        assert!(err.to_string().starts_with("Template merge failed: Template parse error:"),
+            "prefix chain changed: {}", err);
+        assert!(err.warnings.is_empty());
+    }
+
+    #[test]
+    fn pipeline_include_error_unprefixed() {
+        let dir = std::env::temp_dir().join("inky-e5-layout-err");
+        std::fs::create_dir_all(&dir).unwrap();
+        let err = pipe()
+            .process(r#"<layout src="nope.html"><p>x</p></layout>"#, Some(&dir), None)
+            .unwrap_err();
+        assert!(err.to_string().starts_with("Failed to load layout"), "prefix added: {}", err);
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]

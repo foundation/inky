@@ -549,6 +549,7 @@ fn cmd_build(
                         }
                     }
                     Err(e) => {
+                        print_warnings(&e.warnings);
                         eprintln!("{} {}: {}", "error:".red().bold(), path.display(), e);
                         process::exit(1);
                     }
@@ -583,6 +584,7 @@ fn cmd_build(
                     }
                 }
                 Err(e) => {
+                    print_warnings(&e.warnings);
                     eprintln!("{} stdin: {}", "error:".red().bold(), e);
                     process::exit(1);
                 }
@@ -662,6 +664,7 @@ fn build_directory(
         let built = match builder.build_file(file, input_dir, data_source) {
             Ok(built) => built,
             Err(e) => {
+                print_warnings(&e.warnings);
                 eprintln!("{} {}: {}", "error:".red().bold(), file.display(), e);
                 process::exit(1);
             }
@@ -828,6 +831,7 @@ fn cmd_validate(input: Option<PathBuf>, json: bool) {
                     }
                     Err(e) => {
                         has_errors = true;
+                        print_warnings(&e.warnings);
                         eprintln!("{} {}: {}", "error:".red().bold(), file.display(), e);
                     }
                 }
@@ -868,6 +872,7 @@ fn cmd_validate(input: Option<PathBuf>, json: bool) {
                 }
                 Err(e) => {
                     has_errors = true;
+                    print_warnings(&e.warnings);
                     eprintln!("{} stdin: {}", "error:".red().bold(), e);
                 }
             }
@@ -931,6 +936,7 @@ fn cmd_spam_check(input: Option<PathBuf>, json: bool) {
                 ) {
                     Ok(built) => built,
                     Err(e) => {
+                        print_warnings(&e.warnings);
                         eprintln!("{} {}: {}", "error:".red().bold(), file.display(), e);
                         process::exit(1);
                     }
@@ -969,6 +975,7 @@ fn cmd_spam_check(input: Option<PathBuf>, json: bool) {
             let built = match builder.build_source(&html, cwd.as_deref(), None) {
                 Ok(built) => built,
                 Err(e) => {
+                    print_warnings(&e.warnings);
                     eprintln!("{} stdin: {}", "error:".red().bold(), e);
                     process::exit(1);
                 }

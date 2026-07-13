@@ -5,7 +5,8 @@ use std::time::Duration;
 use colored::Colorize;
 use notify_debouncer_mini::{new_debouncer, DebouncedEventKind};
 
-use inky_core::Config;
+use inky_core::pipeline::PipelineError;
+use inky_core::{Config, InkyError};
 
 pub fn cmd_watch(
     input: PathBuf,
@@ -265,6 +266,9 @@ fn do_full_build(
                 built += 1;
             }
             Err(e) => {
+                for w in &e.warnings {
+                    eprintln!("  {} {}", "warning:".yellow().bold(), w);
+                }
                 eprintln!("  {} {}: {}", "error:".red().bold(), file.display(), e);
             }
         }
@@ -293,6 +297,9 @@ fn rebuild_single_file(
             );
         }
         Err(e) => {
+            for w in &e.warnings {
+                eprintln!("  {} {}", "warning:".yellow().bold(), w);
+            }
             eprintln!(
                 "  [{}] {} {}: {}",
                 timestamp,
@@ -310,7 +317,7 @@ fn build_file(
     input_dir: &Path,
     output_dir: &Path,
     data_source: &crate::builder::DataSource,
-) -> Result<PathBuf, String> {
+) -> Result<PathBuf, PipelineError> {
     let built = builder.build_file(file, input_dir, data_source)?;
 
     for w in &built.warnings {
@@ -326,14 +333,21 @@ fn build_file(
 
     let dest = to_output_path(file, input_dir, output_dir);
     if let Some(parent) = dest.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|e| format!("Failed to create directory: {}", e))?;
+        std::fs::create_dir_all(parent).map_err(|e| PipelineError {
+            error: InkyError::Io(format!("Failed to create directory: {}", e)),
+            warnings: Vec::new(),
+        })?;
     }
-    std::fs::write(&dest, &built.html).map_err(|e| format!("Failed to write: {}", e))?;
+    std::fs::write(&dest, &built.html).map_err(|e| PipelineError {
+        error: InkyError::Io(format!("Failed to write: {}", e)),
+        warnings: Vec::new(),
+    })?;
     if let Some(ref txt) = built.plain_text {
         let txt_path = dest.with_extension("txt");
-        std::fs::write(&txt_path, txt)
-            .map_err(|e| format!("Failed to write {}: {}", txt_path.display(), e))?;
+        std::fs::write(&txt_path, txt).map_err(|e| PipelineError {
+            error: InkyError::Io(format!("Failed to write {}: {}", txt_path.display(), e)),
+            warnings: Vec::new(),
+        })?;
     }
 
     Ok(dest)

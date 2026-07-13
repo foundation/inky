@@ -25,6 +25,37 @@ pub enum InkyError {
     CssInline(String),
 }
 
+/// A pipeline failure plus the non-fatal warnings collected before it.
+#[cfg(feature = "pipeline")]
+#[derive(Debug)]
+pub struct PipelineError {
+    pub error: InkyError,
+    /// Warnings gathered before the failure (previously lost on the Err path).
+    pub warnings: Vec<String>,
+}
+
+#[cfg(feature = "pipeline")]
+impl std::fmt::Display for PipelineError {
+    /// Reproduces the pipeline's historical context prefixes exactly.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.error {
+            #[cfg(feature = "templating")]
+            InkyError::Template(m) => write!(f, "Template merge failed: {}", m),
+            InkyError::Scss(e) => write!(f, "SCSS compilation failed: {}", e),
+            #[cfg(feature = "css-inlining")]
+            InkyError::CssInline(m) => write!(f, "CSS inlining failed: {}", m),
+            other => write!(f, "{}", other),
+        }
+    }
+}
+
+#[cfg(feature = "pipeline")]
+impl std::error::Error for PipelineError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.error)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::InkyError;

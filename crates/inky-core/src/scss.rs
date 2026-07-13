@@ -6,6 +6,8 @@ use std::collections::{HashMap, HashSet};
 use std::io;
 use std::path::{Path, PathBuf};
 
+use crate::InkyError;
+
 // Embed all SCSS files into the binary
 const SCSS_FILES: &[(&str, &str)] = &[
     ("inky.scss", include_str!("../scss/inky.scss")),
@@ -216,14 +218,14 @@ pub fn extract_scss_sources(html: &str, base_path: Option<&Path>) -> (String, St
 /// The user SCSS is prepended before `@import 'inky';`, so user variable
 /// definitions (without `!default`) override the framework's `!default` values.
 /// Arbitrary SCSS — maps, `@each` loops, custom selectors — is supported.
-pub fn compile_framework_scss(user_scss: &str) -> Result<String, Box<grass::Error>> {
+pub fn compile_framework_scss(user_scss: &str) -> Result<String, InkyError> {
     let embedded_fs = EmbeddedFs::with_entry(user_scss);
     let entry_path = format!("{}/{}", EMBEDDED_ROOT, ENTRY_FILENAME);
     let options = grass::Options::default()
         .style(grass::OutputStyle::Compressed)
         .fs(&embedded_fs);
 
-    let css = grass::from_path(&entry_path, &options)?;
+    let css = grass::from_path(&entry_path, &options).map_err(InkyError::Scss)?;
     Ok(css.replace(" !important", "!important"))
 }
 
