@@ -162,6 +162,14 @@ Dir.mktmpdir("inky-rb-build-") do |tmp|
   end
 end
 
+assert_true "BuildError inherits Error", Inky::BuildError.ancestors.include?(Inky::Error)
+
+begin
+  raise Inky::BuildError, "x"
+rescue Inky::BuildError => e
+  assert_true "BuildError two-arg raise message", e.message == "x"
+end
+
 # --- Summary ---
 
 puts

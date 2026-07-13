@@ -89,6 +89,10 @@ class Inky
      */
     public static function build(string $html, ?string $basePath = null, array $options = []): BuildResult
     {
+        if (($options['data'] ?? null) === []) {
+            $options['data'] = new \stdClass();
+        }
+
         $envelope = self::getDriver()->build(
             $html,
             $basePath,

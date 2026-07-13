@@ -150,9 +150,9 @@ $result = Inky::build('<button href="https://x.dev">Go</button>', null, [
     'framework_css' => false,
     'inline_css' => false,
 ]);
-assert(str_contains($result->html, 'class="button"'));
-assert($result->warnings === []);
-assert($result->text === null);
+assert_true('build basic: html has button class', str_contains($result->html, 'class="button"'));
+assert_true('build basic: warnings empty', $result->warnings === []);
+assert_true('build basic: text is null', $result->text === null);
 echo "build basic ok\n";
 
 $result = Inky::build('<p>Hi {{ name }}</p>', null, [
@@ -161,8 +161,8 @@ $result = Inky::build('<p>Hi {{ name }}</p>', null, [
     'plain_text' => true,
     'data' => ['name' => 'Joe'],
 ]);
-assert(str_contains($result->html, 'Hi Joe'));
-assert(str_contains((string) $result->text, 'Hi Joe'));
+assert_true('build data+text: html merged', str_contains($result->html, 'Hi Joe'));
+assert_true('build data+text: text merged', str_contains((string) $result->text, 'Hi Joe'));
 echo "build data+text ok\n";
 
 $tmp = sys_get_temp_dir() . '/inky-php-build-' . getmypid();
@@ -172,8 +172,8 @@ $result = Inky::build('<layout src="layout.html"><p>inner</p></layout>', $tmp, [
     'framework_css' => false,
     'inline_css' => false,
 ]);
-assert(str_contains($result->html, '<p>inner</p>'));
-assert(str_contains($result->html, '<body>'));
+assert_true('build layout: inner content present', str_contains($result->html, '<p>inner</p>'));
+assert_true('build layout: layout body present', str_contains($result->html, '<body>'));
 echo "build layout ok\n";
 
 try {
@@ -181,10 +181,17 @@ try {
     echo "FAIL: expected BuildException\n";
     exit(1);
 } catch (\Inky\BuildException $e) {
-    assert(str_starts_with($e->getMessage(), "Failed to load layout 'nope.html'"));
-    assert(is_array($e->warnings));
+    assert_true('build error: message', str_starts_with($e->getMessage(), "Failed to load layout 'nope.html'"));
+    assert_true('build error: warnings is array', is_array($e->warnings));
     echo "build error ok\n";
 }
+
+$result = Inky::build('<p>x</p>', null, [
+    'framework_css' => false,
+    'inline_css' => false,
+    'data' => [],
+]);
+assert_true('build: empty-array data serializes as object', str_contains($result->html, '<p>x</p>'));
 
 // --- Summary ---
 

@@ -102,14 +102,14 @@ class InkyError(RuntimeError):
     """Raised when the native inky library reports an error."""
 
 
-class InkyBuildError(RuntimeError):
+class InkyBuildError(InkyError):
     """Raised when the full build pipeline fails.
 
     Attributes:
         warnings: Non-fatal notes collected before the failure.
     """
 
-    def __init__(self, message: str, warnings: list):
+    def __init__(self, message: str, warnings: list[str]):
         super().__init__(message)
         self.warnings = warnings
 
@@ -120,7 +120,7 @@ class BuildResult:
 
     html: str
     text: str | None
-    warnings: list
+    warnings: list[str]
 
 
 def _call_str(fn, *args) -> str:
@@ -239,13 +239,7 @@ def build(html: str, base_path: str | None = None, **options) -> BuildResult:
     encoded_base = base_path.encode("utf-8") if base_path is not None else None
     options_json = json.dumps(options).encode("utf-8")
 
-    ptr = lib.inky_build(encoded_html, encoded_base, options_json)
-    if not ptr:
-        raise InkyError("inky native call failed (null result)")
-    try:
-        envelope = json.loads(ctypes.string_at(ptr).decode("utf-8"))
-    finally:
-        lib.inky_free(ptr)
+    envelope = json.loads(_call_str(lib.inky_build, encoded_html, encoded_base, options_json))
 
     warnings = envelope.get("warnings", [])
     if not envelope.get("ok"):

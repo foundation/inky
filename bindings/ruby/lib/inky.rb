@@ -14,11 +14,11 @@ module Inky
   class Error < StandardError; end
 
   # Raised when the full build pipeline fails.
-  class BuildError < StandardError
+  class BuildError < Error
     # @return [Array<String>] Non-fatal notes collected before the failure.
     attr_reader :warnings
 
-    def initialize(message, warnings)
+    def initialize(message, warnings = [])
       super(message)
       @warnings = warnings
     end
