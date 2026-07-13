@@ -169,3 +169,23 @@ fn test_v2_nesting_fixtures() {
 fn test_migration_fixtures() {
     run_migration_fixtures("../../tests/fixtures/migration.json");
 }
+
+#[test]
+fn test_migration_idempotent() {
+    let content = fs::read_to_string("../../tests/fixtures/migration.json").unwrap();
+    let fixtures: FixtureFile = serde_json::from_str(&content).unwrap();
+    for test in &fixtures.tests {
+        let once = migrate::migrate(&test.input);
+        let twice = migrate::migrate(&once.html);
+        assert_eq!(
+            twice.html, once.html,
+            "migrate not idempotent for '{}'",
+            test.name
+        );
+        assert!(
+            twice.changes.is_empty(),
+            "second migrate reported changes for '{}': {:?}",
+            test.name, twice.changes
+        );
+    }
+}

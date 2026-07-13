@@ -1,6 +1,5 @@
 pub(crate) mod scanner;
 
-use regex::Regex;
 use scanner::{scan, Attr, Doc, Token};
 
 /// Migrate v1 Inky syntax to v2 syntax.
@@ -46,13 +45,13 @@ pub fn migrate(html: &str) -> MigrateResult {
         &mut changes,
     );
 
-    let html = doc.emit();
+    // 9. <center><menu ...> → <menu align="center" ...>
+    migrate_centered_menu(&mut doc, &mut changes);
 
-    // 9. <center><menu ...> → <menu align="center" ...> (token-based in the
-    // next task; the old regex still runs on the emitted string until then)
-    let html = migrate_centered_menu(&html, &mut changes);
-
-    MigrateResult { html, changes }
+    MigrateResult {
+        html: doc.emit(),
+        changes,
+    }
 }
 
 /// Result of a migration, including the transformed HTML and a list of changes made.
@@ -220,25 +219,93 @@ fn migrate_classes(
     }
 }
 
-/// Migrate <center><menu ...></menu></center> to <menu align="center" ...>.
-fn migrate_centered_menu(html: &str, changes: &mut Vec<MigrateChange>) -> String {
-    let re = Regex::new(r#"(?si)<center>\s*<menu(\s[^>]*)?(>)(.*?)</menu>\s*</center>"#).unwrap();
+/// Migrate `<center><menu ...>...</menu></center>` to `<menu align="center" ...>`.
+/// Matches only an attribute-less `<center>` directly wrapping a single menu
+/// (the same shape the old regex matched).
+fn migrate_centered_menu(doc: &mut Doc, changes: &mut Vec<MigrateChange>) {
+    let mut changed = false;
+    let mut i = 0;
+    while i < doc.tokens.len() {
+        // <center> with no attributes
+        let Token::Open(center) = &doc.tokens[i] else {
+            i += 1;
+            continue;
+        };
+        if center.name != "center" || !center.attrs.is_empty() || center.self_closing {
+            i += 1;
+            continue;
+        }
 
-    if !re.is_match(html) {
-        return html.to_string();
+        // optional whitespace-only text, then <menu ...>
+        let mut j = i + 1;
+        let ws_before = matches!(&doc.tokens.get(j), Some(Token::Text(r)) if doc.src[r.clone()].trim().is_empty());
+        if ws_before {
+            j += 1;
+        }
+        let Some(Token::Open(menu)) = doc.tokens.get(j) else {
+            i += 1;
+            continue;
+        };
+        if menu.name != "menu" || menu.self_closing {
+            i += 1;
+            continue;
+        }
+
+        // first </menu> after j (menus don't nest — matches the old non-greedy regex)
+        let Some(close_menu_rel) = doc.tokens[j + 1..]
+            .iter()
+            .position(|t| matches!(t, Token::Close(c) if c.name == "menu"))
+        else {
+            i += 1;
+            continue;
+        };
+        let close_menu_idx = j + 1 + close_menu_rel;
+
+        // optional whitespace-only text, then </center>
+        let mut k = close_menu_idx + 1;
+        let ws_after = matches!(&doc.tokens.get(k), Some(Token::Text(r)) if doc.src[r.clone()].trim().is_empty());
+        if ws_after {
+            k += 1;
+        }
+        let Some(Token::Close(close_center)) = doc.tokens.get(k) else {
+            i += 1;
+            continue;
+        };
+        if close_center.name != "center" {
+            i += 1;
+            continue;
+        }
+
+        // Apply: drop <center>/</center> (and the whitespace runs the old
+        // regex consumed), add align="center" to the menu tag.
+        if let Token::Open(center) = &mut doc.tokens[i] {
+            center.deleted = true;
+        }
+        if ws_before {
+            if let Token::Text(range) = &mut doc.tokens[i + 1] {
+                *range = 0..0;
+            }
+        }
+        if let Token::Open(menu) = &mut doc.tokens[j] {
+            menu.attrs.push(Attr::new_double("align", "center"));
+            menu.dirty = true;
+        }
+        if ws_after {
+            if let Token::Text(range) = &mut doc.tokens[close_menu_idx + 1] {
+                *range = 0..0;
+            }
+        }
+        if let Token::Close(close_center) = &mut doc.tokens[k] {
+            close_center.deleted = true;
+        }
+        changed = true;
+        i = k + 1;
     }
-
-    changes.push(MigrateChange {
-        description: r#"<center><menu> → <menu align="center">"#.to_string(),
-    });
-
-    re.replace_all(html, |caps: &regex::Captures| {
-        let existing_attrs = caps.get(1).map(|m| m.as_str()).unwrap_or("");
-        let inner = &caps[3];
-
-        format!(r#"<menu{} align="center">{}</menu>"#, existing_attrs, inner)
-    })
-    .to_string()
+    if changed {
+        changes.push(MigrateChange {
+            description: r#"<center><menu> → <menu align="center">"#.to_string(),
+        });
+    }
 }
 
 #[cfg(test)]
@@ -474,5 +541,81 @@ mod tests {
         assert!(result.html.starts_with("prefix &amp; entities <b>bold</b>\n\t "));
         assert!(result.html.ends_with(" suffix &lt;"));
         assert!(result.html.contains(r#"<spacer height="4"></spacer>"#));
+    }
+
+    // --- Task 3: token-based centered-menu rule ---
+
+    #[test]
+    fn centered_menu_attrs_preserved_and_center_removed() {
+        let input = r##"<center><menu class="vertical" data-x="1"><item href="#">L</item></menu></center>"##;
+        let result = migrate(input);
+        assert!(result.html.contains(r#"direction="vertical""#));
+        assert!(result.html.contains(r#"data-x="1""#));
+        assert!(result.html.contains(r#"align="center""#));
+        assert!(!result.html.contains("<center>"));
+        assert!(!result.html.contains("</center>"));
+    }
+
+    #[test]
+    fn center_with_attributes_not_unwrapped() {
+        // The old regex only matched a bare <center>; keep that behavior.
+        let input = r##"<center class="x"><menu><item href="#">L</item></menu></center>"##;
+        let result = migrate(input);
+        assert!(result.html.contains(r#"<center class="x">"#));
+        assert!(!result.html.contains("align=\"center\""));
+    }
+
+    #[test]
+    fn center_without_menu_untouched() {
+        let input = "<center><p>hi</p></center>";
+        let result = migrate(input);
+        assert_eq!(result.html, input);
+    }
+
+    #[test]
+    fn centered_menu_with_whitespace_between() {
+        let input = "<center>\n  <menu><item href=\"#\">L</item></menu>\n</center>";
+        let result = migrate(input);
+        assert!(result.html.contains(r#"align="center""#));
+        assert!(!result.html.contains("<center>"));
+    }
+
+    // --- opacity regressions (the scanner guarantees these end-to-end) ---
+
+    #[test]
+    fn commented_out_v1_untouched() {
+        let input = r#"<!-- <columns large="6">old</columns> --><p>x</p>"#;
+        let result = migrate(input);
+        assert_eq!(result.html, input);
+        assert!(result.changes.is_empty());
+    }
+
+    #[test]
+    fn raw_block_untouched() {
+        let input = r#"<raw><columns large="6">keep v1</columns></raw>"#;
+        let result = migrate(input);
+        assert_eq!(result.html, input);
+    }
+
+    #[test]
+    fn script_and_style_content_untouched() {
+        let input = r#"<script>var t = '<spacer size="4">';</script><style>/* <h-line> */</style>"#;
+        let result = migrate(input);
+        assert_eq!(result.html, input);
+    }
+
+    #[test]
+    fn erb_content_untouched_but_surroundings_migrate() {
+        let input = r#"<%= tag("<columns>") %><spacer size="8"></spacer>"#;
+        let result = migrate(input);
+        assert!(result.html.starts_with(r#"<%= tag("<columns>") %>"#));
+        assert!(result.html.contains(r#"height="8""#));
+    }
+
+    #[test]
+    fn merge_tag_in_attr_value_preserved() {
+        let input = r#"<spacer size="<%= n %>"></spacer>"#;
+        let result = migrate(input);
+        assert_eq!(result.html, r#"<spacer height="<%= n %>"></spacer>"#);
     }
 }
