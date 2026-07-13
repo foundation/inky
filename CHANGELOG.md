@@ -15,6 +15,8 @@ All notable changes to the Inky project will be documented in this file.
 - Template discovery skips the output directory, so `"src": ".", "dist": "dist"` no longer re-ingests built files (`dist/dist/dist/…`).
 - `inky watch` and `inky serve` now exit with an error at startup when `--data` points to a missing or unparseable path, matching `inky build` (previously they warned and continued without data).
 - `inky watch` and `inky serve` now honor `--bulletproof-buttons` (previously the flag was accepted but silently ignored by those two commands).
+- **Library errors are now typed.** All fallible inky-core APIs return `InkyError` (a `thiserror` enum with `Include`/`Io`/`Template`/`Scss`/`CssInline` variants) instead of bare `String`s, and `pipeline::Pipeline::process` returns `PipelineError`, which carries the non-fatal warnings collected before the failure. Error *messages* are unchanged — only the types are breaking for library consumers.
+- Build warnings (e.g. an unreadable linked SCSS file) are no longer lost when the build subsequently fails: all CLI commands now print collected warnings before the error.
 
 ### Fixed
 
