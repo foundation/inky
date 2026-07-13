@@ -116,13 +116,19 @@ pub(crate) fn scan(src: &str) -> Doc<'_> {
         // Closing tag
         if let Some(after_slash) = rest.strip_prefix("</") {
             if after_slash.starts_with(|c: char| c.is_ascii_alphabetic()) {
-                if let Some(gt) = rest.find('>') {
-                    let end = i + gt + 1;
-                    let name: String = after_slash
-                        .chars()
-                        .take_while(|c| c.is_ascii_alphanumeric() || *c == '-')
-                        .collect::<String>()
-                        .to_ascii_lowercase();
+                let name: String = after_slash
+                    .chars()
+                    .take_while(|c| c.is_ascii_alphanumeric() || *c == '-')
+                    .collect::<String>()
+                    .to_ascii_lowercase();
+                // Strict grammar: `</name` + optional whitespace + `>`.
+                // Anything else is literal text — migrate never guesses.
+                let mut j = i + 2 + name.len(); // name is ASCII: char count == byte count
+                while j < bytes.len() && bytes[j].is_ascii_whitespace() {
+                    j += 1;
+                }
+                if j < bytes.len() && bytes[j] == b'>' {
+                    let end = j + 1;
                     flush_text!(i);
                     tokens.push(Token::Close(CloseTag {
                         name,
@@ -145,7 +151,9 @@ pub(crate) fn scan(src: &str) -> Doc<'_> {
             Some((tag, end)) => {
                 flush_text!(i);
                 let name = tag.name.clone();
-                if RAW_TEXT_ELEMENTS.contains(&name.as_str()) {
+                if RAW_TEXT_ELEMENTS.contains(&name.as_str())
+                    && !(tag.self_closing && name == "raw")
+                {
                     // Opaque: open tag + content + close tag all stay Text.
                     let after = find_raw_close(src, end, &name).unwrap_or(src.len());
                     tokens.push(Token::Text(i..after));

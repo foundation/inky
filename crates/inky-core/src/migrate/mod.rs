@@ -1,6 +1,6 @@
 pub(crate) mod scanner;
 
-use scanner::{scan, Attr, Doc, Token};
+use scanner::{scan, Attr, Doc, Quote, Token};
 
 /// Migrate v1 Inky syntax to v2 syntax.
 ///
@@ -169,6 +169,7 @@ fn migrate_classes(
         let Some(class_value) = tag.attrs[class_idx].value.clone() else {
             continue;
         };
+        let original_quote = tag.attrs[class_idx].quote;
 
         // One slot per valued rule entry (last matching class wins, as before).
         let mut valued: Vec<Option<String>> = vec![None; rule.valued.len()];
@@ -197,7 +198,22 @@ fn migrate_classes(
         // Rebuild in place: [attrs before class] class(remaining)? valued... booleans [attrs after]
         let mut replacement: Vec<Attr> = Vec::new();
         if !remaining.is_empty() {
-            replacement.push(Attr::new_double("class", &remaining.join(" ")));
+            let remaining_value = remaining.join(" ");
+            // Never emit a double-quoted attribute whose value contains a
+            // literal `"` — that would corrupt the markup. Prefer single
+            // quotes when the value needs them, otherwise keep the
+            // original quote style if it was single, else double.
+            let quote = if remaining_value.contains('"') || original_quote == Quote::Single {
+                Quote::Single
+            } else {
+                Quote::Double
+            };
+            replacement.push(Attr {
+                name: "class".to_string(),
+                name_out: "class".to_string(),
+                value: Some(remaining_value),
+                quote,
+            });
         }
         for (slot, (attr_name, _)) in valued.iter().zip(rule.valued.iter()) {
             if let Some(value) = slot {
@@ -639,5 +655,55 @@ mod tests {
         let input = r#"<spacer size="<%= n %>"></spacer>"#;
         let result = migrate(input);
         assert_eq!(result.html, r#"<spacer height="<%= n %>"></spacer>"#);
+    }
+
+    // --- Final code review regression tests ---
+
+    #[test]
+    fn unterminated_close_tag_never_swallows_bytes() {
+        let input = "before\n</columns\n<spacer size=\"4\"></spacer>\nafter";
+        let result = migrate(input);
+        assert!(result.html.contains("</columns\n"), "malformed close mangled: {}", result.html);
+        assert!(result.html.contains(r#"height="4""#));
+        assert!(result.html.contains("after"));
+    }
+
+    #[test]
+    fn close_tag_with_junk_is_literal_text() {
+        let input = r#"</columns junk="a>b">text"#;
+        let result = migrate(input);
+        assert_eq!(result.html, input);
+        assert!(result.changes.is_empty());
+    }
+
+    #[test]
+    fn close_tag_with_whitespace_still_renames() {
+        let input = "<columns>x</columns  >";
+        let result = migrate(input);
+        assert_eq!(result.html, "<column>x</column>");
+    }
+
+    #[test]
+    fn class_with_embedded_double_quote_not_corrupted() {
+        let input = r##"<button class='small has"x' href="#">Go</button>"##;
+        let result = migrate(input);
+        assert!(result.html.contains(r#"size="small""#));
+        assert!(result.html.contains(r#"class='has"x'"#), "class re-quoting corrupted: {}", result.html);
+    }
+
+    #[test]
+    fn single_quoted_class_attr_keeps_quote_style() {
+        let input = "<callout class='primary custom'>M</callout>";
+        let result = migrate(input);
+        assert!(result.html.contains("class='custom'"), "quote style changed: {}", result.html);
+        assert!(result.html.contains(r#"color="primary""#));
+    }
+
+    #[test]
+    fn self_closing_raw_does_not_swallow_document() {
+        let input = r#"<raw/><spacer size="8"></spacer>"#;
+        let result = migrate(input);
+        assert!(result.html.contains(r#"height="8""#), "raw/ swallowed the document: {}", result.html);
+        assert!(result.html.starts_with("<raw/>"));
     }
 }
