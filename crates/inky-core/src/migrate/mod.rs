@@ -1,3 +1,5 @@
+pub(crate) mod scanner;
+
 use regex::Regex;
 
 /// Migrate v1 Inky syntax to v2 syntax.
