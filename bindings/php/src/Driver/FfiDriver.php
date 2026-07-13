@@ -80,6 +80,12 @@ class FfiDriver implements DriverInterface
         return $this->stringResult($this->ffi->inky_version());
     }
 
+    public function build(string $html, ?string $basePath, string $optionsJson): array
+    {
+        $json = $this->stringResult($this->ffi->inky_build($html, $basePath, $optionsJson));
+        return json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+    }
+
     /**
      * Call an FFI function that takes a single string arg and returns a string.
      */

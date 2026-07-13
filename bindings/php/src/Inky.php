@@ -76,6 +76,34 @@ class Inky
     }
 
     /**
+     * Run the full build pipeline: layouts, includes, custom components,
+     * data merge, framework SCSS, component transform, CSS inlining, and
+     * output cleanup — identical to `inky build`.
+     *
+     * Options: inline_css (true), framework_css (true), components_dir
+     * ("components"), columns (12), hybrid (false), bulletproof_buttons
+     * (false), plain_text (false), data (array of merge variables).
+     *
+     * @param array<string, mixed> $options
+     * @throws BuildException on pipeline failure (warnings attached)
+     */
+    public static function build(string $html, ?string $basePath = null, array $options = []): BuildResult
+    {
+        $envelope = self::getDriver()->build(
+            $html,
+            $basePath,
+            $options === [] ? '{}' : json_encode($options, JSON_THROW_ON_ERROR),
+        );
+
+        $warnings = $envelope['warnings'] ?? [];
+        if (($envelope['ok'] ?? false) !== true) {
+            throw new BuildException($envelope['error'] ?? 'unknown build error', $warnings);
+        }
+
+        return new BuildResult($envelope['html'], $envelope['text'] ?? null, $warnings);
+    }
+
+    /**
      * Get the active driver, auto-detecting if needed.
      */
     public static function getDriver(): DriverInterface

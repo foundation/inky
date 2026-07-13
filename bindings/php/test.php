@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/src/Driver/DriverInterface.php';
 require_once __DIR__ . '/src/Driver/FfiDriver.php';
+require_once __DIR__ . '/src/BuildResult.php';
+require_once __DIR__ . '/src/BuildException.php';
 require_once __DIR__ . '/src/Inky.php';
 
 use Inky\Inky;
@@ -139,6 +141,50 @@ $v = Inky::version();
 assert_true('returns a string', is_string($v));
 assert_true('looks like semver', (bool) preg_match('/^\d+\.\d+\.\d+/', $v));
 assert_true('is 2.x', str_starts_with($v, '2.'));
+
+// --- build (full pipeline) ---
+
+echo "build:\n";
+
+$result = Inky::build('<button href="https://x.dev">Go</button>', null, [
+    'framework_css' => false,
+    'inline_css' => false,
+]);
+assert(str_contains($result->html, 'class="button"'));
+assert($result->warnings === []);
+assert($result->text === null);
+echo "build basic ok\n";
+
+$result = Inky::build('<p>Hi {{ name }}</p>', null, [
+    'framework_css' => false,
+    'inline_css' => false,
+    'plain_text' => true,
+    'data' => ['name' => 'Joe'],
+]);
+assert(str_contains($result->html, 'Hi Joe'));
+assert(str_contains((string) $result->text, 'Hi Joe'));
+echo "build data+text ok\n";
+
+$tmp = sys_get_temp_dir() . '/inky-php-build-' . getmypid();
+@mkdir($tmp, 0755, true);
+file_put_contents("$tmp/layout.html", "<html><body><yield /></body></html>");
+$result = Inky::build('<layout src="layout.html"><p>inner</p></layout>', $tmp, [
+    'framework_css' => false,
+    'inline_css' => false,
+]);
+assert(str_contains($result->html, '<p>inner</p>'));
+assert(str_contains($result->html, '<body>'));
+echo "build layout ok\n";
+
+try {
+    Inky::build('<layout src="nope.html"><p>x</p></layout>', $tmp, ['framework_css' => false]);
+    echo "FAIL: expected BuildException\n";
+    exit(1);
+} catch (\Inky\BuildException $e) {
+    assert(str_starts_with($e->getMessage(), "Failed to load layout 'nope.html'"));
+    assert(is_array($e->warnings));
+    echo "build error ok\n";
+}
 
 // --- Summary ---
 

@@ -21,4 +21,11 @@ interface DriverInterface
     public function validate(string $html): array;
 
     public function version(): string;
+
+    /**
+     * Run the full build pipeline. Returns the decoded JSON envelope.
+     *
+     * @return array{ok: bool, html?: string, text?: string, error?: string, warnings: string[]}
+     */
+    public function build(string $html, ?string $basePath, string $optionsJson): array;
 }
