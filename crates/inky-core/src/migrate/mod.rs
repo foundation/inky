@@ -1,6 +1,7 @@
 pub(crate) mod scanner;
 
 use regex::Regex;
+use scanner::{scan, Attr, Doc, Token};
 
 /// Migrate v1 Inky syntax to v2 syntax.
 ///
@@ -8,42 +9,50 @@ use regex::Regex;
 /// It converts old tag names, attribute names, and class-based patterns
 /// to the modern v2 equivalents.
 pub fn migrate(html: &str) -> MigrateResult {
-    let mut result = html.to_string();
+    let mut doc = scan(html);
     let mut changes = Vec::new();
 
     // 1. <columns> → <column> (plural → singular)
-    result = rename_tag(&result, "columns", "column", &mut changes);
-
+    rename_tag(&mut doc, "columns", "column", &mut changes);
     // 2. <h-line> → <divider>
-    result = rename_tag(&result, "h-line", "divider", &mut changes);
-
+    rename_tag(&mut doc, "h-line", "divider", &mut changes);
     // 3. Attribute renames on <column>: large→lg, small→sm
-    result = rename_attr_on_tag(&result, "column", "large", "lg", &mut changes);
-    result = rename_attr_on_tag(&result, "column", "small", "sm", &mut changes);
+    rename_attr_on_tag(&mut doc, "column", "large", "lg", &mut changes);
+    rename_attr_on_tag(&mut doc, "column", "small", "sm", &mut changes);
+    // 4./5. <spacer> size→height, size-sm→sm, size-lg→lg
+    rename_attr_on_tag(&mut doc, "spacer", "size", "height", &mut changes);
+    rename_attr_on_tag(&mut doc, "spacer", "size-sm", "sm", &mut changes);
+    rename_attr_on_tag(&mut doc, "spacer", "size-lg", "lg", &mut changes);
+    // 6.–8. class → attribute migrations
+    migrate_classes(
+        &mut doc,
+        "button",
+        &BUTTON_RULE,
+        "<button> class → attributes (size, color, expand, etc.)",
+        &mut changes,
+    );
+    migrate_classes(
+        &mut doc,
+        "callout",
+        &CALLOUT_RULE,
+        r#"<callout class="..."> → <callout color="...">"#,
+        &mut changes,
+    );
+    migrate_classes(
+        &mut doc,
+        "menu",
+        &MENU_RULE,
+        r#"<menu class="vertical"> → <menu direction="vertical">"#,
+        &mut changes,
+    );
 
-    // 4. <spacer size="N"> → <spacer height="N">
-    result = rename_attr_on_tag(&result, "spacer", "size", "height", &mut changes);
+    let html = doc.emit();
 
-    // 5. <spacer size-sm="N" size-lg="N"> → <spacer sm="N" lg="N">
-    result = rename_attr_on_tag(&result, "spacer", "size-sm", "sm", &mut changes);
-    result = rename_attr_on_tag(&result, "spacer", "size-lg", "lg", &mut changes);
+    // 9. <center><menu ...> → <menu align="center" ...> (token-based in the
+    // next task; the old regex still runs on the emitted string until then)
+    let html = migrate_centered_menu(&html, &mut changes);
 
-    // 6. <button class="small alert expand"> → <button size="small" color="alert" expand>
-    result = migrate_button_classes(&result, &mut changes);
-
-    // 7. <callout class="primary"> → <callout color="primary">
-    result = migrate_callout_classes(&result, &mut changes);
-
-    // 8. <menu class="vertical"> → <menu direction="vertical">
-    result = migrate_menu_classes(&result, &mut changes);
-
-    // 9. <center><menu ...> → <menu align="center" ...> and remove wrapping <center>
-    result = migrate_centered_menu(&result, &mut changes);
-
-    MigrateResult {
-        html: result,
-        changes,
-    }
+    MigrateResult { html, changes }
 }
 
 /// Result of a migration, including the transformed HTML and a list of changes made.
@@ -59,287 +68,156 @@ pub struct MigrateChange {
     pub description: String,
 }
 
-/// Rename a tag (both opening and closing).
-fn rename_tag(html: &str, from: &str, to: &str, changes: &mut Vec<MigrateChange>) -> String {
-    let from_escaped = regex::escape(from);
-    // Opening tag: <from ...> or <from>
-    let open_re = Regex::new(&format!(r"<{f}(\s|>|/>)", f = from_escaped)).unwrap();
-    // Closing tag: </from>
-    let close_re = Regex::new(&format!(r"</{f}\s*>", f = from_escaped)).unwrap();
-
-    let mut result = html.to_string();
-    if open_re.is_match(&result) {
+/// Rename a tag (both opening and closing), case-insensitively.
+fn rename_tag(doc: &mut Doc, from: &str, to: &str, changes: &mut Vec<MigrateChange>) {
+    let mut changed = false;
+    for token in &mut doc.tokens {
+        match token {
+            Token::Open(tag) if tag.name == from => {
+                tag.name = to.to_string();
+                tag.dirty = true;
+                changed = true;
+            }
+            Token::Close(close) if close.name == from => {
+                close.renamed = Some(to.to_string());
+                changed = true;
+            }
+            _ => {}
+        }
+    }
+    if changed {
         changes.push(MigrateChange {
             description: format!("<{}> → <{}>", from, to),
         });
-        result = open_re
-            .replace_all(&result, |caps: &regex::Captures| {
-                format!("<{}{}", to, &caps[1])
-            })
-            .to_string();
-        result = close_re
-            .replace_all(&result, format!("</{}>", to))
-            .to_string();
     }
-    result
 }
 
-/// Rename an attribute on a specific tag.
+/// Rename an attribute on a specific tag. Exact name matching — `data-large`
+/// can never match a rule for `large`.
 fn rename_attr_on_tag(
-    html: &str,
-    tag: &str,
+    doc: &mut Doc,
+    tag_name: &str,
     from_attr: &str,
     to_attr: &str,
     changes: &mut Vec<MigrateChange>,
-) -> String {
-    let tag_escaped = regex::escape(tag);
-    let from_escaped = regex::escape(from_attr);
+) {
+    let mut changed = false;
+    for token in &mut doc.tokens {
+        let Token::Open(tag) = token else { continue };
+        if tag.name != tag_name {
+            continue;
+        }
+        for attr in &mut tag.attrs {
+            if attr.name == from_attr {
+                attr.name = to_attr.to_string();
+                attr.name_out = to_attr.to_string();
+                tag.dirty = true;
+                changed = true;
+            }
+        }
+    }
+    if changed {
+        changes.push(MigrateChange {
+            description: format!("<{}> attribute {} → {}", tag_name, from_attr, to_attr),
+        });
+    }
+}
 
-    // Match the full opening tag for this element
-    let tag_re = Regex::new(&format!(r"<{t}(\s[^>]*)?>", t = tag_escaped)).unwrap();
+/// A class→attribute migration rule for one tag.
+struct ClassRule {
+    /// (target attribute, class values that map to it) — emitted in this order.
+    valued: &'static [(&'static str, &'static [&'static str])],
+    /// Class values that become bare boolean attributes.
+    boolean: &'static [&'static str],
+}
 
-    // Match the attribute within the tag
-    let attr_re = Regex::new(&format!(r#"\b{a}\s*="#, a = from_escaped)).unwrap();
+const BUTTON_RULE: ClassRule = ClassRule {
+    valued: &[
+        ("size", &["tiny", "small", "large"]),
+        ("color", &["primary", "secondary", "success", "alert", "warning"]),
+    ],
+    boolean: &["expand", "expanded", "radius", "rounded", "hollow"],
+};
 
-    let mut made_change = false;
+const CALLOUT_RULE: ClassRule = ClassRule {
+    valued: &[("color", &["primary", "secondary", "success", "alert", "warning"])],
+    boolean: &[],
+};
 
-    let result = tag_re
-        .replace_all(html, |caps: &regex::Captures| {
-            let full = caps[0].to_string();
-            if attr_re.is_match(&full) {
-                made_change = true;
-                attr_re.replace(&full, format!("{}=", to_attr)).to_string()
+const MENU_RULE: ClassRule = ClassRule {
+    valued: &[("direction", &["vertical"])],
+    boolean: &[],
+};
+
+/// Convert recognized classes on `tag_name` into attributes, preserving all
+/// other attributes and the position of the class attribute.
+fn migrate_classes(
+    doc: &mut Doc,
+    tag_name: &str,
+    rule: &ClassRule,
+    description: &str,
+    changes: &mut Vec<MigrateChange>,
+) {
+    let mut changed = false;
+    for token in &mut doc.tokens {
+        let Token::Open(tag) = token else { continue };
+        if tag.name != tag_name {
+            continue;
+        }
+        let Some(class_idx) = tag.attrs.iter().position(|a| a.name == "class") else {
+            continue;
+        };
+        let Some(class_value) = tag.attrs[class_idx].value.clone() else {
+            continue;
+        };
+
+        // One slot per valued rule entry (last matching class wins, as before).
+        let mut valued: Vec<Option<String>> = vec![None; rule.valued.len()];
+        let mut booleans: Vec<String> = Vec::new();
+        let mut remaining: Vec<&str> = Vec::new();
+
+        for class in class_value.split_whitespace() {
+            let lower = class.to_lowercase();
+            if let Some(idx) = rule
+                .valued
+                .iter()
+                .position(|(_, values)| values.contains(&lower.as_str()))
+            {
+                valued[idx] = Some(lower);
+            } else if rule.boolean.contains(&lower.as_str()) {
+                booleans.push(lower);
             } else {
-                full
+                remaining.push(class);
             }
-        })
-        .to_string();
+        }
 
-    if made_change {
+        if valued.iter().all(Option::is_none) && booleans.is_empty() {
+            continue;
+        }
+
+        // Rebuild in place: [attrs before class] class(remaining)? valued... booleans [attrs after]
+        let mut replacement: Vec<Attr> = Vec::new();
+        if !remaining.is_empty() {
+            replacement.push(Attr::new_double("class", &remaining.join(" ")));
+        }
+        for (slot, (attr_name, _)) in valued.iter().zip(rule.valued.iter()) {
+            if let Some(value) = slot {
+                replacement.push(Attr::new_double(attr_name, value));
+            }
+        }
+        for boolean in &booleans {
+            replacement.push(Attr::new_bare(boolean));
+        }
+
+        tag.attrs.splice(class_idx..class_idx + 1, replacement);
+        tag.dirty = true;
+        changed = true;
+    }
+    if changed {
         changes.push(MigrateChange {
-            description: format!("<{}> attribute {} → {}", tag, from_attr, to_attr),
+            description: description.to_string(),
         });
     }
-
-    result
-}
-
-/// Button size class names that become size="..." attributes.
-const BUTTON_SIZES: &[&str] = &["tiny", "small", "large"];
-/// Button color class names that become color="..." attributes.
-const BUTTON_COLORS: &[&str] = &["primary", "secondary", "success", "alert", "warning"];
-/// Button boolean class names that become bare attributes.
-const BUTTON_BOOLEANS: &[&str] = &["expand", "expanded", "radius", "rounded", "hollow"];
-
-/// Migrate button classes to attributes.
-fn migrate_button_classes(html: &str, changes: &mut Vec<MigrateChange>) -> String {
-    let re = Regex::new(r#"(?i)(<button\s)([^>]*?)class\s*=\s*"([^"]*)"([^>]*>)"#).unwrap();
-
-    if !re.is_match(html) {
-        return html.to_string();
-    }
-
-    let mut made_changes = false;
-
-    let result = re
-        .replace_all(html, |caps: &regex::Captures| {
-            let prefix = &caps[1]; // "<button "
-            let before = &caps[2]; // attrs before class
-            let class_val = &caps[3]; // class value
-            let after = &caps[4]; // attrs after class + >
-
-            let classes: Vec<&str> = class_val.split_whitespace().collect();
-
-            let mut size_attr = String::new();
-            let mut color_attr = String::new();
-            let mut bool_attrs = Vec::new();
-            let mut remaining_classes = Vec::new();
-
-            for cls in &classes {
-                let cls_lower = cls.to_lowercase();
-                if BUTTON_SIZES.contains(&cls_lower.as_str()) {
-                    size_attr = format!(r#"size="{}""#, cls_lower);
-                    made_changes = true;
-                } else if BUTTON_COLORS.contains(&cls_lower.as_str()) {
-                    color_attr = format!(r#"color="{}""#, cls_lower);
-                    made_changes = true;
-                } else if BUTTON_BOOLEANS.contains(&cls_lower.as_str()) {
-                    bool_attrs.push(cls_lower);
-                    made_changes = true;
-                } else {
-                    remaining_classes.push(*cls);
-                }
-            }
-
-            // Rebuild the tag
-            let mut parts = Vec::new();
-            parts.push(prefix.to_string());
-            if !before.trim().is_empty() {
-                parts.push(before.trim().to_string());
-                parts.push(" ".to_string());
-            }
-            if !remaining_classes.is_empty() {
-                parts.push(format!(r#"class="{}""#, remaining_classes.join(" ")));
-                parts.push(" ".to_string());
-            }
-            if !size_attr.is_empty() {
-                parts.push(size_attr);
-                parts.push(" ".to_string());
-            }
-            if !color_attr.is_empty() {
-                parts.push(color_attr);
-                parts.push(" ".to_string());
-            }
-            for b in &bool_attrs {
-                parts.push(b.clone());
-                parts.push(" ".to_string());
-            }
-
-            // Append remaining attrs from after class (everything before the closing >)
-            let after_trimmed = after.trim();
-            if after_trimmed != ">" && after_trimmed != "/>" {
-                // Strip the closing > or /> to get remaining attrs
-                let remaining = after_trimmed
-                    .trim_end_matches('>')
-                    .trim_end_matches('/')
-                    .trim();
-                if !remaining.is_empty() {
-                    parts.push(remaining.to_string());
-                    parts.push(" ".to_string());
-                }
-            }
-
-            // Build result, trimming trailing space before >
-            let mut tag = parts.join("");
-            tag = tag.trim_end().to_string();
-            // Re-add the closing >
-            let closing = if after.contains("/>") { "/>" } else { ">" };
-            format!("{}{}", tag, closing)
-        })
-        .to_string();
-
-    if made_changes {
-        changes.push(MigrateChange {
-            description: "<button> class → attributes (size, color, expand, etc.)".to_string(),
-        });
-    }
-
-    result
-}
-
-/// Migrate callout classes to color attribute.
-fn migrate_callout_classes(html: &str, changes: &mut Vec<MigrateChange>) -> String {
-    let re = Regex::new(r#"(?i)(<callout\s)([^>]*?)class\s*=\s*"([^"]*)"([^>]*>)"#).unwrap();
-
-    if !re.is_match(html) {
-        return html.to_string();
-    }
-
-    let colors = ["primary", "secondary", "success", "alert", "warning"];
-    let mut made_changes = false;
-
-    let result = re
-        .replace_all(html, |caps: &regex::Captures| {
-            let prefix = &caps[1];
-            let before = &caps[2];
-            let class_val = &caps[3];
-            let after = &caps[4];
-
-            let classes: Vec<&str> = class_val.split_whitespace().collect();
-            let mut color = String::new();
-            let mut remaining = Vec::new();
-
-            for cls in &classes {
-                if colors.contains(&cls.to_lowercase().as_str()) {
-                    color = cls.to_lowercase();
-                    made_changes = true;
-                } else {
-                    remaining.push(*cls);
-                }
-            }
-
-            let mut tag = prefix.to_string();
-            if !before.trim().is_empty() {
-                tag.push_str(before.trim());
-                tag.push(' ');
-            }
-            if !remaining.is_empty() {
-                tag.push_str(&format!(r#"class="{}""#, remaining.join(" ")));
-                tag.push(' ');
-            }
-            if !color.is_empty() {
-                tag.push_str(&format!(r#"color="{}""#, color));
-            }
-            tag = tag.trim_end().to_string();
-            let closing = after.trim_start_matches(|c: char| c != '>' && c != '/');
-            format!("{}{}", tag, closing)
-        })
-        .to_string();
-
-    if made_changes {
-        changes.push(MigrateChange {
-            description: r#"<callout class="..."> → <callout color="...">"#.to_string(),
-        });
-    }
-
-    result
-}
-
-/// Migrate menu class="vertical" to direction="vertical".
-fn migrate_menu_classes(html: &str, changes: &mut Vec<MigrateChange>) -> String {
-    let re = Regex::new(r#"(?i)(<menu\s)([^>]*?)class\s*=\s*"([^"]*)"([^>]*>)"#).unwrap();
-
-    if !re.is_match(html) {
-        return html.to_string();
-    }
-
-    let mut made_changes = false;
-
-    let result = re
-        .replace_all(html, |caps: &regex::Captures| {
-            let prefix = &caps[1];
-            let before = &caps[2];
-            let class_val = &caps[3];
-            let after = &caps[4];
-
-            let classes: Vec<&str> = class_val.split_whitespace().collect();
-            let mut direction = String::new();
-            let mut remaining = Vec::new();
-
-            for cls in &classes {
-                if cls.eq_ignore_ascii_case("vertical") {
-                    direction = "vertical".to_string();
-                    made_changes = true;
-                } else {
-                    remaining.push(*cls);
-                }
-            }
-
-            let mut tag = prefix.to_string();
-            if !before.trim().is_empty() {
-                tag.push_str(before.trim());
-                tag.push(' ');
-            }
-            if !remaining.is_empty() {
-                tag.push_str(&format!(r#"class="{}""#, remaining.join(" ")));
-                tag.push(' ');
-            }
-            if !direction.is_empty() {
-                tag.push_str(&format!(r#"direction="{}""#, direction));
-            }
-            tag = tag.trim_end().to_string();
-            let closing = after.trim_start_matches(|c: char| c != '>' && c != '/');
-            format!("{}{}", tag, closing)
-        })
-        .to_string();
-
-    if made_changes {
-        changes.push(MigrateChange {
-            description: r#"<menu class="vertical"> → <menu direction="vertical">"#.to_string(),
-        });
-    }
-
-    result
 }
 
 /// Migrate <center><menu ...></menu></center> to <menu align="center" ...>.
@@ -512,5 +390,89 @@ mod tests {
 
         // Should have multiple changes
         assert!(result.changes.len() >= 5);
+    }
+
+    // --- Phase 4 regression tests: bugs in the regex-based migrator ---
+
+    #[test]
+    fn callout_preserves_attributes_after_class() {
+        let input = r#"<callout class="primary" id="promo">M</callout>"#;
+        let result = migrate(input);
+        assert!(result.html.contains(r#"color="primary""#));
+        assert!(result.html.contains(r#"id="promo""#), "attribute dropped: {}", result.html);
+    }
+
+    #[test]
+    fn menu_attr_value_with_slash_not_corrupted() {
+        let input = r#"<menu class="vertical" data-url="a/b">x</menu>"#;
+        let result = migrate(input);
+        assert!(result.html.contains(r#"direction="vertical""#));
+        assert!(result.html.contains(r#"data-url="a/b""#), "value corrupted: {}", result.html);
+    }
+
+    #[test]
+    fn data_large_attribute_untouched() {
+        let input = r#"<column data-large="4" large="6">x</column>"#;
+        let result = migrate(input);
+        assert!(result.html.contains(r#"data-large="4""#), "data-* corrupted: {}", result.html);
+        assert!(result.html.contains(r#"lg="6""#), "real attr unmigrated: {}", result.html);
+        assert!(!result.html.contains("data-lg"));
+    }
+
+    #[test]
+    fn attr_value_containing_attr_syntax_untouched() {
+        let input = r#"<column title="large=6" large="4">x</column>"#;
+        let result = migrate(input);
+        assert!(result.html.contains(r#"title="large=6""#), "value rewritten: {}", result.html);
+        assert!(result.html.contains(r#"lg="4""#));
+    }
+
+    #[test]
+    fn data_class_not_treated_as_class() {
+        let input = r##"<button data-class="small" href="#">x</button>"##;
+        let result = migrate(input);
+        assert_eq!(result.html, input);
+        assert!(result.changes.is_empty());
+    }
+
+    #[test]
+    fn attr_value_with_gt_parses() {
+        let input = r#"<column large="6" title="a > b">x</column>"#;
+        let result = migrate(input);
+        assert!(result.html.contains(r#"lg="6""#));
+        assert!(result.html.contains(r#"title="a > b""#));
+    }
+
+    #[test]
+    fn single_quoted_values_preserved() {
+        let input = "<column large='6'>x</column>";
+        let result = migrate(input);
+        assert!(result.html.contains("lg='6'"), "quote style changed: {}", result.html);
+    }
+
+    #[test]
+    fn self_closing_spacer_migrates() {
+        let input = r#"<spacer size="16"/>"#;
+        let result = migrate(input);
+        assert!(result.html.contains(r#"height="16""#));
+        assert!(result.html.trim_end().ends_with("/>"));
+    }
+
+    #[test]
+    fn uppercase_v1_tag_migrated() {
+        let input = r#"<COLUMNS LARGE="6">x</COLUMNS>"#;
+        let result = migrate(input);
+        assert!(result.html.contains("<column"), "uppercase tag skipped: {}", result.html);
+        assert!(result.html.contains(r#"lg="6""#));
+        assert!(result.html.contains("</column>"));
+    }
+
+    #[test]
+    fn bytes_outside_migrated_tags_preserved() {
+        let input = "prefix &amp; entities <b>bold</b>\n\t <spacer size=\"4\"></spacer> suffix &lt;";
+        let result = migrate(input);
+        assert!(result.html.starts_with("prefix &amp; entities <b>bold</b>\n\t "));
+        assert!(result.html.ends_with(" suffix &lt;"));
+        assert!(result.html.contains(r#"<spacer height="4"></spacer>"#));
     }
 }

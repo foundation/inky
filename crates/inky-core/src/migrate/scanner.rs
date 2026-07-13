@@ -6,9 +6,6 @@
 //! elements — stays inside `Text` and is emitted byte-for-byte. Migration
 //! must never guess: when in doubt, it is text.
 
-// Wired into migrate() in the next task; remove this allow then.
-#![allow(dead_code)]
-
 use std::ops::Range;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
