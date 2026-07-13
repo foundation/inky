@@ -100,6 +100,28 @@ char *inky_validate(const char *input);
 char *inky_to_plain_text(const char *input);
 
 /**
+ * Run the full build pipeline: layout/include/custom-component resolution,
+ * template data merge, framework SCSS compilation and injection, component
+ * transform, CSS inlining, and output cleanup — the same pipeline `inky build`
+ * runs.
+ *
+ * `base_path` (nullable) is the directory used to resolve layouts, includes,
+ * custom components, and linked SCSS/CSS. `options_json` (nullable) is a JSON
+ * object; see BuildOptions for keys and defaults.
+ *
+ * Returns a JSON envelope:
+ *   `{"ok": true, "html": "...", "warnings": [...]}` (+ `"text"` when
+ *   `plain_text` was requested), or
+ *   `{"ok": false, "error": "...", "warnings": [...]}`.
+ * Returns null only if `input` is null or an internal error occurs.
+ * Caller must free the returned string with inky_free().
+ *
+ * # Safety
+ * Each pointer must be null or a valid null-terminated C string.
+ */
+char *inky_build(const char *input, const char *base_path, const char *options_json);
+
+/**
  * Get the Inky version string.
  * Caller must free the returned string with inky_free().
  */

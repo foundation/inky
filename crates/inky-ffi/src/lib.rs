@@ -1,4 +1,5 @@
 use inky_core::migrate;
+use inky_core::pipeline::{Pipeline, PipelineOptions};
 use inky_core::validate::{self, Severity};
 use inky_core::{Config, Inky, OutputMode};
 use std::ffi::{CStr, CString};
@@ -209,6 +210,106 @@ pub unsafe extern "C" fn inky_to_plain_text(input: *const c_char) -> *mut c_char
     ffi_result(move || inky_core::plaintext::html_to_plain_text(&html))
 }
 
+/// Options accepted by `inky_build`. All fields optional; unknown keys ignored.
+#[derive(serde::Deserialize, Default)]
+#[serde(default)]
+struct BuildOptions {
+    inline_css: Option<bool>,
+    framework_css: Option<bool>,
+    components_dir: Option<String>,
+    columns: Option<u32>,
+    hybrid: bool,
+    bulletproof_buttons: bool,
+    plain_text: bool,
+    data: Option<serde_json::Value>,
+}
+
+fn error_envelope(message: &str, warnings: &[String]) -> String {
+    serde_json::json!({ "ok": false, "error": message, "warnings": warnings }).to_string()
+}
+
+/// Run the full build pipeline: layout/include/custom-component resolution,
+/// template data merge, framework SCSS compilation and injection, component
+/// transform, CSS inlining, and output cleanup — the same pipeline `inky build`
+/// runs.
+///
+/// `base_path` (nullable) is the directory used to resolve layouts, includes,
+/// custom components, and linked SCSS/CSS. `options_json` (nullable) is a JSON
+/// object; see BuildOptions for keys and defaults.
+///
+/// Returns a JSON envelope:
+///   `{"ok": true, "html": "...", "warnings": [...]}` (+ `"text"` when
+///   `plain_text` was requested), or
+///   `{"ok": false, "error": "...", "warnings": [...]}`.
+/// Returns null only if `input` is null or an internal error occurs.
+/// Caller must free the returned string with inky_free().
+///
+/// # Safety
+/// Each pointer must be null or a valid null-terminated C string.
+#[no_mangle]
+pub unsafe extern "C" fn inky_build(
+    input: *const c_char,
+    base_path: *const c_char,
+    options_json: *const c_char,
+) -> *mut c_char {
+    let Some(html) = (unsafe { arg_str(input) }) else {
+        return std::ptr::null_mut();
+    };
+    let base = unsafe { arg_str(base_path) };
+    let opts_raw = unsafe { arg_str(options_json) };
+
+    ffi_result(move || {
+        let opts: BuildOptions = match opts_raw.as_deref().filter(|s| !s.trim().is_empty()) {
+            Some(s) => match serde_json::from_str(s) {
+                Ok(o) => o,
+                Err(e) => return error_envelope(&format!("Invalid options JSON: {}", e), &[]),
+            },
+            None => BuildOptions::default(),
+        };
+
+        let config = Config {
+            column_count: opts.columns.unwrap_or(12),
+            output_mode: if opts.hybrid {
+                OutputMode::Hybrid
+            } else {
+                OutputMode::Table
+            },
+            bulletproof_buttons: opts.bulletproof_buttons,
+            ..Config::default()
+        };
+        let pipeline_options = PipelineOptions {
+            inline_css: opts.inline_css.unwrap_or(true),
+            framework_css: opts.framework_css.unwrap_or(true),
+            components_dir: opts
+                .components_dir
+                .unwrap_or_else(|| "components".to_string()),
+        };
+
+        let pipeline = Pipeline::new(config, pipeline_options);
+        match pipeline.process(
+            &html,
+            base.as_deref().map(std::path::Path::new),
+            opts.data.as_ref(),
+        ) {
+            Ok(processed) => {
+                let mut envelope = serde_json::json!({
+                    "ok": true,
+                    "html": processed.html,
+                    "warnings": processed.warnings,
+                });
+                if opts.plain_text {
+                    let text = inky_core::plaintext::html_to_plain_text(
+                        envelope["html"].as_str().unwrap_or_default(),
+                    );
+                    envelope["text"] = serde_json::Value::String(text);
+                }
+                envelope.to_string()
+            }
+            Err(e) => error_envelope(&e.to_string(), &e.warnings),
+        }
+    })
+}
+
 /// Get the Inky version string.
 /// Caller must free the returned string with inky_free().
 #[no_mangle]
@@ -284,5 +385,102 @@ mod tests {
         let s = unsafe { CStr::from_ptr(out) }.to_str().unwrap();
         assert!(s.contains("https://x.com"));
         unsafe { inky_free(out) };
+    }
+
+    fn call_build(html: &str, base: Option<&str>, opts: Option<&str>) -> serde_json::Value {
+        let html_c = CString::new(html).unwrap();
+        let base_c = base.map(|s| CString::new(s).unwrap());
+        let opts_c = opts.map(|s| CString::new(s).unwrap());
+        let ptr = unsafe {
+            inky_build(
+                html_c.as_ptr(),
+                base_c.as_ref().map_or(std::ptr::null(), |c| c.as_ptr()),
+                opts_c.as_ref().map_or(std::ptr::null(), |c| c.as_ptr()),
+            )
+        };
+        assert!(!ptr.is_null(), "inky_build returned null");
+        let s = unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned();
+        unsafe { inky_free(ptr) };
+        serde_json::from_str(&s).expect("envelope is not valid JSON")
+    }
+
+    #[test]
+    fn build_success_envelope() {
+        let env = call_build(
+            r#"<button href="https://x.dev">Go</button>"#,
+            None,
+            Some(r#"{"framework_css": false, "inline_css": false}"#),
+        );
+        assert_eq!(env["ok"], true);
+        assert!(env["html"].as_str().unwrap().contains(r#"class="button""#));
+        assert!(env["warnings"].as_array().unwrap().is_empty());
+        assert!(env.get("text").is_none());
+    }
+
+    #[test]
+    fn build_with_data_and_plain_text() {
+        let env = call_build(
+            "<p>Hi {{ name }}</p>",
+            None,
+            Some(r#"{"framework_css": false, "inline_css": false, "plain_text": true, "data": {"name": "Joe"}}"#),
+        );
+        assert_eq!(env["ok"], true);
+        assert!(env["html"].as_str().unwrap().contains("Hi Joe"));
+        assert!(env["text"].as_str().unwrap().contains("Hi Joe"));
+    }
+
+    #[test]
+    fn build_error_envelope_with_prefix() {
+        let dir = std::env::temp_dir().join("inky-ffi-build-err");
+        std::fs::create_dir_all(&dir).unwrap();
+        let env = call_build(
+            r#"<layout src="nope.html"><p>x</p></layout>"#,
+            Some(dir.to_str().unwrap()),
+            None,
+        );
+        assert_eq!(env["ok"], false);
+        assert!(env["error"].as_str().unwrap().starts_with("Failed to load layout 'nope.html'"));
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn build_error_envelope_carries_warnings() {
+        let dir = std::env::temp_dir().join("inky-ffi-build-warn");
+        std::fs::create_dir_all(&dir).unwrap();
+        let env = call_build(
+            r#"<link rel="stylesheet" href="nope.scss"><style type="text/scss">$broken: {</style><p>x</p>"#,
+            Some(dir.to_str().unwrap()),
+            None,
+        );
+        assert_eq!(env["ok"], false);
+        assert!(env["error"].as_str().unwrap().starts_with("SCSS compilation failed:"));
+        let warnings = env["warnings"].as_array().unwrap();
+        assert_eq!(warnings.len(), 1);
+        assert!(warnings[0].as_str().unwrap().contains("nope.scss"));
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn build_invalid_options_is_envelope_not_null() {
+        let env = call_build("<p>x</p>", None, Some("{not json"));
+        assert_eq!(env["ok"], false);
+        assert!(env["error"].as_str().unwrap().starts_with("Invalid options JSON:"));
+    }
+
+    #[test]
+    fn build_null_input_returns_null() {
+        let ptr = unsafe { inky_build(std::ptr::null(), std::ptr::null(), std::ptr::null()) };
+        assert!(ptr.is_null());
+    }
+
+    #[test]
+    fn build_hybrid_and_columns_options() {
+        let env = call_build(
+            "<row><column>A</column><column>B</column></row>",
+            None,
+            Some(r#"{"framework_css": false, "inline_css": false, "hybrid": true, "columns": 12}"#),
+        );
+        assert_eq!(env["ok"], true);
+        assert!(env["html"].as_str().unwrap().contains("<!--[if mso]>"));
     }
 }
