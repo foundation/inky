@@ -36,3 +36,5 @@ Thumbs.db
 # Legacy
 test/fixtures/_build
 /docs/superpowers
+__pycache__/
+*.pyc
