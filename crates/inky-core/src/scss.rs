@@ -225,7 +225,7 @@ pub fn compile_framework_scss(user_scss: &str) -> Result<String, InkyError> {
         .style(grass::OutputStyle::Compressed)
         .fs(&embedded_fs);
 
-    let css = grass::from_path(&entry_path, &options).map_err(InkyError::Scss)?;
+    let css = grass::from_path(&entry_path, &options).map_err(|e| InkyError::Scss(e.to_string()))?;
     Ok(css.replace(" !important", "!important"))
 }
 

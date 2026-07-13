@@ -17,8 +17,8 @@ pub enum InkyError {
     Template(String),
     /// Framework SCSS compilation failed.
     #[cfg(feature = "pipeline")]
-    #[error(transparent)]
-    Scss(Box<grass::Error>),
+    #[error("{0}")]
+    Scss(String),
     /// CSS inlining failed.
     #[cfg(feature = "css-inlining")]
     #[error("{0}")]
