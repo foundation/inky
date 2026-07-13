@@ -2,6 +2,7 @@ pub mod attrs;
 pub mod color;
 pub mod components;
 pub mod config;
+mod error;
 pub mod include;
 #[cfg(feature = "css-inlining")]
 pub mod inline;
@@ -26,6 +27,7 @@ static RE_RAW_BLOCKS: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?s)(?:\n *)?< *raw *>(.*?)</ *raw *>(?: *\n)?").unwrap());
 
 pub use config::{ComponentNames, Config, OutputMode};
+pub use error::InkyError;
 
 /// The Inky parser. Converts simple HTML tags into email-safe table markup.
 pub struct Inky {
@@ -88,7 +90,7 @@ impl Inky {
         &self,
         html: &str,
         base_path: Option<&std::path::Path>,
-    ) -> Result<String, String> {
+    ) -> Result<String, InkyError> {
         let transformed = self.transform(html);
         inline::inline_css(&transformed, base_path)
     }
@@ -98,7 +100,7 @@ impl Inky {
         &self,
         html: &str,
         base_path: &std::path::Path,
-    ) -> Result<String, String> {
+    ) -> Result<String, InkyError> {
         let resolved = include::process_includes(html, base_path)?;
         Ok(self.transform(&resolved))
     }
@@ -110,7 +112,7 @@ impl Inky {
         html: &str,
         include_base: &std::path::Path,
         css_base: Option<&std::path::Path>,
-    ) -> Result<String, String> {
+    ) -> Result<String, InkyError> {
         let resolved = include::process_includes(html, include_base)?;
         self.transform_and_inline(&resolved, css_base)
     }

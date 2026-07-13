@@ -194,7 +194,7 @@ mod tests {
         let data = json!({});
         let result = render_template(template, &data, true);
         assert!(result.is_err());
-        let err = result.unwrap_err();
+        let err = result.unwrap_err().to_string();
         assert!(
             err.contains("undefined") || err.contains("unknown"),
             "Expected error about undefined variable, got: {}",

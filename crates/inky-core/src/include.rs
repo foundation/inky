@@ -1,9 +1,11 @@
 use regex::Regex;
 use std::path::{Path, PathBuf};
 
+use crate::InkyError;
+
 /// Trait for resolving include paths to their content.
 pub trait IncludeResolver {
-    fn resolve(&self, path: &str) -> Result<String, String>;
+    fn resolve(&self, path: &str) -> Result<String, InkyError>;
 }
 
 /// Resolves includes from the filesystem, relative to a base path.
@@ -20,15 +22,15 @@ impl FileIncludeResolver {
 }
 
 impl IncludeResolver for FileIncludeResolver {
-    fn resolve(&self, path: &str) -> Result<String, String> {
+    fn resolve(&self, path: &str) -> Result<String, InkyError> {
         let full_path = self.base_path.join(path);
         std::fs::read_to_string(&full_path).map_err(|e| {
-            format!(
+            InkyError::Include(format!(
                 "Failed to include '{}' (resolved to '{}'): {}",
                 path,
                 full_path.display(),
                 e
-            )
+            ))
         })
     }
 }
@@ -75,7 +77,7 @@ fn replace_variables(content: &str, vars: &[(String, String)]) -> String {
 /// and replace `$name$` placeholders in the layout file.
 ///
 /// If no `<layout>` tag is found, the content is returned as-is.
-pub fn process_layout(html: &str, base_path: &Path) -> Result<String, String> {
+pub fn process_layout(html: &str, base_path: &Path) -> Result<String, InkyError> {
     let layout_re = Regex::new(r#"(?s)<layout\s+((?:[^>]*?))\s*>(.*)"#).unwrap();
 
     if let Some(caps) = layout_re.captures(html) {
@@ -87,7 +89,7 @@ pub fn process_layout(html: &str, base_path: &Path) -> Result<String, String> {
             .iter()
             .find(|(name, _)| name == "src")
             .map(|(_, v)| v.clone())
-            .ok_or_else(|| "Layout tag is missing src attribute".to_string())?;
+            .ok_or_else(|| InkyError::Include("Layout tag is missing src attribute".to_string()))?;
 
         // Collect variables (all attributes except src)
         let vars: Vec<(String, String)> = attrs
@@ -97,12 +99,12 @@ pub fn process_layout(html: &str, base_path: &Path) -> Result<String, String> {
 
         let layout_path = base_path.join(&layout_src);
         let layout_html = std::fs::read_to_string(&layout_path).map_err(|e| {
-            format!(
+            InkyError::Include(format!(
                 "Failed to load layout '{}' (resolved to '{}'): {}",
                 layout_src,
                 layout_path.display(),
                 e
-            )
+            ))
         })?;
 
         // Replace $name$ variables in the layout
@@ -111,10 +113,10 @@ pub fn process_layout(html: &str, base_path: &Path) -> Result<String, String> {
         // Replace <yield>, <yield/>, or <yield /> in the layout with the content
         let yield_re = Regex::new(r"<yield\s*/?\s*>").unwrap();
         if !yield_re.is_match(&layout_html) {
-            return Err(format!(
+            return Err(InkyError::Include(format!(
                 "Layout '{}' does not contain a <yield> tag",
                 layout_src
-            ));
+            )));
         }
 
         Ok(yield_re.replace(&layout_html, content).to_string())
@@ -128,7 +130,7 @@ pub fn process_layout(html: &str, base_path: &Path) -> Result<String, String> {
 ///
 /// Includes are resolved recursively (included files may themselves contain includes),
 /// up to a maximum depth to prevent infinite loops.
-pub fn process_includes(html: &str, base_path: &Path) -> Result<String, String> {
+pub fn process_includes(html: &str, base_path: &Path) -> Result<String, InkyError> {
     let resolver = FileIncludeResolver::new(base_path);
     process_includes_recursive(html, &resolver, 0)
 }
@@ -137,7 +139,7 @@ pub fn process_includes(html: &str, base_path: &Path) -> Result<String, String> 
 pub fn process_includes_with_resolver(
     html: &str,
     resolver: &dyn IncludeResolver,
-) -> Result<String, String> {
+) -> Result<String, InkyError> {
     process_includes_recursive(html, resolver, 0)
 }
 
@@ -145,12 +147,12 @@ fn process_includes_recursive(
     html: &str,
     resolver: &dyn IncludeResolver,
     depth: usize,
-) -> Result<String, String> {
+) -> Result<String, InkyError> {
     if depth >= MAX_INCLUDE_DEPTH {
-        return Err(format!(
+        return Err(InkyError::Include(format!(
             "Maximum include depth ({}) exceeded — check for circular includes",
             MAX_INCLUDE_DEPTH
-        ));
+        )));
     }
 
     // Match <include ...> and <include ... /> with any attributes
@@ -172,7 +174,7 @@ fn process_includes_recursive(
             .iter()
             .find(|(name, _)| name == "src")
             .map(|(_, v)| v.clone())
-            .ok_or_else(|| "Include tag is missing src attribute".to_string())?;
+            .ok_or_else(|| InkyError::Include("Include tag is missing src attribute".to_string()))?;
 
         let vars: Vec<(String, String)> = attrs
             .into_iter()
@@ -216,7 +218,7 @@ struct NestedResolver<'a> {
 }
 
 impl<'a> IncludeResolver for NestedResolver<'a> {
-    fn resolve(&self, path: &str) -> Result<String, String> {
+    fn resolve(&self, path: &str) -> Result<String, InkyError> {
         let prefixed = format!("{}/{}", self.prefix, path);
         self.parent.resolve(&prefixed)
     }
@@ -231,7 +233,7 @@ pub fn process_custom_components(
     html: &str,
     base_path: &Path,
     components_dir: &str,
-) -> Result<String, String> {
+) -> Result<String, InkyError> {
     let components_path = Path::new(components_dir);
     let resolved = if components_path.is_absolute() {
         components_path.to_path_buf()
@@ -246,7 +248,7 @@ pub fn process_custom_components(
 pub fn process_custom_components_with_resolver(
     html: &str,
     resolver: &dyn IncludeResolver,
-) -> Result<String, String> {
+) -> Result<String, InkyError> {
     process_custom_components_recursive(html, resolver, 0)
 }
 
@@ -254,12 +256,12 @@ fn process_custom_components_recursive(
     html: &str,
     resolver: &dyn IncludeResolver,
     depth: usize,
-) -> Result<String, String> {
+) -> Result<String, InkyError> {
     if depth >= MAX_INCLUDE_DEPTH {
-        return Err(format!(
+        return Err(InkyError::Include(format!(
             "Maximum custom component depth ({}) exceeded — check for circular components",
             MAX_INCLUDE_DEPTH
-        ));
+        )));
     }
 
     // Match <ink-NAME ...> opening tags (not self-closing)
@@ -332,10 +334,10 @@ fn process_custom_components_recursive(
                         pos = ce;
                     }
                     _ => {
-                        return Err(format!(
+                        return Err(InkyError::Include(format!(
                             "Missing closing tag {} for custom component",
                             close_tag
-                        ));
+                        )));
                     }
                 }
             }
@@ -366,13 +368,13 @@ fn resolve_component(
     inner_content: &str,
     resolver: &dyn IncludeResolver,
     depth: usize,
-) -> Result<String, String> {
+) -> Result<String, InkyError> {
     let file_name = format!("{}.inky", name);
     let template = resolver.resolve(&file_name).map_err(|_| {
-        format!(
+        InkyError::Include(format!(
             "Custom component <ink-{}> not found: could not load '{}'. Create this file in your components directory.",
             name, file_name
-        )
+        ))
     })?;
 
     let attrs = parse_attributes(attrs_str);
@@ -397,11 +399,11 @@ mod tests {
     }
 
     impl IncludeResolver for MapResolver {
-        fn resolve(&self, path: &str) -> Result<String, String> {
+        fn resolve(&self, path: &str) -> Result<String, InkyError> {
             self.files
                 .get(path)
                 .cloned()
-                .ok_or_else(|| format!("File not found: {}", path))
+                .ok_or_else(|| InkyError::Include(format!("File not found: {}", path)))
         }
     }
 
@@ -476,7 +478,7 @@ mod tests {
         let html = r#"<include src="nonexistent.inky">"#;
         let result = process_includes_with_resolver(html, &resolver);
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("nonexistent.inky"));
+        assert!(result.unwrap_err().to_string().contains("nonexistent.inky"));
     }
 
     #[test]
@@ -503,7 +505,7 @@ mod tests {
         let html = r#"<include src="a.inky">"#;
         let result = process_includes_with_resolver(html, &resolver);
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Maximum include depth"));
+        assert!(result.unwrap_err().to_string().contains("Maximum include depth"));
     }
 
     #[test]
@@ -731,7 +733,7 @@ mod tests {
         let html = r#"<ink-missing />"#;
         let result = process_custom_components_with_resolver(html, &resolver);
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("ink-missing"));
+        assert!(result.unwrap_err().to_string().contains("ink-missing"));
     }
 
     #[test]
@@ -748,6 +750,7 @@ mod tests {
         assert!(result.is_err());
         assert!(result
             .unwrap_err()
+            .to_string()
             .contains("Maximum custom component depth"));
     }
 
@@ -777,6 +780,32 @@ mod tests {
         let html = "<p>No custom components here</p>";
         let result = process_custom_components_with_resolver(html, &resolver).unwrap();
         assert_eq!(result, html);
+    }
+
+    #[test]
+    fn missing_layout_error_message_and_variant() {
+        let dir = std::env::temp_dir().join("inky-e5-layout");
+        std::fs::create_dir_all(&dir).unwrap();
+        let err = process_layout(r#"<layout src="nope.html"><p>x</p>"#, &dir).unwrap_err();
+        assert!(matches!(err, crate::InkyError::Include(_)));
+        let msg = err.to_string();
+        assert!(msg.starts_with("Failed to load layout 'nope.html'"), "message changed: {msg}");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn include_depth_error_message_preserved() {
+        struct Loop;
+        impl IncludeResolver for Loop {
+            fn resolve(&self, _path: &str) -> Result<String, crate::InkyError> {
+                Ok(r#"<include src="again.html">"#.to_string())
+            }
+        }
+        let err = process_includes_with_resolver(r#"<include src="a.html">"#, &Loop).unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "Maximum include depth (10) exceeded — check for circular includes"
+        );
     }
 
     #[test]

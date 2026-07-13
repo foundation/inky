@@ -1,6 +1,8 @@
 use css_inline::{CSSInliner, InlineOptions};
 use regex::Regex;
 
+use crate::InkyError;
+
 /// Inline CSS into element `style=""` attributes.
 ///
 /// Resolves both `<style>` blocks and `<link rel="stylesheet" href="...">` tags.
@@ -9,7 +11,7 @@ use regex::Regex;
 ///
 /// `base_path` is the directory used to resolve relative `href` paths in
 /// `<link>` tags. If `None`, link tags with relative paths won't resolve.
-pub fn inline_css(html: &str, base_path: Option<&std::path::Path>) -> Result<String, String> {
+pub fn inline_css(html: &str, base_path: Option<&std::path::Path>) -> Result<String, InkyError> {
     // Resolve <link rel="stylesheet"> tags to inline <style> blocks ourselves,
     // rather than relying on css_inline's file URL resolution which breaks on Windows.
     let html = resolve_link_tags(html, base_path);
@@ -23,7 +25,9 @@ pub fn inline_css(html: &str, base_path: Option<&std::path::Path>) -> Result<Str
         ..InlineOptions::default()
     };
     let inliner = CSSInliner::new(options);
-    let result = inliner.inline(&html).map_err(|e| e.to_string())?;
+    let result = inliner
+        .inline(&html)
+        .map_err(|e| InkyError::CssInline(e.to_string()))?;
 
     // Move remaining <style> blocks from <head> to end of <body>.
     // Gmail clips emails at ~102KB — styles in <head> eat into that budget

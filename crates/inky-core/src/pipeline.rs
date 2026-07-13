@@ -64,15 +64,18 @@ impl Pipeline {
     ) -> Result<Processed, String> {
         let mut warnings = Vec::new();
 
+        // Task 2 removes these shims
         // Layout → custom components → includes
         let mut html = if let Some(base) = base_path {
-            let with_layout = crate::include::process_layout(html, base)?;
+            let with_layout =
+                crate::include::process_layout(html, base).map_err(|e| e.to_string())?;
             let with_components = crate::include::process_custom_components(
                 &with_layout,
                 base,
                 &self.options.components_dir,
-            )?;
-            crate::include::process_includes(&with_components, base)?
+            )
+            .map_err(|e| e.to_string())?;
+            crate::include::process_includes(&with_components, base).map_err(|e| e.to_string())?
         } else {
             html.to_string()
         };

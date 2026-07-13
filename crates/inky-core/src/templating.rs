@@ -1,11 +1,17 @@
 use minijinja::{Environment, UndefinedBehavior};
 use serde_json::Value as JsonValue;
 
+use crate::InkyError;
+
 /// Render a MiniJinja template string with the provided JSON data.
 ///
 /// When `strict` is false (the default), missing variables render as empty strings.
 /// When `strict` is true, missing variables cause an error.
-pub fn render_template(template: &str, data: &JsonValue, strict: bool) -> Result<String, String> {
+pub fn render_template(
+    template: &str,
+    data: &JsonValue,
+    strict: bool,
+) -> Result<String, InkyError> {
     let mut env = Environment::new();
     if strict {
         env.set_undefined_behavior(UndefinedBehavior::Strict);
@@ -14,15 +20,15 @@ pub fn render_template(template: &str, data: &JsonValue, strict: bool) -> Result
     }
 
     env.add_template("__inky__", template)
-        .map_err(|e| format!("Template parse error: {}", e))?;
+        .map_err(|e| InkyError::Template(format!("Template parse error: {}", e)))?;
 
     let tmpl = env
         .get_template("__inky__")
-        .map_err(|e| format!("Template error: {}", e))?;
+        .map_err(|e| InkyError::Template(format!("Template error: {}", e)))?;
 
     let ctx = minijinja::Value::from_serialize(data);
     tmpl.render(ctx)
-        .map_err(|e| format!("Template render error: {}", e))
+        .map_err(|e| InkyError::Template(format!("Template render error: {}", e)))
 }
 
 #[cfg(test)]
@@ -81,6 +87,14 @@ mod tests {
     fn test_filter() {
         let result = render_template("{{ name | upper }}", &json!({"name": "hello"}), false);
         assert_eq!(result.unwrap(), "HELLO");
+    }
+
+    #[test]
+    fn template_error_variant_and_prefix() {
+        let data = serde_json::json!({});
+        let err = render_template("{% invalid", &data, false).unwrap_err();
+        assert!(matches!(err, crate::InkyError::Template(_)));
+        assert!(err.to_string().starts_with("Template parse error:"), "prefix changed: {err}");
     }
 
     #[test]
