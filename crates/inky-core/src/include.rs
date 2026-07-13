@@ -57,7 +57,9 @@ fn replace_variables(content: &str, vars: &[(String, String)]) -> String {
     // Then replace simple $name$ patterns where a value was provided
     for (name, value) in vars {
         let default_re = Regex::new(&format!(r"\${}(?:\|[^$]*)?\$", regex::escape(name))).unwrap();
-        result = default_re.replace_all(&result, value.as_str()).to_string();
+        result = default_re
+            .replace_all(&result, regex::NoExpand(value.as_str()))
+            .to_string();
     }
 
     // Replace any remaining $name|default$ with their default values
@@ -119,7 +121,9 @@ pub fn process_layout(html: &str, base_path: &Path) -> Result<String, InkyError>
             )));
         }
 
-        Ok(yield_re.replace(&layout_html, content).to_string())
+        Ok(yield_re
+            .replace(&layout_html, regex::NoExpand(content))
+            .to_string())
     } else {
         Ok(html.to_string())
     }
@@ -382,7 +386,9 @@ fn resolve_component(
 
     // Replace <yield> with inner content
     let yield_re = Regex::new(r"<yield\s*/?\s*>").unwrap();
-    let resolved = yield_re.replace_all(&template, inner_content).to_string();
+    let resolved = yield_re
+        .replace_all(&template, regex::NoExpand(inner_content))
+        .to_string();
 
     // Recursively process any nested ink- tags in the result
     process_custom_components_recursive(&resolved, resolver, depth + 1)
@@ -821,5 +827,58 @@ mod tests {
         let html = r#"<ink-wrapper />"#;
         let result = process_custom_components_with_resolver(html, &resolver).unwrap();
         assert_eq!(result, r#"<div><include src="inner.html"></div>"#);
+    }
+
+    // --- Regex replacement-string expansion ("$N") regression tests ---
+
+    #[test]
+    fn yield_content_with_dollar_amounts_survives() {
+        let dir = std::env::temp_dir().join("inky-yield-dollar");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("layout.html"), "<html><body><yield /></body></html>").unwrap();
+        let out = process_layout("<layout src=\"layout.html\"><p>Total: $17.00 and $5</p></layout>", &dir).unwrap();
+        assert!(out.contains("Total: $17.00 and $5"), "dollar content mangled: {out}");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn layout_variable_value_with_dollar_survives() {
+        let dir = std::env::temp_dir().join("inky-var-dollar");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("layout.html"), "<html><head><title>$title$</title></head><body><yield /></body></html>").unwrap();
+        let out = process_layout("<layout src=\"layout.html\" title=\"Sale: save $10\"><p>x</p></layout>", &dir).unwrap();
+        assert!(out.contains("Sale: save $10"), "variable value mangled: {out}");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn include_variable_value_with_dollar_survives() {
+        let mut files = HashMap::new();
+        files.insert(
+            "greeting.inky".to_string(),
+            "<p>$msg$</p>".to_string(),
+        );
+        let resolver = MapResolver { files };
+
+        let html = r#"<include src="greeting.inky" msg="Save $5 today">"#;
+        let result = process_includes_with_resolver(html, &resolver).unwrap();
+        assert_eq!(result, "<p>Save $5 today</p>");
+    }
+
+    #[test]
+    fn custom_component_yield_body_with_dollar_survives() {
+        let mut files = HashMap::new();
+        files.insert(
+            "card.inky".to_string(),
+            "<div class=\"card\"><yield></div>".to_string(),
+        );
+        let resolver = MapResolver { files };
+
+        let html = r#"<ink-card><p>Total: $17.00 and $5</p></ink-card>"#;
+        let result = process_custom_components_with_resolver(html, &resolver).unwrap();
+        assert_eq!(
+            result,
+            r#"<div class="card"><p>Total: $17.00 and $5</p></div>"#
+        );
     }
 }

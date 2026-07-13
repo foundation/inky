@@ -21,6 +21,7 @@ All notable changes to the Inky project will be documented in this file.
 
 ### Fixed
 
+- Literal `$` in template content, layout variable values, custom-component slot content, or included files is no longer mangled by layout/include/component substitution (regex replacement-string expansion — e.g. `$17.00` parsed as a capture-group reference — is now disabled for user content via `regex::NoExpand`).
 - A capitalized component tag (`<Button>`) no longer silently halts transformation of the entire document.
 - Component tag names inside attribute values (e.g. `title="see <button>"`) are no longer transformed.
 - An HTML comment between columns no longer breaks grid width math.
