@@ -129,6 +129,39 @@ assert_true "returns a string", v.is_a?(String)
 assert_true "looks like semver", v.count(".") >= 2
 assert_true "is 2.x", v.start_with?("2.")
 
+# --- build (full pipeline) ---
+require "json"
+require "tmpdir"
+
+result = Inky.build('<button href="https://x.dev">Go</button>', framework_css: false, inline_css: false)
+raise "html missing button class" unless result.html.include?('class="button"')
+raise "warnings not empty" unless result.warnings == []
+raise "text should be nil" unless result.text.nil?
+puts "build basic ok"
+
+result = Inky.build('<p>Hi {{ name }}</p>', framework_css: false, inline_css: false,
+                    plain_text: true, data: { name: "Joe" })
+raise "merge failed" unless result.html.include?("Hi Joe")
+raise "text merge failed" unless result.text.include?("Hi Joe")
+puts "build data+text ok"
+
+Dir.mktmpdir("inky-rb-build-") do |tmp|
+  File.write(File.join(tmp, "layout.html"), "<html><body><yield /></body></html>")
+  result = Inky.build('<layout src="layout.html"><p>inner</p></layout>', base_path: tmp,
+                      framework_css: false, inline_css: false)
+  raise "layout not applied" unless result.html.include?("<p>inner</p>") && result.html.include?("<body>")
+  puts "build layout ok"
+
+  begin
+    Inky.build('<layout src="nope.html"><p>x</p></layout>', base_path: tmp, framework_css: false)
+    raise "FAIL: expected Inky::BuildError"
+  rescue Inky::BuildError => e
+    raise "wrong message: #{e.message}" unless e.message.start_with?("Failed to load layout 'nope.html'")
+    raise "warnings missing" unless e.warnings.is_a?(Array)
+    puts "build error ok"
+  end
+end
+
 # --- Summary ---
 
 puts

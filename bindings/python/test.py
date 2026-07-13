@@ -139,6 +139,38 @@ assert_true("returns a string", isinstance(v, str))
 assert_true("looks like semver", v.count(".") >= 2)
 assert_true("is 2.x", v.startswith("2."))
 
+# --- build (full pipeline) ---
+import json, os, tempfile
+import inky
+
+result = inky.build('<button href="https://x.dev">Go</button>', framework_css=False, inline_css=False)
+assert 'class="button"' in result.html
+assert result.warnings == []
+assert result.text is None
+print("build basic ok")
+
+result = inky.build('<p>Hi {{ name }}</p>', framework_css=False, inline_css=False,
+                    plain_text=True, data={"name": "Joe"})
+assert 'Hi Joe' in result.html
+assert 'Hi Joe' in result.text
+print("build data+text ok")
+
+tmp = tempfile.mkdtemp(prefix="inky-py-build-")
+with open(os.path.join(tmp, "layout.html"), "w") as f:
+    f.write("<html><body><yield /></body></html>")
+result = inky.build('<layout src="layout.html"><p>inner</p></layout>', base_path=tmp,
+                    framework_css=False, inline_css=False)
+assert '<p>inner</p>' in result.html and '<body>' in result.html
+print("build layout ok")
+
+try:
+    inky.build('<layout src="nope.html"><p>x</p></layout>', base_path=tmp, framework_css=False)
+    raise SystemExit("FAIL: expected InkyBuildError")
+except inky.InkyBuildError as e:
+    assert str(e).startswith("Failed to load layout 'nope.html'")
+    assert isinstance(e.warnings, list)
+    print("build error ok")
+
 # --- Summary ---
 
 print()

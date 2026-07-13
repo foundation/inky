@@ -4,11 +4,14 @@ Inky — Transform email templates into email-safe HTML.
 Powered by Rust via ctypes FFI.
 """
 
+from __future__ import annotations
+
 import ctypes
 import json
 import os
 import platform
 import sys
+from dataclasses import dataclass
 
 __version__ = "2.0.0"
 
@@ -86,6 +89,9 @@ def _get_lib():
     _lib.inky_version.argtypes = []
     _lib.inky_version.restype = ctypes.c_void_p
 
+    _lib.inky_build.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p]
+    _lib.inky_build.restype = ctypes.c_void_p
+
     _lib.inky_free.argtypes = [ctypes.c_void_p]
     _lib.inky_free.restype = None
 
@@ -94,6 +100,27 @@ def _get_lib():
 
 class InkyError(RuntimeError):
     """Raised when the native inky library reports an error."""
+
+
+class InkyBuildError(RuntimeError):
+    """Raised when the full build pipeline fails.
+
+    Attributes:
+        warnings: Non-fatal notes collected before the failure.
+    """
+
+    def __init__(self, message: str, warnings: list):
+        super().__init__(message)
+        self.warnings = warnings
+
+
+@dataclass
+class BuildResult:
+    """Result of a full pipeline build."""
+
+    html: str
+    text: str | None
+    warnings: list
 
 
 def _call_str(fn, *args) -> str:
@@ -185,3 +212,43 @@ def version() -> str:
     """
     lib = _get_lib()
     return _call_str(lib.inky_version)
+
+
+def build(html: str, base_path: str | None = None, **options) -> BuildResult:
+    """Run the full build pipeline: layouts, includes, custom components,
+    data merge, framework SCSS, component transform, CSS inlining, and
+    output cleanup — identical to `inky build`.
+
+    Args:
+        html: Inky template HTML.
+        base_path: Directory used to resolve layouts, includes, custom
+            components, and linked SCSS/CSS (default: None).
+        **options: inline_css (bool), framework_css (bool),
+            components_dir (str), columns (int), hybrid (bool),
+            bulletproof_buttons (bool), plain_text (bool), data (dict of
+            merge variables).
+
+    Returns:
+        BuildResult with html, text (or None), and warnings.
+
+    Raises:
+        InkyBuildError: If the pipeline fails. Carries `.warnings`.
+    """
+    lib = _get_lib()
+    encoded_html = html.encode("utf-8")
+    encoded_base = base_path.encode("utf-8") if base_path is not None else None
+    options_json = json.dumps(options).encode("utf-8")
+
+    ptr = lib.inky_build(encoded_html, encoded_base, options_json)
+    if not ptr:
+        raise InkyError("inky native call failed (null result)")
+    try:
+        envelope = json.loads(ctypes.string_at(ptr).decode("utf-8"))
+    finally:
+        lib.inky_free(ptr)
+
+    warnings = envelope.get("warnings", [])
+    if not envelope.get("ok"):
+        raise InkyBuildError(envelope.get("error", "unknown build error"), warnings)
+
+    return BuildResult(html=envelope["html"], text=envelope.get("text"), warnings=warnings)

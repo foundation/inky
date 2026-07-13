@@ -13,6 +13,20 @@ module Inky
   # Raised when the native inky library reports an error.
   class Error < StandardError; end
 
+  # Raised when the full build pipeline fails.
+  class BuildError < StandardError
+    # @return [Array<String>] Non-fatal notes collected before the failure.
+    attr_reader :warnings
+
+    def initialize(message, warnings)
+      super(message)
+      @warnings = warnings
+    end
+  end
+
+  # Result of a full pipeline build.
+  BuildResult = Struct.new(:html, :text, :warnings, keyword_init: true)
+
   module Native
     extend Fiddle::Importer
 
@@ -55,6 +69,7 @@ module Inky
     extern "char* inky_migrate_with_details(const char*)"
     extern "char* inky_validate(const char*)"
     extern "char* inky_version()"
+    extern "char* inky_build(const char*, const char*, const char*)"
     extern "void inky_free(char*)"
   end
 
@@ -134,5 +149,32 @@ module Inky
   # @return [String] Version string
   def self.version
     string_result(Native.inky_version())
+  end
+
+  # Run the full build pipeline: layouts, includes, custom components,
+  # data merge, framework SCSS, component transform, CSS inlining, and
+  # output cleanup — identical to `inky build`.
+  #
+  # @param html [String] Inky template HTML
+  # @param base_path [String, nil] Directory used to resolve layouts,
+  #   includes, custom components, and linked SCSS/CSS
+  # @param options [Hash] inline_css, framework_css, components_dir,
+  #   columns, hybrid, bulletproof_buttons, plain_text, data (Hash of
+  #   merge variables)
+  # @return [BuildResult]
+  # @raise [BuildError] if the pipeline fails; carries #warnings
+  def self.build(html, base_path: nil, **options)
+    check_html!(html)
+    options_json = JSON.generate(options)
+
+    json = string_result(Native.inky_build(html, base_path, options_json))
+    envelope = JSON.parse(json, symbolize_names: true)
+
+    warnings = envelope[:warnings] || []
+    unless envelope[:ok]
+      raise BuildError.new(envelope[:error] || "unknown build error", warnings)
+    end
+
+    BuildResult.new(html: envelope[:html], text: envelope[:text], warnings: warnings)
   end
 end
