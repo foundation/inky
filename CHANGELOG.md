@@ -26,6 +26,7 @@ All notable changes to the Inky project will be documented in this file.
 - Attributes like `data-parsed-mode` are no longer corrupted by internal marker cleanup.
 - `<raw>` now protects `<image>` tags from preprocessing.
 - Template merge tags used in attribute position (`<row <%= attrs %>>`) now survive the transform.
+- **`inky migrate` was rewritten on a real tag scanner and can no longer corrupt templates.** Previously it was regex-based and could silently drop attributes that appeared after `class="..."` on `<callout>`/`<menu>`, mangle attribute values containing `/` or `>`, rewrite `data-large`/`data-class`-style attribute names and even attribute *values* that looked like `large=`, and skip uppercase tags. Migration now parses each tag properly: attributes are never dropped or reordered beyond the documented class→attribute conversions, matching is case-insensitive, byte-for-byte formatting is preserved everywhere except the tags actually migrated, and v1 syntax inside HTML comments, `<raw>` blocks, `<script>`/`<style>`/`<textarea>`/`<title>` content, and ERB `<% %>` tags is now correctly left alone.
 
 ## 2.0.0-beta.9
 

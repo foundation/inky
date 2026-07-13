@@ -580,6 +580,28 @@ mod tests {
         assert!(!result.html.contains("<center>"));
     }
 
+    #[test]
+    fn multiple_centered_menus_all_convert() {
+        let input = r##"<center><menu><item href="#">a</item></menu></center><center><menu><item href="#">b</item></menu></center>"##;
+        let result = migrate(input);
+        assert_eq!(result.html.matches(r#"align="center""#).count(), 2);
+        assert!(!result.html.contains("<center>"));
+        // one MigrateChange per rule invocation, not per match (matches old behavior)
+        assert_eq!(
+            result.changes.iter().filter(|c| c.description.contains("align")).count(),
+            1
+        );
+    }
+
+    #[test]
+    fn nested_center_only_inner_unwrapped() {
+        let input = "<center><center><menu><item href=\"#\">a</item></menu></center></center>";
+        let result = migrate(input);
+        assert!(result.html.contains(r#"align="center""#));
+        // The outer <center> stays: its immediate child is another <center>, not a <menu>.
+        assert!(result.html.contains("<center>"));
+    }
+
     // --- opacity regressions (the scanner guarantees these end-to-end) ---
 
     #[test]
