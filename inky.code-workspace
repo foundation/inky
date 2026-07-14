@@ -1,0 +1,26 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../inky-example-go"
+		},
+		{
+			"path": "../inky-example-node"
+		},
+		{
+			"path": "../inky-example-php"
+		},
+		{
+			"path": "../inky-example-python"
+		},
+		{
+			"path": "../inky-example-ruby"
+		},
+		{
+			"path": "../inky-go"
+		}
+	],
+	"settings": {}
+}
