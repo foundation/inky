@@ -2,7 +2,11 @@
 
 All notable changes to the Inky project will be documented in this file.
 
-## Unreleased
+## 2.0.0-beta.10
+
+### Security
+
+- **The dev server (`inky serve`) now binds to `127.0.0.1` by default** instead of `0.0.0.0`, which exposed rendered templates (including merged data) to the local network. Use the new `--host` flag to opt in to external access explicitly.
 
 ### Changed
 
@@ -21,6 +25,12 @@ All notable changes to the Inky project will be documented in this file.
 
 ### Fixed
 
+- **Outlook no longer drops content after bulletproof buttons or `<not-outlook>` blocks.** The CLI's comment stripping preserved MSO conditional openers but removed their `<!--<![endif]-->` closers, leaving unclosed conditionals that Outlook fails on.
+- **The FFI boundary can no longer abort the host process.** All C exports catch panics and null-check their arguments; invalid UTF-8 input is decoded lossily instead of silently producing an empty email. `Inky.transform(nil)` in Ruby now raises `TypeError` instead of segfaulting.
+- **The Python and Ruby bindings no longer leak every returned string** — both now free engine-allocated strings via `inky_free` (long-running workers previously grew memory on every render).
+- The tracked PHP header stub is regenerated from cbindgen on every build, so it can no longer drift from the actual C ABI (it had been missing three exported functions).
+- Fixed panics on ordinary non-ASCII content: byte-offset slicing in validation snippets, hex color parsing (`#aé` no longer crashes), and CSS/reload-script injection around multibyte characters.
+- `inky init` now refuses to overwrite existing files (pre-flight check before any write) and warns on symlink failures instead of aborting mid-scaffold.
 - Literal `$` in template content, layout variable values, custom-component slot content, or included files is no longer mangled by layout/include/component substitution (regex replacement-string expansion — e.g. `$17.00` parsed as a capture-group reference — is now disabled for user content via `regex::NoExpand`).
 - A capitalized component tag (`<Button>`) no longer silently halts transformation of the entire document.
 - Component tag names inside attribute values (e.g. `title="see <button>"`) are no longer transformed.
