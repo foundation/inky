@@ -127,10 +127,7 @@ impl Pipeline {
 /// Build a [`PipelineError`], moving the warnings collected so far onto it
 /// so they aren't lost on the Err path.
 fn fail(error: InkyError, warnings: &mut Vec<String>) -> PipelineError {
-    PipelineError {
-        error,
-        warnings: std::mem::take(warnings),
-    }
+    PipelineError::new(error, std::mem::take(warnings))
 }
 
 static RE_COMMENT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?s)<!--.*?-->").unwrap());

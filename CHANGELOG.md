@@ -2,6 +2,12 @@
 
 All notable changes to the Inky project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- `PipelineError` is now `#[non_exhaustive]` — construct it with `PipelineError::new(error, warnings)` (fields remain publicly readable). Its `source()` now returns `None` per the `Error::source` convention, since `Display` already includes the underlying error's message (fixes double-printing in `anyhow`-style error chains); the underlying `InkyError` remains available via the `error` field.
+
 ## 2.0.0-beta.10
 
 ### Security

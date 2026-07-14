@@ -333,20 +333,23 @@ fn build_file(
 
     let dest = to_output_path(file, input_dir, output_dir);
     if let Some(parent) = dest.parent() {
-        std::fs::create_dir_all(parent).map_err(|e| PipelineError {
-            error: InkyError::Io(format!("Failed to create directory: {}", e)),
-            warnings: Vec::new(),
+        std::fs::create_dir_all(parent).map_err(|e| {
+            PipelineError::new(
+                InkyError::Io(format!("Failed to create directory: {}", e)),
+                Vec::new(),
+            )
         })?;
     }
-    std::fs::write(&dest, &built.html).map_err(|e| PipelineError {
-        error: InkyError::Io(format!("Failed to write: {}", e)),
-        warnings: Vec::new(),
+    std::fs::write(&dest, &built.html).map_err(|e| {
+        PipelineError::new(InkyError::Io(format!("Failed to write: {}", e)), Vec::new())
     })?;
     if let Some(ref txt) = built.plain_text {
         let txt_path = dest.with_extension("txt");
-        std::fs::write(&txt_path, txt).map_err(|e| PipelineError {
-            error: InkyError::Io(format!("Failed to write {}: {}", txt_path.display(), e)),
-            warnings: Vec::new(),
+        std::fs::write(&txt_path, txt).map_err(|e| {
+            PipelineError::new(
+                InkyError::Io(format!("Failed to write {}: {}", txt_path.display(), e)),
+                Vec::new(),
+            )
         })?;
     }
 

@@ -98,9 +98,11 @@ impl Builder {
         input_dir: &Path,
         data: &DataSource,
     ) -> Result<BuiltFile, PipelineError> {
-        let html = std::fs::read_to_string(file).map_err(|e| PipelineError {
-            error: InkyError::Io(format!("Failed to read {}: {}", file.display(), e)),
-            warnings: Vec::new(),
+        let html = std::fs::read_to_string(file).map_err(|e| {
+            PipelineError::new(
+                InkyError::Io(format!("Failed to read {}: {}", file.display(), e)),
+                Vec::new(),
+            )
         })?;
         let file_data = resolve_data_for_file(file, input_dir, data);
         self.build_source(&html, file.parent(), file_data.as_ref())
