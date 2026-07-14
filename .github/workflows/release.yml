@@ -283,3 +283,22 @@ jobs:
           gem push "$GEM_FILE"
         env:
           GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+
+  sync-php-split:
+    name: Sync PHP split repo (Packagist)
+    needs: [release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Split bindings/php and push to foundation/inky-php
+        env:
+          TOKEN: ${{ secrets.PHP_SPLIT_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          SPLIT_SHA=$(git subtree split --prefix=bindings/php HEAD)
+          git push --force "https://x-access-token:${TOKEN}@github.com/foundation/inky-php.git" "${SPLIT_SHA}:refs/heads/main"
+          git push "https://x-access-token:${TOKEN}@github.com/foundation/inky-php.git" "${SPLIT_SHA}:refs/tags/${GITHUB_REF_NAME}"
