@@ -94,7 +94,10 @@ mod tests {
         let data = serde_json::json!({});
         let err = render_template("{% invalid", &data, false).unwrap_err();
         assert!(matches!(err, crate::InkyError::Template(_)));
-        assert!(err.to_string().starts_with("Template parse error:"), "prefix changed: {err}");
+        assert!(
+            err.to_string().starts_with("Template parse error:"),
+            "prefix changed: {err}"
+        );
     }
 
     #[test]

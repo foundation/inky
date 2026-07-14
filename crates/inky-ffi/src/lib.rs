@@ -399,7 +399,9 @@ mod tests {
             )
         };
         assert!(!ptr.is_null(), "inky_build returned null");
-        let s = unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned();
+        let s = unsafe { CStr::from_ptr(ptr) }
+            .to_string_lossy()
+            .into_owned();
         unsafe { inky_free(ptr) };
         serde_json::from_str(&s).expect("envelope is not valid JSON")
     }
@@ -422,7 +424,9 @@ mod tests {
         let env = call_build(
             "<p>Hi {{ name }}</p>",
             None,
-            Some(r#"{"framework_css": false, "inline_css": false, "plain_text": true, "data": {"name": "Joe"}}"#),
+            Some(
+                r#"{"framework_css": false, "inline_css": false, "plain_text": true, "data": {"name": "Joe"}}"#,
+            ),
         );
         assert_eq!(env["ok"], true);
         assert!(env["html"].as_str().unwrap().contains("Hi Joe"));
@@ -439,7 +443,10 @@ mod tests {
             None,
         );
         assert_eq!(env["ok"], false);
-        assert!(env["error"].as_str().unwrap().starts_with("Failed to load layout 'nope.html'"));
+        assert!(env["error"]
+            .as_str()
+            .unwrap()
+            .starts_with("Failed to load layout 'nope.html'"));
         std::fs::remove_dir_all(&dir).ok();
     }
 
@@ -453,7 +460,10 @@ mod tests {
             None,
         );
         assert_eq!(env["ok"], false);
-        assert!(env["error"].as_str().unwrap().starts_with("SCSS compilation failed:"));
+        assert!(env["error"]
+            .as_str()
+            .unwrap()
+            .starts_with("SCSS compilation failed:"));
         let warnings = env["warnings"].as_array().unwrap();
         assert_eq!(warnings.len(), 1);
         assert!(warnings[0].as_str().unwrap().contains("nope.scss"));
@@ -464,7 +474,10 @@ mod tests {
     fn build_invalid_options_is_envelope_not_null() {
         let env = call_build("<p>x</p>", None, Some("{not json"));
         assert_eq!(env["ok"], false);
-        assert!(env["error"].as_str().unwrap().starts_with("Invalid options JSON:"));
+        assert!(env["error"]
+            .as_str()
+            .unwrap()
+            .starts_with("Invalid options JSON:"));
     }
 
     #[test]

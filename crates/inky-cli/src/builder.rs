@@ -233,10 +233,15 @@ mod tests {
             "<link rel=\"stylesheet\" href=\"nope.scss\"><style type=\"text/scss\">$broken: {</style><p>x</p>");
         let b = Builder::new(
             Config::default(),
-            PipelineOptions { inline_css: false, framework_css: true, ..Default::default() },
+            PipelineOptions {
+                inline_css: false,
+                framework_css: true,
+                ..Default::default()
+            },
             false,
         );
-        let err = b.build_file(&dir.join("src/t.html"), &dir.join("src"), &DataSource::None)
+        let err = b
+            .build_file(&dir.join("src/t.html"), &dir.join("src"), &DataSource::None)
             .unwrap_err();
         assert_eq!(err.warnings.len(), 1, "warnings must survive build failure");
         std::fs::remove_dir_all(&dir).ok();
@@ -245,13 +250,17 @@ mod tests {
     #[test]
     fn builder_read_failure_is_io_error_with_message() {
         let b = no_css_builder(false);
-        let err = b.build_file(
-            std::path::Path::new("/nonexistent/inky/file.html"),
-            std::path::Path::new("/nonexistent/inky"),
-            &DataSource::None,
-        ).unwrap_err();
+        let err = b
+            .build_file(
+                std::path::Path::new("/nonexistent/inky/file.html"),
+                std::path::Path::new("/nonexistent/inky"),
+                &DataSource::None,
+            )
+            .unwrap_err();
         assert!(matches!(err.error, inky_core::InkyError::Io(_)));
-        assert!(err.to_string().starts_with("Failed to read /nonexistent/inky/file.html"));
+        assert!(err
+            .to_string()
+            .starts_with("Failed to read /nonexistent/inky/file.html"));
         assert!(err.warnings.is_empty());
     }
 }

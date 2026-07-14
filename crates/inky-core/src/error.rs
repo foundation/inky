@@ -109,7 +109,10 @@ mod tests {
     fn pipeline_error_source_is_none() {
         use std::error::Error;
         let e = crate::error::PipelineError::new(InkyError::Include("boom".into()), vec![]);
-        assert!(e.source().is_none(), "source() must be None: Display already carries the inner message");
+        assert!(
+            e.source().is_none(),
+            "source() must be None: Display already carries the inner message"
+        );
         assert_eq!(e.to_string(), "boom");
     }
 }

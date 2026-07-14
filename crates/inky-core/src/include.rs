@@ -178,7 +178,9 @@ fn process_includes_recursive(
             .iter()
             .find(|(name, _)| name == "src")
             .map(|(_, v)| v.clone())
-            .ok_or_else(|| InkyError::Include("Include tag is missing src attribute".to_string()))?;
+            .ok_or_else(|| {
+                InkyError::Include("Include tag is missing src attribute".to_string())
+            })?;
 
         let vars: Vec<(String, String)> = attrs
             .into_iter()
@@ -511,7 +513,10 @@ mod tests {
         let html = r#"<include src="a.inky">"#;
         let result = process_includes_with_resolver(html, &resolver);
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Maximum include depth"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Maximum include depth"));
     }
 
     #[test]
@@ -795,7 +800,10 @@ mod tests {
         let err = process_layout(r#"<layout src="nope.html"><p>x</p>"#, &dir).unwrap_err();
         assert!(matches!(err, crate::InkyError::Include(_)));
         let msg = err.to_string();
-        assert!(msg.starts_with("Failed to load layout 'nope.html'"), "message changed: {msg}");
+        assert!(
+            msg.starts_with("Failed to load layout 'nope.html'"),
+            "message changed: {msg}"
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 
@@ -835,9 +843,20 @@ mod tests {
     fn yield_content_with_dollar_amounts_survives() {
         let dir = std::env::temp_dir().join("inky-yield-dollar");
         std::fs::create_dir_all(&dir).unwrap();
-        std::fs::write(dir.join("layout.html"), "<html><body><yield /></body></html>").unwrap();
-        let out = process_layout("<layout src=\"layout.html\"><p>Total: $17.00 and $5</p></layout>", &dir).unwrap();
-        assert!(out.contains("Total: $17.00 and $5"), "dollar content mangled: {out}");
+        std::fs::write(
+            dir.join("layout.html"),
+            "<html><body><yield /></body></html>",
+        )
+        .unwrap();
+        let out = process_layout(
+            "<layout src=\"layout.html\"><p>Total: $17.00 and $5</p></layout>",
+            &dir,
+        )
+        .unwrap();
+        assert!(
+            out.contains("Total: $17.00 and $5"),
+            "dollar content mangled: {out}"
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 
@@ -845,19 +864,27 @@ mod tests {
     fn layout_variable_value_with_dollar_survives() {
         let dir = std::env::temp_dir().join("inky-var-dollar");
         std::fs::create_dir_all(&dir).unwrap();
-        std::fs::write(dir.join("layout.html"), "<html><head><title>$title$</title></head><body><yield /></body></html>").unwrap();
-        let out = process_layout("<layout src=\"layout.html\" title=\"Sale: save $10\"><p>x</p></layout>", &dir).unwrap();
-        assert!(out.contains("Sale: save $10"), "variable value mangled: {out}");
+        std::fs::write(
+            dir.join("layout.html"),
+            "<html><head><title>$title$</title></head><body><yield /></body></html>",
+        )
+        .unwrap();
+        let out = process_layout(
+            "<layout src=\"layout.html\" title=\"Sale: save $10\"><p>x</p></layout>",
+            &dir,
+        )
+        .unwrap();
+        assert!(
+            out.contains("Sale: save $10"),
+            "variable value mangled: {out}"
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]
     fn include_variable_value_with_dollar_survives() {
         let mut files = HashMap::new();
-        files.insert(
-            "greeting.inky".to_string(),
-            "<p>$msg$</p>".to_string(),
-        );
+        files.insert("greeting.inky".to_string(), "<p>$msg$</p>".to_string());
         let resolver = MapResolver { files };
 
         let html = r#"<include src="greeting.inky" msg="Save $5 today">"#;

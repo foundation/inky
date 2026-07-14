@@ -69,8 +69,8 @@ impl Pipeline {
 
         // Layout → custom components → includes
         let mut html = if let Some(base) = base_path {
-            let with_layout = crate::include::process_layout(html, base)
-                .map_err(|e| fail(e, &mut warnings))?;
+            let with_layout =
+                crate::include::process_layout(html, base).map_err(|e| fail(e, &mut warnings))?;
             let with_components = crate::include::process_custom_components(
                 &with_layout,
                 base,
@@ -94,8 +94,8 @@ impl Pipeline {
             warnings.extend(scss_warnings);
             html = cleaned;
 
-            let css = scss::compile_framework_scss(&user_scss)
-                .map_err(|e| fail(e, &mut warnings))?;
+            let css =
+                scss::compile_framework_scss(&user_scss).map_err(|e| fail(e, &mut warnings))?;
 
             html = scss::inject_css_into_html(&html, &css);
             html = inject_color_scheme_meta(&html);
@@ -376,10 +376,23 @@ mod tests {
 <style type="text/scss">$broken: {</style>
 </head><body><p>x</p></body></html>"#;
         let err = pipe().process(input, Some(&dir), None).unwrap_err();
-        assert!(matches!(err.error, crate::InkyError::Scss(_)), "wrong variant: {}", err);
-        assert_eq!(err.warnings.len(), 1, "warning lost on Err path: {:?}", err.warnings);
+        assert!(
+            matches!(err.error, crate::InkyError::Scss(_)),
+            "wrong variant: {}",
+            err
+        );
+        assert_eq!(
+            err.warnings.len(),
+            1,
+            "warning lost on Err path: {:?}",
+            err.warnings
+        );
         assert!(err.warnings[0].contains("nope.scss"));
-        assert!(err.to_string().starts_with("SCSS compilation failed:"), "prefix changed: {}", err);
+        assert!(
+            err.to_string().starts_with("SCSS compilation failed:"),
+            "prefix changed: {}",
+            err
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 
@@ -387,12 +400,20 @@ mod tests {
     fn pipeline_template_error_prefix_preserved() {
         let p = Pipeline::new(
             Config::default(),
-            PipelineOptions { framework_css: false, inline_css: false, ..Default::default() },
+            PipelineOptions {
+                framework_css: false,
+                inline_css: false,
+                ..Default::default()
+            },
         );
         let data = serde_json::json!({});
         let err = p.process("{% invalid", None, Some(&data)).unwrap_err();
-        assert!(err.to_string().starts_with("Template merge failed: Template parse error:"),
-            "prefix chain changed: {}", err);
+        assert!(
+            err.to_string()
+                .starts_with("Template merge failed: Template parse error:"),
+            "prefix chain changed: {}",
+            err
+        );
         assert!(err.warnings.is_empty());
     }
 
@@ -401,9 +422,17 @@ mod tests {
         let dir = std::env::temp_dir().join("inky-e5-layout-err");
         std::fs::create_dir_all(&dir).unwrap();
         let err = pipe()
-            .process(r#"<layout src="nope.html"><p>x</p></layout>"#, Some(&dir), None)
+            .process(
+                r#"<layout src="nope.html"><p>x</p></layout>"#,
+                Some(&dir),
+                None,
+            )
             .unwrap_err();
-        assert!(err.to_string().starts_with("Failed to load layout"), "prefix added: {}", err);
+        assert!(
+            err.to_string().starts_with("Failed to load layout"),
+            "prefix added: {}",
+            err
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 
