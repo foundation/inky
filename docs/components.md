@@ -440,6 +440,8 @@ Prevents Inky from transforming the contents.
 
 The `<raw>` wrapper is stripped from the output. Most template syntaxes (`{{ }}`, `<%= %>`, etc.) are auto-detected and don't need `<raw>`.
 
+Content outside `<raw>` passes through Inky's HTML5 parser and gets re-serialized: entity escaping is normalized (a literal `&` becomes `&amp;`), attribute quotes are normalized to double quotes, tag/attribute names are lowercased, and invalid table markup is corrected per the HTML5 spec. `<raw>` is the escape hatch when content must survive byte-for-byte -- including `<image>` tags, and template merge tags sitting directly between table rows (see [Data Merging](data-merging.md#loops)).
+
 ---
 
 ## Media Components

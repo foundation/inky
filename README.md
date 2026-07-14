@@ -46,7 +46,7 @@ brew install foundation/inky/inky
 cargo install inky-cli
 
 # npm (WASM)
-npm install inky-email
+npm install inky
 ```
 
 ## Quick Start
@@ -62,6 +62,10 @@ inky build
 # Watch for changes
 inky watch
 ```
+
+## Library & Bindings
+
+The full build pipeline (layouts, includes, data merge, framework CSS, component transform, CSS inlining) isn't CLI-only — it's available in-process to PHP, Python, Ruby, and Go via `build()`/`Build()`, producing byte-identical output to `inky build`. See [Language Bindings](docs/bindings.md).
 
 ## What's New in v2
 
@@ -80,7 +84,7 @@ inky watch
 - **Plain text generation** — auto-generate `.txt` multipart email version (`--plain-text`)
 - **Spam checker** — `inky spam-check` detects common spam triggers
 - **22 validation rules** — links, accessibility, rendering quirks, Gmail clipping, spam detection
-- **Per-template data** — `--data-dir` auto-pairs JSON data files with templates
+- **Per-template data** — point `--data` at a directory to auto-pair JSON files with templates
 - **Migration tool** — `inky migrate` converts v1 syntax to v2 automatically
 - **Language bindings** — Node.js, PHP, Python, Ruby, Go
 

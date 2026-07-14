@@ -188,7 +188,7 @@ Custom CSS classes that aren't migration targets are preserved in the `class` at
 
 ## Breaking Changes
 
-1. **v2 parser is strict** -- it does not accept v1 syntax. Run `inky migrate` first. If v1 tags are encountered, the parser outputs an error pointing to `inky migrate`.
+1. **v1 syntax isn't fully supported, but it doesn't hard-fail the build either.** A handful of common v1 patterns (`<columns>`, `<h-line>`, `large="..."`/`small="..."` on `<column>`, `<spacer size="...">`) are still accepted as compatibility aliases and just produce a `v1-syntax` warning from `inky build`/`inky validate`. Other v1 patterns — class-based styling like `<button class="small alert expand">`, `<center><menu>` wrapping — aren't recognized at all and are silently treated as plain CSS classes, with none of the v1 behavior and no warning. Run `inky migrate` first rather than relying on the aliases or the warning to catch everything.
 
 2. **`.inky` file extension** -- Source templates should use `.inky`. The CLI auto-generates `.html` output files. Both `.inky` and `.html` are accepted as input.
 
@@ -197,6 +197,15 @@ Custom CSS classes that aren't migration targets are preserved in the `class` at
 4. **Framework CSS is injected by default** -- The built-in SCSS framework is compiled and injected into each email. Disable with `--no-framework-css` if you use your own CSS.
 
 5. **`role="presentation"` on all layout tables** -- v2 adds accessibility attributes to all generated tables. This is a non-breaking output change but may affect CSS selectors or snapshot tests.
+
+## How the Migrator Works
+
+`inky migrate` is a tag scanner, not a regex rewrite -- it parses each tag properly rather than pattern-matching across the raw string. That means:
+
+- **Attributes are never dropped, reordered, or corrupted.** Attributes after `class="..."` on `<callout>`/`<menu>`, attribute values containing `/` or `>`, and attribute names/values that merely look like a migration target (e.g. a `data-large` attribute, or a value of `large=`) are all left alone -- only the documented class-to-attribute conversions happen.
+- **Tag matching is case-insensitive.** `<COLUMNS>`, `<Columns>`, and `<columns>` all migrate the same way.
+- **Formatting outside migrated tags is preserved byte-for-byte.** Only the tags actually being migrated are rewritten; everything else in the file -- whitespace, line breaks, quoting style -- is untouched.
+- **v1 syntax inside HTML comments, `<raw>` blocks, `<script>`/`<style>`/`<textarea>`/`<title>` content, and ERB `<% %>` tags is left alone.** The scanner doesn't migrate text that isn't actually markup in that context.
 
 ## Tips
 

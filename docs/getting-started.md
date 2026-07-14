@@ -150,9 +150,12 @@ Rebuild automatically on file changes.
 
 ```bash
 inky watch src/emails -o dist
+
+# Per-template data files, same as `inky build --data data/`
+inky watch src/emails -o dist --data data/
 ```
 
-Watches all `.inky` and `.html` files, plus any referenced partials and layouts. When a partial or layout changes, all templates rebuild. When a single template changes, only that file rebuilds.
+Watches all `.inky` and `.html` files, plus any referenced partials and layouts. When a partial or layout changes, all templates rebuild. When a single template changes, only that file rebuilds. `watch` and `serve` accept the same `--data` (file or directory), `--hybrid`, and `--bulletproof-buttons` flags as `build`, print the same validation diagnostics, and exit with an error at startup if `--data` points to a missing or unparseable path. If a rebuild fails after a file change, the previous output is kept rather than replaced with an empty file.
 
 ### `inky validate`
 
@@ -195,7 +198,7 @@ echo '<img src="photo.jpg">' | inky validate --json
 | `spam-missing-unsubscribe` | warning | No unsubscribe link found |
 | `spam-suspicious-phrases` | warning | 3+ common spam trigger phrases detected |
 
-Exit codes: `0` success, `1` errors, `2` warnings (with `--strict`).
+Exit code: `0` if no file has any diagnostic (warning or error); `1` if any file has a diagnostic, or fails to process. `inky validate` has no `--strict` flag — every diagnostic already affects the exit code. (`inky build --strict` is different: it exits `1` if any diagnostic was found during that build, `0` otherwise.)
 
 ### `inky serve`
 
@@ -205,9 +208,14 @@ Start a local dev server with live preview and auto-reload.
 inky serve src/emails
 inky serve src/emails --port 8080
 inky serve src/emails --data data.json
+
+# Expose to your local network (off by default)
+inky serve src/emails --host 0.0.0.0
 ```
 
-Opens an index page at `http://localhost:3000` listing all templates. Click any template to preview the rendered output. Edits to source files or data automatically trigger a browser reload.
+Opens an index page at `http://127.0.0.1:3000` listing all templates. Click any template to preview the rendered output. Edits to source files or data automatically trigger a browser reload.
+
+By default the server binds to `127.0.0.1`, so it's only reachable from the machine running it — rendered templates (including any merged `--data`) aren't exposed to your network. Pass `--host 0.0.0.0` to opt in to external access explicitly; `inky serve` prints a warning when you do.
 
 ### `inky spam-check`
 
@@ -451,7 +459,6 @@ Place `inky.config.json` in your project root:
   "dist": "dist",
   "columns": 12,
   "data": "data.json",
-  "data_dir": "data",
   "hybrid": false,
   "plain_text": false,
   "bulletproof_buttons": false
@@ -459,8 +466,7 @@ Place `inky.config.json` in your project root:
 ```
 
 Optional fields:
-- `data` — merge all templates with a single JSON data file (see [Data Merging](data-merging.md))
-- `data_dir` — directory of per-template JSON data files (`data/welcome.json` pairs with `src/welcome.inky`)
+- `data` — path to a JSON file or a directory. A file merges the same data into every template; a directory auto-pairs `data/welcome.json` with `src/welcome.inky` (per-template data). See [Data Merging](data-merging.md).
 - `hybrid` — use hybrid `<div>` + MSO ghost table output (see [Hybrid Output](hybrid-output.md))
 - `plain_text` — generate `.txt` plain text version alongside each HTML file
 - `bulletproof_buttons` — generate VML bulletproof buttons for Outlook on all `<button>` components

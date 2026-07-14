@@ -14,17 +14,15 @@ Common issues and how to fix them.
 
 ## Build Issues
 
-### "Unknown component" error
+### "v1-syntax" warning
 
 ```sh
-error: unknown component <columns> at line 5
-  hint: did you mean <column>? (singular in v2)
-  hint: run `inky migrate` to convert v1 syntax automatically
+  warn welcome.inky [v1-syntax] <columns> is v1 syntax — use <column> instead, or run `inky migrate`
 ```
 
-**Cause:** You're using v1 syntax (e.g., `<columns>`, `<h-line>`, `class="expand"`).
+**Cause:** You're using v1 syntax. `<columns>`, `<h-line>`, `large="..."`/`small="..."` on `<column>`, and `<spacer size="...">` are still accepted as v1-compatibility aliases, so the build doesn't fail — `inky build`/`inky validate` just flags them with a `v1-syntax` warning. Other v1 patterns (class-based button/callout/menu styling like `class="small alert expand"`, `<center><menu>` wrapping) aren't detected by this warning at all: they're silently treated as plain CSS classes with none of the v1 styling behavior, which is usually not what you want.
 
-**Fix:** Run the migrator:
+**Fix:** Run the migrator so every v1 pattern — flagged or not — is converted:
 
 ```bash
 inky migrate src/ --in-place
