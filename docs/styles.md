@@ -126,7 +126,7 @@ The `<small>` text renders smaller and muted, controlled by these variables:
 | `$anchor-color-visited` | `$anchor-color` | Visited link color |
 | `$anchor-color-hover` | 10% darker than primary | Hover link color |
 | `$anchor-color-active` | `$anchor-color-hover` | Active link color |
-| `$remove-ios-blue` | `true` | Strip iOS auto-detected link styling (dates, phone numbers, addresses — see [Email Guide](email-guide.md#ios-auto-detected-links)) |
+| `$remove-ios-blue` | `true` | Strip iOS auto-detected link styling (dates, phone numbers, addresses — see [Email Guide](../email-guide#ios-auto-detected-links)) |
 
 ## Buttons
 
